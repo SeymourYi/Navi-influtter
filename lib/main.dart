@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutterlearn2/components/like_notification_list.dart';
+import 'package:flutterlearn2/models/like_notification.dart';
 import './components/article.dart';
 
 void main(List<String> args) {
@@ -24,7 +26,25 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHome extends StatelessWidget {
-  const MyHome({super.key});
+  // 移除 const 关键字
+  MyHome({super.key});
+
+  final List<LikeNotification> notifications = [
+    LikeNotification(
+      postTitle: "我的Flutter学习心得",
+      postPreview: "分享我最近学习Flutter的体会和经验...",
+      user: UserInfo(
+        avatar: "assets/avatars/user1.jpg",
+        name: "张开发者",
+        location: "北京 · 海淀区",
+        occupation: "移动端开发工程师",
+        joinDate: DateTime(2021, 3, 15),
+        bio: "热爱技术分享，专注移动开发领域",
+      ),
+      likedAt: DateTime(2023, 7, 20, 14, 30),
+    ),
+    // 可以添加更多数据...
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -64,37 +84,33 @@ class MyHome extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.all(0),
             children: [
-              Expanded(
-                child: UserAccountsDrawerHeader(
-                  currentAccountPicture: CircleAvatar(
-                    backgroundImage: AssetImage(
-                      "lib/assets/images/userpic.jpg",
+              UserAccountsDrawerHeader(
+                currentAccountPicture: CircleAvatar(
+                  backgroundImage: AssetImage("lib/assets/images/userpic.jpg"),
+                ),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      'https://img-s.msn.cn/tenant/amp/entityid/AA1yQEG5?w=0&h=0&q=60&m=6&f=jpg&u=t',
                     ),
+                    fit: BoxFit.cover,
                   ),
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(
-                        'https://img-s.msn.cn/tenant/amp/entityid/AA1yQEG5?w=0&h=0&q=60&m=6&f=jpg&u=t',
-                      ),
-                      fit: BoxFit.cover,
-                    ),
+                ),
+                accountName: Text(
+                  "霸气小肥鹅",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Inter-Regular",
+                    color: Colors.black,
                   ),
-                  accountName: Text(
-                    "霸气小肥鹅",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: "Inter-Regular",
-                      color: Colors.black,
-                    ),
-                  ),
-                  accountEmail: Text(
-                    "@1111",
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 15,
-                      fontFamily: "Inter-Regular",
-                    ),
+                ),
+                accountEmail: Text(
+                  "@1111",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 15,
+                    fontFamily: "Inter-Regular",
                   ),
                 ),
               ),
@@ -170,7 +186,6 @@ class MyHome extends StatelessWidget {
                         ),
                       ), // 文本
                     ),
-
                     Expanded(child: SizedBox.shrink()),
                     TextButton(
                       onPressed: () {
@@ -208,14 +223,38 @@ class MyHome extends StatelessWidget {
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,
-              overlayColor: WidgetStatePropertyAll(Colors.transparent),
+              overlayColor: MaterialStateProperty.all(Colors.transparent),
               unselectedLabelStyle: TextStyle(fontSize: 12),
               labelStyle: TextStyle(fontSize: 12),
               labelColor: const Color.fromARGB(255, 106, 75, 202),
             ),
           ),
         ),
-        body: TabBarView(children: [Article(), Text("消息")]),
+        body: TabBarView(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  Article(),
+                  Article(),
+                  Article(),
+                  Article(),
+                  Article(),
+                  Article(),
+                ],
+              ),
+            ),
+            LikeNotificationList(
+              notifications: notifications,
+              onFollowUser: (user) {
+                // 处理关注逻辑
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

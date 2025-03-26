@@ -57,7 +57,16 @@ class _ArticleState extends State<Article> {
                         ),
                       ),
                     ),
-                    ArticleImage(),
+                    ArticleImage(
+                      imageUrls: [
+                        "lib/assets/images/3.jpg",
+                        "lib/assets/images/3.jpg",
+                        "lib/assets/images/3.jpg",
+                        "lib/assets/images/3.jpg",
+                        "lib/assets/images/3.jpg",
+                        "lib/assets/images/3.jpg",
+                      ],
+                    ),
                     // 时间和操作按钮
                     Padding(
                       padding: EdgeInsets.only(top: 8, right: 12),
