@@ -20,10 +20,6 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           iconTheme: IconThemeData(color: Color(0xFF6000E6)),
         ),
-        tabBarTheme: TabBarTheme(
-          labelColor: Color(0xFF6000E6),
-          unselectedLabelColor: Colors.grey,
-        ),
       ),
       home: MyHome(),
     );
@@ -83,24 +79,15 @@ class MyHome extends StatelessWidget {
           ),
         ),
         bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: Colors.grey[200]!)),
-          ),
           child: SizedBox(
             height: 50,
             child: TabBar(
-              splashFactory: NoSplash.splashFactory,
               overlayColor: MaterialStateProperty.all(Colors.transparent),
-              indicator: UnderlineTabIndicator(
-                borderSide: BorderSide.none,
-                insets: EdgeInsets.zero,
-              ),
               indicatorColor: Colors.transparent,
               labelColor: Color(0xFF6000E6),
               unselectedLabelColor: Colors.grey,
               labelStyle: TextStyle(fontSize: 12),
               unselectedLabelStyle: TextStyle(fontSize: 12),
-              labelPadding: EdgeInsets.symmetric(vertical: 2),
               tabs: [
                 Tab(icon: Icon(Icons.home, size: 20), text: "主界面"),
                 Tab(icon: Icon(Icons.email, size: 20), text: "消息"),
@@ -111,10 +98,13 @@ class MyHome extends StatelessWidget {
         body: TabBarView(
           children: [Center(child: Text("主界面内容")), Center(child: Text("消息内容"))],
         ),
+
         drawer: Theme(
-          data: Theme.of(
-            context,
-          ).copyWith(dividerTheme: DividerThemeData(color: Colors.transparent)),
+          data: Theme.of(context).copyWith(
+            dividerTheme: DividerThemeData(
+              color: const Color.fromARGB(0, 164, 20, 20),
+            ),
+          ),
           child: Drawer(
             backgroundColor: Colors.white,
             child: Column(
