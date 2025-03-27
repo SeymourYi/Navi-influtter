@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutterlearn2/components/article.dart';
+import 'package:flutterlearn2/page/Home/articlelist.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -188,7 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
       itemBuilder: (context, index) {
         return const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
-          child: Article(), // Your existing article widget
+          child: Articlelist(), // Your existing article widget
         );
       },
     );

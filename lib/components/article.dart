@@ -4,15 +4,23 @@ import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
 import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
+import '../api/articleAPI.dart';
 
 class Article extends StatefulWidget {
-  const Article({super.key});
-
+  const Article({super.key, required this.articleData});
+  final dynamic articleData;
   @override
   State<Article> createState() => _ArticleState();
 }
 
 class _ArticleState extends State<Article> {
+  @override
+  void initState() {
+    super.initState();
+    print(widget.articleData);
+    print("111111111111111111111111111111111111");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -58,13 +66,12 @@ class _ArticleState extends State<Article> {
                   padding: EdgeInsets.only(left: 12, top: 8, right: 8),
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundImage: AssetImage(
-                      "assets/images/user_avatar.png",
+                    backgroundImage: NetworkImage(
+                      widget.articleData['userPic'],
                     ), // 替换为你的头像路径
                   ),
                 ),
               ),
-
               // 右侧内容
               Expanded(
                 child: Column(
@@ -72,7 +79,7 @@ class _ArticleState extends State<Article> {
                   children: [
                     // 用户名
                     Text(
-                      "霸气小肥鹅",
+                      "${widget.articleData['nickname']}",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -115,7 +122,7 @@ class _ArticleState extends State<Article> {
                       child: Padding(
                         padding: EdgeInsets.only(top: 4, right: 12),
                         child: Text(
-                          "社区有个小伙伴，刚跟我吐槽职场环境，结果上周他自己的 App 爆发，得到了应用市场的推荐，数据爆炸。他的产品其实已经默默开发 2 年多了，去年还问我怎么把收到的100 刀提出来，如今已经在琢磨如何利用好这 破天富贵，期待他有空了发个帖子分享一下。做独立开发者就是这样，有努力、有运气，有坚持。",
+                          "${widget.articleData['content']}",
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 15,
@@ -125,16 +132,11 @@ class _ArticleState extends State<Article> {
                       ),
                     ),
 
-                    ArticleImage(
-                      imageUrls: [
-                        "lib/assets/images/3.jpg",
-                        "lib/assets/images/3.jpg",
-                        "lib/assets/images/3.jpg",
-                        "lib/assets/images/3.jpg",
-                        "lib/assets/images/3.jpg",
-                        "lib/assets/images/3.jpg",
-                      ],
-                    ),
+                    widget.articleData['coverImg'] != ""
+                        ? ArticleImage(
+                          imageUrls: ["${widget.articleData['coverImg']}"],
+                        )
+                        : Container(), // Returns an empty container if no image
                     // 时间和操作按钮
                     Padding(
                       padding: EdgeInsets.only(top: 8, right: 12),

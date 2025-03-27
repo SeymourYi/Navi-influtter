@@ -110,7 +110,7 @@ class ArticleImage extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Hero(
           tag: 'article_image_$index',
-          child: Image.asset(
+          child: Image.network(
             imageUrls[index],
             width: double.infinity,
             height: 200,

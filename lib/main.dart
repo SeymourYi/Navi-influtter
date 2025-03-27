@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutterlearn2/components/like_notification_list.dart';
 import 'package:flutterlearn2/models/like_notification.dart';
+import 'package:flutterlearn2/page/Home/articlelist.dart';
 import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
 import 'package:flutterlearn2/page/edit/editpage.dart';
 import 'package:flutterlearn2/page/friends/friendspage.dart';
 import 'package:flutterlearn2/test/components/articledetail.dart';
+import 'package:flutterlearn2/utils/mydio.dart';
 import './components/article.dart';
 import './page/post/post.dart';
 import './page/friends/friendspage.dart';
 import './page/search/search.dart';
 
 void main(List<String> args) {
+  HttpClient.init();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -364,7 +366,13 @@ class MyHome extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            SingleChildScrollView(child: Column(children: [Article()])),
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(padding: EdgeInsets.all(0), child: Articlelist()),
+                ],
+              ),
+            ),
             LikeNotificationList(
               notifications: notifications,
               onFollowUser: (user) {

@@ -79,9 +79,43 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
                 onLongPress: () => _showActionMenu(context),
                 child: Hero(
                   tag: 'article_image_$index',
-                  child: Image.asset(
-                    widget.imageUrls[index],
-                    fit: BoxFit.contain,
+                  child: Center(
+                    child: Image.network(
+                      widget.imageUrls[index],
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value:
+                                loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                          ),
+                        );
+                      },
+                      errorBuilder:
+                          (context, error, stackTrace) => Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.error,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  '图片加载失败',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                    ),
                   ),
                 ),
               );
@@ -112,6 +146,14 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
                 ),
               ),
             ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ],
       ),
     );
