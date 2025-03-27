@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutterlearn2/components/like_notification_list.dart';
 import 'package:flutterlearn2/models/like_notification.dart';
+import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
+import 'package:flutterlearn2/page/edit/editpage.dart';
+import 'package:flutterlearn2/page/friends/friendspage.dart';
 import 'package:flutterlearn2/test/components/articledetail.dart';
 import './components/article.dart';
 import './page/post/post.dart';
+import './page/friends/friendspage.dart';
+import './page/search/search.dart';
 
 void main(List<String> args) {
   runApp(MyApp());
@@ -65,7 +70,34 @@ class MyHome extends StatelessWidget {
           ),
           actions: [
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            SearchPage(),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      var tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
+              },
               icon: SvgPicture.asset(
                 "lib/assets/icons/adduser.svg",
                 height: 20,
@@ -126,6 +158,37 @@ class MyHome extends StatelessWidget {
                   ),
                 ),
                 leading: SvgPicture.asset("lib/assets/icons/Profile.svg"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder:
+                          (context, animation, secondaryAnimation) =>
+                              ProfilePage(),
+                      transitionsBuilder: (
+                        context,
+                        animation,
+                        secondaryAnimation,
+                        child,
+                      ) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.ease;
+
+                        var tween = Tween(
+                          begin: begin,
+                          end: end,
+                        ).chain(CurveTween(curve: curve));
+
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
               ListTile(
                 title: Text(
@@ -137,6 +200,61 @@ class MyHome extends StatelessWidget {
                   ),
                 ),
                 leading: SvgPicture.asset("lib/assets/icons/Vector1.svg"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder:
+                          (context, animation, secondaryAnimation) =>
+                              FriendsList(
+                                friends: [
+                                  Friend(
+                                    name: '霸气小肥鹅',
+                                    username: 'baqixiaofeie',
+                                    avatarUrl: 'assets/images/user_avatar.png',
+                                    bio: '独立开发者 | Flutter爱好者 | 分享开发经验和生活点滴',
+                                    isFollowing: true,
+                                    isVerified: true,
+                                    followers: 12800,
+                                    following: 542,
+                                    showStats: true,
+                                  ),
+                                  Friend(
+                                    name: 'Flutter官方',
+                                    username: 'flutter',
+                                    avatarUrl: 'assets/images/flutter_logo.png',
+                                    bio: 'Flutter官方账号，分享Flutter最新动态和开发技巧',
+                                    isVerified: true,
+                                    followers: 250000,
+                                    following: 120,
+                                    showStats: true,
+                                  ),
+                                ],
+                              ),
+                      transitionsBuilder: (
+                        context,
+                        animation,
+                        secondaryAnimation,
+                        child,
+                      ) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.ease;
+
+                        var tween = Tween(
+                          begin: begin,
+                          end: end,
+                        ).chain(CurveTween(curve: curve));
+
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
               ListTile(
                 title: Text(
@@ -148,6 +266,15 @@ class MyHome extends StatelessWidget {
                   ),
                 ),
                 leading: SvgPicture.asset("lib/assets/icons/Vector.svg"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditProfilePage(),
+                    ),
+                  );
+                },
               ),
               Divider(),
               ListTile(
@@ -160,6 +287,9 @@ class MyHome extends StatelessWidget {
                   ),
                 ),
                 leading: SvgPicture.asset("lib/assets/icons/information.svg"),
+                onTap: () {
+                  Navigator.pop(context);
+                },
               ),
               Padding(
                 padding: EdgeInsets.only(top: 310),
@@ -251,7 +381,8 @@ class MyHome extends StatelessWidget {
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => Post(),
+                pageBuilder:
+                    (context, animation, secondaryAnimation) => PostPage(),
                 transitionsBuilder: (
                   context,
                   animation,
@@ -261,12 +392,10 @@ class MyHome extends StatelessWidget {
                   const begin = Offset(0.0, 1.0);
                   const end = Offset.zero;
                   const curve = Curves.ease;
-
                   var tween = Tween(
                     begin: begin,
                     end: end,
                   ).chain(CurveTween(curve: curve));
-
                   return SlideTransition(
                     position: animation.drive(tween),
                     child: child,
