@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'full_screen_image_view.dart';
 
 class ArticleImage extends StatelessWidget {
   final List<String> imageUrls;
@@ -35,13 +36,36 @@ class ArticleImage extends StatelessWidget {
   }
 
   void _showFullScreenImage(BuildContext context, int initialIndex) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder:
-            (context) => _FullScreenImageView(
+    // Navigator.of(context).push(
+    //   MaterialPageRoute(
+    //     builder:
+    //         (context) => FullScreenImageView(
+    //           imageUrls: imageUrls,
+    //           initialIndex: initialIndex,
+    //         ),
+    //   ),
+    // );
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) => FullScreenImageView(
               imageUrls: imageUrls,
               initialIndex: initialIndex,
             ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -99,125 +123,6 @@ class ArticleImage extends StatelessWidget {
                 ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _FullScreenImageView extends StatefulWidget {
-  final List<String> imageUrls;
-  final int initialIndex;
-
-  const _FullScreenImageView({
-    required this.imageUrls,
-    required this.initialIndex,
-  });
-
-  @override
-  State<_FullScreenImageView> createState() => _FullScreenImageViewState();
-}
-
-class _FullScreenImageViewState extends State<_FullScreenImageView> {
-  late PageController _pageController;
-  late int _currentIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageController = PageController(
-      initialPage: widget.initialIndex,
-      viewportFraction: 1.0,
-    );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _showActionMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.close),
-                  title: const Text('取消'),
-                  onTap: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.imageUrls.length,
-            physics: const PageScrollPhysics(
-              parent: ClampingScrollPhysics(),
-            ), // 修改这里
-            onPageChanged: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () => Navigator.pop(context),
-                onLongPress: () => _showActionMenu(context),
-                child: Hero(
-                  tag: 'article_image_$index',
-                  child: Image.asset(
-                    widget.imageUrls[index],
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              );
-            },
-          ),
-          if (widget.imageUrls.length > 1)
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.imageUrls.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: _currentIndex == index ? 12 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          _currentIndex == index
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

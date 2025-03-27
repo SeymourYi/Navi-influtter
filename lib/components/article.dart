@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
 import 'articleimage.dart';
+import '../components/articledetail.dart';
+import '../components/userinfo.dart';
 
 class Article extends StatefulWidget {
   const Article({super.key});
@@ -20,13 +23,45 @@ class _ArticleState extends State<Article> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 左侧头像
-              Padding(
-                padding: EdgeInsets.only(left: 12, top: 8, right: 8),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage(
-                    "assets/images/user_avatar.png",
-                  ), // 替换为你的头像路径
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder:
+                          (context, animation, secondaryAnimation) =>
+                              ProfilePage(),
+                      transitionsBuilder: (
+                        context,
+                        animation,
+                        secondaryAnimation,
+                        child,
+                      ) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.ease;
+
+                        var tween = Tween(
+                          begin: begin,
+                          end: end,
+                        ).chain(CurveTween(curve: curve));
+
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(left: 12, top: 8, right: 8),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(
+                      "assets/images/user_avatar.png",
+                    ), // 替换为你的头像路径
+                  ),
                 ),
               ),
 
@@ -46,17 +81,50 @@ class _ArticleState extends State<Article> {
                     ),
 
                     // 正文内容
-                    Padding(
-                      padding: EdgeInsets.only(top: 4, right: 12),
-                      child: Text(
-                        "社区有个小伙伴，刚跟我吐槽职场环境，结果上周他自己的 App 爆发，得到了应用市场的推荐，数据爆炸。他的产品其实已经默默开发 2 年多了，去年还问我怎么把收到的100 刀提出来，如今已经在琢磨如何利用好这 破天富贵，期待他有空了发个帖子分享一下。做独立开发者就是这样，有努力、有运气，有坚持。",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 15,
-                          fontFamily: "Inter-Regular",
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    Articledetail(id: "123"),
+                            transitionsBuilder: (
+                              context,
+                              animation,
+                              secondaryAnimation,
+                              child,
+                            ) {
+                              const begin = Offset(1.0, 0.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+
+                              var tween = Tween(
+                                begin: begin,
+                                end: end,
+                              ).chain(CurveTween(curve: curve));
+
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 4, right: 12),
+                        child: Text(
+                          "社区有个小伙伴，刚跟我吐槽职场环境，结果上周他自己的 App 爆发，得到了应用市场的推荐，数据爆炸。他的产品其实已经默默开发 2 年多了，去年还问我怎么把收到的100 刀提出来，如今已经在琢磨如何利用好这 破天富贵，期待他有空了发个帖子分享一下。做独立开发者就是这样，有努力、有运气，有坚持。",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                            fontFamily: "Inter-Regular",
+                          ),
                         ),
                       ),
                     ),
+
                     ArticleImage(
                       imageUrls: [
                         "lib/assets/images/3.jpg",
