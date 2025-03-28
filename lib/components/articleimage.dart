@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'full_screen_image_view.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ArticleImage extends StatelessWidget {
   final List<String> imageUrls;

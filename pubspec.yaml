@@ -5,6 +5,7 @@ version: 0.1.0
 environment:
   sdk: ^3.7.2
 dependencies:
+  cached_network_image: ^3.4.1
   dio: ^5.8.0+1
   flutter:
     sdk: flutter

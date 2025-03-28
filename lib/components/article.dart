@@ -5,6 +5,7 @@ import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
 import '../api/articleAPI.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Article extends StatefulWidget {
   const Article({super.key, required this.articleData});
@@ -23,8 +24,8 @@ class _ArticleState extends State<Article> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(0),
+    return SizedBox(
+      // padding: EdgeInsets.all(0),
       child: Column(
         children: [
           Row(
@@ -48,7 +49,6 @@ class _ArticleState extends State<Article> {
                         const begin = Offset(1.0, 0.0);
                         const end = Offset.zero;
                         const curve = Curves.ease;
-
                         var tween = Tween(
                           begin: begin,
                           end: end,
@@ -66,7 +66,7 @@ class _ArticleState extends State<Article> {
                   padding: EdgeInsets.only(left: 12, top: 8, right: 8),
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundImage: NetworkImage(
+                    backgroundImage: CachedNetworkImageProvider(
                       widget.articleData['userPic'],
                     ), // 替换为你的头像路径
                   ),

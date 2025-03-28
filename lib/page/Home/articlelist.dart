@@ -9,7 +9,8 @@ class Articlelist extends StatefulWidget {
   State<Articlelist> createState() => _ArticlelistState();
 }
 
-class _ArticlelistState extends State<Articlelist> {
+class _ArticlelistState extends State<Articlelist>
+    with AutomaticKeepAliveClientMixin {
   List<dynamic> articleList = [];
 
   Future<void> _fetchArticleList() async {
@@ -25,6 +26,8 @@ class _ArticlelistState extends State<Articlelist> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+  @override
   void initState() {
     super.initState();
     _fetchArticleList();
@@ -35,6 +38,7 @@ class _ArticlelistState extends State<Articlelist> {
     return SizedBox(
       height: 700, // specify a height
       child: ListView.builder(
+        cacheExtent: 2000, // 缓存额外 2000 像素的内容
         itemCount: articleList.length,
         itemBuilder: (BuildContext ctx, int i) {
           return Article(articleData: articleList[i]);
