@@ -237,46 +237,8 @@ class _MyHomeState extends State<MyHome> {
                             context,
                             PageRouteBuilder(
                               pageBuilder:
-                                  (
-                                    context,
-                                    animation,
-                                    secondaryAnimation,
-                                  ) => FriendsList(
-                                    friends: [
-                                      Friend(
-                                        name:
-                                            _userInfo != null
-                                                ? _userInfo!['nickname']
-                                                : '霸气小肥鹅',
-                                        username:
-                                            _userInfo != null
-                                                ? _userInfo!['username']
-                                                : 'baqixiaofeie',
-                                        avatarUrl:
-                                            'assets/images/user_avatar.png',
-                                        bio:
-                                            _userInfo != null
-                                                ? _userInfo!['bio']
-                                                : '独立开发者 | Flutter爱好者 | 分享开发经验和生活点滴',
-                                        isFollowing: true,
-                                        isVerified: true,
-                                        followers: 12800,
-                                        following: 542,
-                                        showStats: true,
-                                      ),
-                                      Friend(
-                                        name: 'Flutter官方',
-                                        username: 'flutter',
-                                        avatarUrl:
-                                            'assets/images/flutter_logo.png',
-                                        bio: 'Flutter官方账号，分享Flutter最新动态和开发技巧',
-                                        isVerified: true,
-                                        followers: 250000,
-                                        following: 120,
-                                        showStats: true,
-                                      ),
-                                    ],
-                                  ),
+                                  (context, animation, secondaryAnimation) =>
+                                      FriendsList(),
                               transitionsBuilder: (
                                 context,
                                 animation,

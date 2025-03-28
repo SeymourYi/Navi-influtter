@@ -1,30 +1,185 @@
 import 'package:flutter/material.dart';
+import 'package:flutterlearn2/api/getfriendlist.dart';
+import '../../api/articleAPI.dart';
+import '../../Store/storeutils.dart';
 
-class FriendsList extends StatelessWidget {
-  final List<Friend> friends;
+class Friend {
+  final String name;
+  final String username;
+  final String avatarUrl;
+  final String? bio;
+  final bool isFollowing;
+  final bool isVerified;
+  final int followers;
+  final int following;
+  final bool showStats;
+
+  Friend({
+    required this.name,
+    required this.username,
+    required this.avatarUrl,
+    this.bio,
+    this.isFollowing = false,
+    this.isVerified = false,
+    this.followers = 0,
+    this.following = 0,
+    this.showStats = false,
+  });
+
+  // 从API返回的数据中创建Friend对象
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
+      name: json['nickname'] ?? '',
+      username: json['username'] ?? '',
+      avatarUrl: json['userPic'] ?? 'https://via.placeholder.com/150',
+      bio: json['bio'] ?? '',
+      isFollowing: true, // 假设已关注
+      isVerified: false, // 假设未认证
+      followers: 0, // 默认值
+      following: 0, // 默认值
+      showStats: true, // 显示统计信息
+    );
+  }
+}
+
+class FriendsList extends StatefulWidget {
+  final List<Friend>? friends;
   final ValueChanged<Friend>? onFollowPressed;
 
-  const FriendsList({super.key, required this.friends, this.onFollowPressed});
+  const FriendsList({super.key, this.friends, this.onFollowPressed});
+
+  @override
+  State<FriendsList> createState() => _FriendsListState();
+}
+
+class _FriendsListState extends State<FriendsList> {
+  bool _isLoading = true;
+  List<Friend> _friends = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFriendList();
+  }
+
+  Future<void> _fetchFriendList() async {
+    // 如果传入了friends列表，则使用传入的列表
+    if (widget.friends != null && widget.friends!.isNotEmpty) {
+      setState(() {
+        _friends = widget.friends!;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    GetFriendListService service = GetFriendListService();
+    try {
+      var username = await SharedPrefsUtils.getUsername();
+      var result = await service.GetFriendList(username.toString());
+      print(result);
+
+      // 将API返回的数据转换为Friend对象列表
+      List<Friend> apiFriends = [];
+      if (result['code'] == 0 && result['data'] is List) {
+        for (var item in result['data']) {
+          apiFriends.add(Friend.fromJson(item));
+        }
+      }
+
+      setState(() {
+        _friends = apiFriends;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // 创建一些模拟数据，以防API调用失败
+      setState(() {
+        _friends = [
+          Friend(
+            name: '霸气小肥鹅',
+            username: '1111',
+            avatarUrl:
+                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/7a2fc306-3a6a-4d5f-ab06-e470ecb1d3a7.jpg',
+            bio: '韶华易逝，劝君惜取少年时',
+            isFollowing: true,
+            isVerified: true,
+            followers: 12800,
+            following: 542,
+            showStats: true,
+          ),
+          Friend(
+            name: '金杯车',
+            username: '2222',
+            avatarUrl:
+                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/973eae25-8da6-4011-9281-f686f03c1bfd.jpg',
+            bio: '青天碧海，蓝天无线。\n微风徐来，阳光沙滩。',
+            isFollowing: true,
+            isVerified: false,
+            followers: 5400,
+            following: 210,
+            showStats: true,
+          ),
+          Friend(
+            name: '用户已注销',
+            username: '3333',
+            avatarUrl:
+                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/R-C.png',
+            bio: '财务自由 | 游乐人间。\n仰观宇宙之大，俯察品类之盛。',
+            isFollowing: false,
+            isVerified: true,
+            followers: 8600,
+            following: 320,
+            showStats: true,
+          ),
+        ];
+        _isLoading = false;
+      });
+      print('Error fetching friend list: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Following'),
+        title: const Text('关注列表'),
         centerTitle: true,
         elevation: 0,
       ),
-      body: ListView.separated(
-        itemCount: friends.length,
-        separatorBuilder: (context, index) => const Divider(height: 0),
-        itemBuilder: (context, index) {
-          final friend = friends[index];
-          return FriendListItem(
-            friend: friend,
-            onFollowPressed: () => onFollowPressed?.call(friend),
-          );
-        },
-      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _friends.isEmpty
+              ? const Center(
+                child: Text('你还没有关注任何人', style: TextStyle(fontSize: 16)),
+              )
+              : ListView.separated(
+                itemCount: _friends.length,
+                separatorBuilder: (context, index) => const Divider(height: 0),
+                itemBuilder: (context, index) {
+                  final friend = _friends[index];
+                  return FriendListItem(
+                    friend: friend,
+                    onFollowPressed: () {
+                      setState(() {
+                        // 切换关注状态
+                        final updatedFriend = Friend(
+                          name: friend.name,
+                          username: friend.username,
+                          avatarUrl: friend.avatarUrl,
+                          bio: friend.bio,
+                          isFollowing: !friend.isFollowing,
+                          isVerified: friend.isVerified,
+                          followers: friend.followers,
+                          following: friend.following,
+                          showStats: friend.showStats,
+                        );
+                        _friends[index] = updatedFriend;
+                      });
+                      widget.onFollowPressed?.call(friend);
+                    },
+                  );
+                },
+              ),
     );
   }
 }
@@ -103,11 +258,11 @@ class FriendListItem extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
-                  _buildStatItem(Icons.people, '${friend.following} Following'),
+                  _buildStatItem(Icons.people, '${friend.following} 关注'),
                   const SizedBox(width: 16),
                   _buildStatItem(
                     Icons.people_outline,
-                    '${friend.followers} Followers',
+                    '${friend.followers} 粉丝',
                   ),
                 ],
               ),
@@ -128,7 +283,7 @@ class FriendListItem extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
           ),
-          child: const Text('Following', style: TextStyle(color: Colors.black)),
+          child: const Text('已关注', style: TextStyle(color: Colors.black)),
         )
         : ElevatedButton(
           onPressed: onFollowPressed,
@@ -139,7 +294,7 @@ class FriendListItem extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
           ),
-          child: const Text('Follow', style: TextStyle(color: Colors.white)),
+          child: const Text('关注', style: TextStyle(color: Colors.white)),
         );
   }
 
@@ -153,61 +308,3 @@ class FriendListItem extends StatelessWidget {
     );
   }
 }
-
-class Friend {
-  final String name;
-  final String username;
-  final String avatarUrl;
-  final String? bio;
-  final bool isFollowing;
-  final bool isVerified;
-  final int followers;
-  final int following;
-  final bool showStats;
-
-  Friend({
-    required this.name,
-    required this.username,
-    required this.avatarUrl,
-    this.bio,
-    this.isFollowing = false,
-    this.isVerified = false,
-    this.followers = 0,
-    this.following = 0,
-    this.showStats = false,
-  });
-}
-
-// Example usage:
-/*
-FriendsList(
-  friends: [
-    Friend(
-      name: '霸气小肥鹅',
-      username: 'baqixiaofeie',
-      avatarUrl: 'assets/images/user_avatar.png',
-      bio: '独立开发者 | Flutter爱好者 | 分享开发经验和生活点滴',
-      isFollowing: true,
-      isVerified: true,
-      followers: 12800,
-      following: 542,
-      showStats: true,
-    ),
-    Friend(
-      name: 'Flutter官方',
-      username: 'flutter',
-      avatarUrl: 'assets/images/flutter_logo.png',
-      bio: 'Flutter官方账号，分享Flutter最新动态和开发技巧',
-      isVerified: true,
-      followers: 250000,
-      following: 120,
-      showStats: true,
-    ),
-    // Add more friends...
-  ],
-  onFollowPressed: (friend) {
-    // Handle follow/unfollow action
-    print('Follow button pressed for ${friend.name}');
-  },
-)
-*/
