@@ -10,10 +10,18 @@ import 'package:flutterlearn2/page/post/post.dart';
 import 'package:flutterlearn2/page/search/search.dart';
 import 'package:flutterlearn2/page/login/login.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class MyHome extends StatelessWidget {
-  // 移除 const 关键字
-  MyHome({super.key});
+class MyHome extends StatefulWidget {
+  const MyHome({super.key});
+
+  @override
+  State<MyHome> createState() => _MyHomeState();
+}
+
+class _MyHomeState extends State<MyHome> {
+  Map<String, dynamic>? _userInfo;
+  bool _isLoading = true;
 
   final List<LikeNotification> notifications = [
     LikeNotification(
@@ -31,6 +39,27 @@ class MyHome extends StatelessWidget {
     ),
     // 可以添加更多数据...
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      setState(() {
+        _userInfo = userInfo;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('加载用户信息出错: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,290 +123,335 @@ class MyHome extends StatelessWidget {
         ),
         drawer: Drawer(
           backgroundColor: Colors.white,
-          child: ListView(
-            padding: EdgeInsets.all(0),
-            children: [
-              UserAccountsDrawerHeader(
-                currentAccountPicture: CircleAvatar(
-                  backgroundImage: AssetImage("lib/assets/images/userpic.jpg"),
-                ),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      'https://img-s.msn.cn/tenant/amp/entityid/AA1yQEG5?w=0&h=0&q=60&m=6&f=jpg&u=t',
-                    ),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                accountName: Text(
-                  "霸气小肥鹅",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Inter-Regular",
-                    color: Colors.black,
-                  ),
-                ),
-                accountEmail: Text(
-                  "@1111",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 15,
-                    fontFamily: "Inter-Regular",
-                  ),
-                ),
-              ),
-              ListTile(
-                title: Text(
-                  "个人信息",
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 126, 121, 211),
-                    fontSize: 18,
-                    fontFamily: "Inter-Regular",
-                  ),
-                ),
-                leading: SvgPicture.asset("lib/assets/icons/Profile.svg"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder:
-                          (context, animation, secondaryAnimation) =>
-                              ProfilePage(),
-                      transitionsBuilder: (
-                        context,
-                        animation,
-                        secondaryAnimation,
-                        child,
-                      ) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.ease;
-
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: Text(
-                  "关注列表",
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 126, 121, 211),
-                    fontSize: 18,
-                    fontFamily: "Inter-Regular",
-                  ),
-                ),
-                leading: SvgPicture.asset("lib/assets/icons/Vector1.svg"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder:
-                          (context, animation, secondaryAnimation) =>
-                              FriendsList(
-                                friends: [
-                                  Friend(
-                                    name: '霸气小肥鹅',
-                                    username: 'baqixiaofeie',
-                                    avatarUrl: 'assets/images/user_avatar.png',
-                                    bio: '独立开发者 | Flutter爱好者 | 分享开发经验和生活点滴',
-                                    isFollowing: true,
-                                    isVerified: true,
-                                    followers: 12800,
-                                    following: 542,
-                                    showStats: true,
+          child:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                    padding: EdgeInsets.all(0),
+                    children: [
+                      UserAccountsDrawerHeader(
+                        currentAccountPicture:
+                            _userInfo != null &&
+                                    _userInfo!['userPic'].isNotEmpty
+                                ? CircleAvatar(
+                                  backgroundImage: CachedNetworkImageProvider(
+                                    _userInfo!['userPic'],
                                   ),
-                                  Friend(
-                                    name: 'Flutter官方',
-                                    username: 'flutter',
-                                    avatarUrl: 'assets/images/flutter_logo.png',
-                                    bio: 'Flutter官方账号，分享Flutter最新动态和开发技巧',
-                                    isVerified: true,
-                                    followers: 250000,
-                                    following: 120,
-                                    showStats: true,
+                                )
+                                : CircleAvatar(
+                                  backgroundImage: AssetImage(
+                                    "lib/assets/images/userpic.jpg",
                                   ),
-                                ],
-                              ),
-                      transitionsBuilder: (
-                        context,
-                        animation,
-                        secondaryAnimation,
-                        child,
-                      ) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.ease;
-
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: Text(
-                  "编辑个人资料",
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 126, 121, 211),
-                    fontSize: 18,
-                    fontFamily: "Inter-Regular",
-                  ),
-                ),
-                leading: SvgPicture.asset("lib/assets/icons/Vector.svg"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EditProfilePage(),
-                    ),
-                  );
-                },
-              ),
-              Divider(),
-              ListTile(
-                title: Text(
-                  "关于Navi",
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 126, 121, 211),
-                    fontSize: 18,
-                    fontFamily: "Inter-Regular",
-                  ),
-                ),
-                leading: SvgPicture.asset("lib/assets/icons/information.svg"),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              Padding(
-                padding: EdgeInsets.only(top: 310),
-                child: Row(
-                  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent, // 透明背景
-                        elevation: 0, // 去除阴影
-                      ),
-                      onPressed: () async {
-                        // 清除用户数据和token
-                        await SharedPrefsUtils.clearUserInfo();
-                        await SharedPrefsUtils.clearToken();
-
-                        // 关闭抽屉
-                        Navigator.pop(context);
-
-                        // 跳转到登录页面
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
-                          (route) => false, // 清除所有路由历史
-                        );
-                      },
-                      icon: Icon(
-                        Icons.exit_to_app, // 退出图标
-                        color: Colors.red,
-                        size: 20, // 图标大小
-                      ), // 图标
-                      label: Text(
-                        "退出",
-                        style: TextStyle(
-                          color: const Color.fromARGB(255, 117, 113, 206),
-                          fontFamily: "Inter-Regular",
-                        ),
-                      ), // 文本
-                    ),
-                    Expanded(child: SizedBox.shrink()),
-                    TextButton(
-                      onPressed: () {
-                        // 显示设置选项
-                        showDialog(
-                          context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                title: Text("设置"),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      leading: Icon(
-                                        Icons.exit_to_app,
-                                        color: Colors.red,
-                                      ),
-                                      title: Text("退出登录"),
-                                      onTap: () async {
-                                        // 清除用户数据和token
-                                        await SharedPrefsUtils.clearUserInfo();
-                                        await SharedPrefsUtils.clearToken();
-
-                                        // 关闭对话框和抽屉
-                                        Navigator.pop(context);
-                                        Navigator.pop(context);
-
-                                        // 跳转到登录页面
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => LoginPage(),
-                                          ),
-                                          (route) => false, // 清除所有路由历史
-                                        );
-                                      },
-                                    ),
-                                  ],
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text("取消"),
-                                  ),
-                                ],
-                              ),
-                        );
-                      },
-                      child: Text(
-                        "设置",
-                        style: TextStyle(
-                          color: const Color.fromARGB(255, 117, 113, 206),
-                          fontFamily: "Inter-Regular",
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image:
+                                _userInfo != null &&
+                                        _userInfo!['bgImg'].isNotEmpty
+                                    ? NetworkImage(_userInfo!['bgImg'])
+                                    : NetworkImage(
+                                      'https://img-s.msn.cn/tenant/amp/entityid/AA1yQEG5?w=0&h=0&q=60&m=6&f=jpg&u=t',
+                                    ),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        accountName: Text(
+                          _userInfo != null ? _userInfo!['nickname'] : "加载中...",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Inter-Regular",
+                            color: Colors.black,
+                          ),
+                        ),
+                        accountEmail: Text(
+                          _userInfo != null
+                              ? "@${_userInfo!['username']}"
+                              : "@加载中...",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 15,
+                            fontFamily: "Inter-Regular",
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                      ListTile(
+                        title: Text(
+                          "个人信息",
+                          style: TextStyle(
+                            color: const Color.fromARGB(255, 126, 121, 211),
+                            fontSize: 18,
+                            fontFamily: "Inter-Regular",
+                          ),
+                        ),
+                        leading: SvgPicture.asset(
+                          "lib/assets/icons/Profile.svg",
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      ProfilePage(),
+                              transitionsBuilder: (
+                                context,
+                                animation,
+                                secondaryAnimation,
+                                child,
+                              ) {
+                                const begin = Offset(1.0, 0.0);
+                                const end = Offset.zero;
+                                const curve = Curves.ease;
+
+                                var tween = Tween(
+                                  begin: begin,
+                                  end: end,
+                                ).chain(CurveTween(curve: curve));
+
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: Text(
+                          "关注列表",
+                          style: TextStyle(
+                            color: const Color.fromARGB(255, 126, 121, 211),
+                            fontSize: 18,
+                            fontFamily: "Inter-Regular",
+                          ),
+                        ),
+                        leading: SvgPicture.asset(
+                          "lib/assets/icons/Vector1.svg",
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (
+                                    context,
+                                    animation,
+                                    secondaryAnimation,
+                                  ) => FriendsList(
+                                    friends: [
+                                      Friend(
+                                        name:
+                                            _userInfo != null
+                                                ? _userInfo!['nickname']
+                                                : '霸气小肥鹅',
+                                        username:
+                                            _userInfo != null
+                                                ? _userInfo!['username']
+                                                : 'baqixiaofeie',
+                                        avatarUrl:
+                                            'assets/images/user_avatar.png',
+                                        bio:
+                                            _userInfo != null
+                                                ? _userInfo!['bio']
+                                                : '独立开发者 | Flutter爱好者 | 分享开发经验和生活点滴',
+                                        isFollowing: true,
+                                        isVerified: true,
+                                        followers: 12800,
+                                        following: 542,
+                                        showStats: true,
+                                      ),
+                                      Friend(
+                                        name: 'Flutter官方',
+                                        username: 'flutter',
+                                        avatarUrl:
+                                            'assets/images/flutter_logo.png',
+                                        bio: 'Flutter官方账号，分享Flutter最新动态和开发技巧',
+                                        isVerified: true,
+                                        followers: 250000,
+                                        following: 120,
+                                        showStats: true,
+                                      ),
+                                    ],
+                                  ),
+                              transitionsBuilder: (
+                                context,
+                                animation,
+                                secondaryAnimation,
+                                child,
+                              ) {
+                                const begin = Offset(1.0, 0.0);
+                                const end = Offset.zero;
+                                const curve = Curves.ease;
+
+                                var tween = Tween(
+                                  begin: begin,
+                                  end: end,
+                                ).chain(CurveTween(curve: curve));
+
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: Text(
+                          "编辑个人资料",
+                          style: TextStyle(
+                            color: const Color.fromARGB(255, 126, 121, 211),
+                            fontSize: 18,
+                            fontFamily: "Inter-Regular",
+                          ),
+                        ),
+                        leading: SvgPicture.asset(
+                          "lib/assets/icons/Vector.svg",
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfilePage(),
+                            ),
+                          );
+                        },
+                      ),
+                      Divider(),
+                      ListTile(
+                        title: Text(
+                          "关于Navi",
+                          style: TextStyle(
+                            color: const Color.fromARGB(255, 126, 121, 211),
+                            fontSize: 18,
+                            fontFamily: "Inter-Regular",
+                          ),
+                        ),
+                        leading: SvgPicture.asset(
+                          "lib/assets/icons/information.svg",
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(top: 310),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                              ),
+                              onPressed: () async {
+                                await SharedPrefsUtils.clearUserInfo();
+                                await SharedPrefsUtils.clearToken();
+
+                                Navigator.pop(context);
+
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LoginPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                              icon: Icon(
+                                Icons.exit_to_app,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              label: Text(
+                                "退出",
+                                style: TextStyle(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    117,
+                                    113,
+                                    206,
+                                  ),
+                                  fontFamily: "Inter-Regular",
+                                ),
+                              ),
+                            ),
+                            Expanded(child: SizedBox.shrink()),
+                            TextButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: Text("设置"),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ListTile(
+                                              leading: Icon(
+                                                Icons.exit_to_app,
+                                                color: Colors.red,
+                                              ),
+                                              title: Text("退出登录"),
+                                              onTap: () async {
+                                                await SharedPrefsUtils.clearUserInfo();
+                                                await SharedPrefsUtils.clearToken();
+
+                                                Navigator.pop(context);
+                                                Navigator.pop(context);
+
+                                                Navigator.pushAndRemoveUntil(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            LoginPage(),
+                                                  ),
+                                                  (route) => false,
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(context),
+                                            child: Text("取消"),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                              },
+                              child: Text(
+                                "设置",
+                                style: TextStyle(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    117,
+                                    113,
+                                    206,
+                                  ),
+                                  fontFamily: "Inter-Regular",
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(
-                color: Colors.grey[300]!, // 线条颜色
-                width: 1.0, // 线条宽度
-              ),
+              top: BorderSide(color: Colors.grey[300]!, width: 1.0),
             ),
           ),
           child: SizedBox(
@@ -408,7 +482,6 @@ class MyHome extends StatelessWidget {
             LikeNotificationList(
               notifications: notifications,
               onFollowUser: (user) {
-                // 处理关注逻辑
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
