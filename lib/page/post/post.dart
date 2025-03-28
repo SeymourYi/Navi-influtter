@@ -1,9 +1,11 @@
 // post_page.dart - 发布页面
 import 'package:flutter/material.dart';
+import 'dart:io';
 // ignore: unused_import
 import '../../models/post_article_model.dart';
 import '../../Store/storeutils.dart';
 import '../../api/postApi.dart';
+import '../../utils/imagepick.dart';
 
 /// 发布页面的无状态组件
 class PostPage extends StatefulWidget {
@@ -29,6 +31,8 @@ class _PostPageState extends State<PostPage> {
   bool _isLoading = false;
   // 选中的标签
   String? _selectedTag;
+  // 选择的图片
+  File? _selectedImage;
   // 标签列表
   final List<String> _tags = [
     '技术交流',
@@ -61,6 +65,20 @@ class _PostPageState extends State<PostPage> {
     setState(() {
       _userInfo = userInfo;
     });
+  }
+
+  // 选择图片
+  Future<void> _pickImage() async {
+    final File? pickedImage = await ImagePickerUtil.pickImageFromGallery();
+
+    if (pickedImage != null) {
+      setState(() {
+        _selectedImage = pickedImage;
+      });
+
+      // 打印图片路径
+      debugPrint('选择的图片路径: ${pickedImage.path}');
+    }
   }
 
   @override
@@ -104,11 +122,15 @@ class _PostPageState extends State<PostPage> {
             child: ElevatedButton(
               // 当有内容时才能点击发布
               onPressed:
-                  _characterCount > 0 && !_isLoading ? _handlePost : null,
+                  (_characterCount > 0 || _selectedImage != null) && !_isLoading
+                      ? _handlePost
+                      : null,
               style: ElevatedButton.styleFrom(
                 // 根据是否有内容设置不同的按钮颜色
                 backgroundColor:
-                    _characterCount > 0 ? Colors.blue : Colors.grey.shade400,
+                    (_characterCount > 0 || _selectedImage != null)
+                        ? Colors.blue
+                        : Colors.grey.shade400,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -158,6 +180,12 @@ class _PostPageState extends State<PostPage> {
                     _buildUserInfo(),
                     const SizedBox(height: 20),
                     _buildTagSelector(),
+                    if (_selectedImage != null) ...[
+                      const SizedBox(height: 16),
+                      _buildImagePreview(),
+                    ],
+                    const SizedBox(height: 16),
+                    _buildActionButtons(),
                     const SizedBox(height: 16),
                     _buildCharCounter(),
                     // 添加足够的底部空间，防止内容被遮挡
@@ -434,6 +462,106 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
+  /// 构建操作按钮
+  Widget _buildActionButtons() {
+    return Container(
+      margin: const EdgeInsets.only(left: 60),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(
+              Icons.image_outlined,
+              color: const Color(0xFF2196F3),
+              size: 24,
+            ),
+            onPressed: _pickImage,
+            tooltip: '添加图片',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建图片预览
+  Widget _buildImagePreview() {
+    return Container(
+      margin: const EdgeInsets.only(left: 60),
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        image: DecorationImage(
+          image: FileImage(_selectedImage!),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // 整个区域可点击预览大图
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _showFullScreenImage,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(width: double.infinity, height: double.infinity),
+            ),
+          ),
+          // 右上角删除按钮
+          Positioned(
+            top: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedImage = null;
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 显示全屏图片预览
+  void _showFullScreenImage() {
+    if (_selectedImage == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                iconTheme: const IconThemeData(color: Colors.white),
+                title: const Text(
+                  '图片预览',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              body: Center(
+                child: InteractiveViewer(
+                  panEnabled: true,
+                  boundaryMargin: const EdgeInsets.all(20),
+                  minScale: 0.5,
+                  maxScale: 4,
+                  child: Image.file(_selectedImage!, fit: BoxFit.contain),
+                ),
+              ),
+            ),
+      ),
+    );
+  }
+
   /// 构建字符计数器
   Widget _buildCharCounter() {
     // 计算剩余字符数
@@ -496,6 +624,11 @@ class _PostPageState extends State<PostPage> {
       } else {
         // 默认分类ID，如果没有选择标签
         categoryId = 1;
+      }
+
+      // 输出选择的图片信息
+      if (_selectedImage != null) {
+        debugPrint('发布带图文章，图片路径: ${_selectedImage!.path}');
       }
 
       // 调用API发布文章
