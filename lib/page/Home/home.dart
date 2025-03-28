@@ -8,6 +8,8 @@ import 'package:flutterlearn2/page/edit/editpage.dart';
 import 'package:flutterlearn2/page/friends/friendspage.dart';
 import 'package:flutterlearn2/page/post/post.dart';
 import 'package:flutterlearn2/page/search/search.dart';
+import 'package:flutterlearn2/page/login/login.dart';
+import 'package:flutterlearn2/Store/storeutils.dart';
 
 class MyHome extends StatelessWidget {
   // 移除 const 关键字
@@ -279,8 +281,20 @@ class MyHome extends StatelessWidget {
                         backgroundColor: Colors.transparent, // 透明背景
                         elevation: 0, // 去除阴影
                       ),
-                      onPressed: () {
-                        // 按钮点击事件
+                      onPressed: () async {
+                        // 清除用户数据和token
+                        await SharedPrefsUtils.clearUserInfo();
+                        await SharedPrefsUtils.clearToken();
+
+                        // 关闭抽屉
+                        Navigator.pop(context);
+
+                        // 跳转到登录页面
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginPage()),
+                          (route) => false, // 清除所有路由历史
+                        );
                       },
                       icon: Icon(
                         Icons.exit_to_app, // 退出图标
@@ -298,7 +312,50 @@ class MyHome extends StatelessWidget {
                     Expanded(child: SizedBox.shrink()),
                     TextButton(
                       onPressed: () {
-                        // Logout action
+                        // 显示设置选项
+                        showDialog(
+                          context: context,
+                          builder:
+                              (context) => AlertDialog(
+                                title: Text("设置"),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      leading: Icon(
+                                        Icons.exit_to_app,
+                                        color: Colors.red,
+                                      ),
+                                      title: Text("退出登录"),
+                                      onTap: () async {
+                                        // 清除用户数据和token
+                                        await SharedPrefsUtils.clearUserInfo();
+                                        await SharedPrefsUtils.clearToken();
+
+                                        // 关闭对话框和抽屉
+                                        Navigator.pop(context);
+                                        Navigator.pop(context);
+
+                                        // 跳转到登录页面
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => LoginPage(),
+                                          ),
+                                          (route) => false, // 清除所有路由历史
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text("取消"),
+                                  ),
+                                ],
+                              ),
+                        );
                       },
                       child: Text(
                         "设置",

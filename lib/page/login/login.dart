@@ -1,5 +1,4 @@
 import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutterlearn2/page/Home/home.dart';
 import '../../api/loginAPI.dart';
@@ -19,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   List<dynamic> articleList = [];
-  var token = '';
+  var token = 'token';
   @override
   void dispose() {
     _emailController.dispose();
@@ -37,6 +36,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _getToken() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     LoginService loginservice = LoginService();
     UserService userService = UserService();
     try {
@@ -45,20 +48,112 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
       if (response['code'] == 0) {
+        // 显示登录成功提示
+        _showSuccessDialog();
+
         SharedPrefsUtils.setString(token, response['data']);
         var aaaa = await userService.getUserinfo();
         SharedPrefsUtils.saveUserInfo(aaaa['data']);
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => MyHome()), // 替换为你的主界面Widget
-          (route) => false, // 清除所有之前的路由
-        );
+
+        // 延迟跳转，让用户看到成功提示
+        Future.delayed(Duration(milliseconds: 1200), () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MyHome()),
+            (route) => false,
+          );
+        });
       } else {
+        // 显示错误信息
+        _showErrorDialog(response['msg'] ?? '登录失败，请稍后重试');
         print(response['msg']);
       }
     } catch (e) {
+      // 显示网络错误
+      _showErrorDialog('网络错误，请检查网络连接');
       print("e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  // 显示登录成功对话框
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        // 1.2秒后自动关闭对话框
+        Future.delayed(Duration(milliseconds: 1200), () {
+          Navigator.of(context).pop();
+        });
+
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 60),
+                SizedBox(height: 15),
+                Text(
+                  '登录成功',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  '欢迎回来',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 显示错误对话框
+  void _showErrorDialog(String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 10),
+              Text('登录失败'),
+            ],
+          ),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                '确定',
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 126, 121, 211),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -96,11 +191,32 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 126, 121, 211),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
                   onPressed: _isLoading ? null : _login,
                   child:
                       _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('登录', style: TextStyle(fontSize: 16)),
+                          ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.0,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text('登录中...', style: TextStyle(fontSize: 16)),
+                            ],
+                          )
+                          : Text('登录', style: TextStyle(fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 16),
