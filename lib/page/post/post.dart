@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // ignore: unused_import
 import '../../models/post_article_model.dart';
 import '../../Store/storeutils.dart';
+import '../../api/postApi.dart';
 
 /// 发布页面的无状态组件
 class PostPage extends StatefulWidget {
@@ -40,6 +41,8 @@ class _PostPageState extends State<PostPage> {
   ];
   // 标签选择器是否显示
   bool _showTagSelector = false;
+  // 文章服务
+  final PostService _postService = PostService();
 
   @override
   void initState() {
@@ -66,6 +69,21 @@ class _PostPageState extends State<PostPage> {
     _postController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  // 获取标签对应的分类ID
+  int? _getCategoryIdFromTag(String tag) {
+    // 这里简化处理，实际应用中可能需要从API获取真实的分类ID
+    final Map<String, int> tagToCategory = {
+      '技术交流': 1,
+      '生活随笔': 2,
+      '学习笔记': 3,
+      '旅行日记': 4,
+      '美食分享': 5,
+      '热点话题': 6,
+      '职场经验': 7,
+    };
+    return tagToCategory[tag];
   }
 
   @override
@@ -450,24 +468,43 @@ class _PostPageState extends State<PostPage> {
 
   /// 处理发布操作
   void _handlePost() async {
+    // 如果用户信息未加载，则不能发布
+    if (_userInfo == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('用户信息加载中，请稍后再试')));
+      return;
+    }
+
     // 设置加载状态
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 延迟模拟网络请求
-      await Future.delayed(const Duration(seconds: 1));
-
       // 准备发布内容
       final content = _postController.text;
       final tag = _selectedTag;
 
-      // 实际项目中应调用API发布内容
-      debugPrint('发布内容: $content');
+      // 如果选择了标签，则获取对应的分类ID
+      int? categoryId;
       if (tag != null) {
-        debugPrint('标签: $tag');
+        categoryId = _getCategoryIdFromTag(tag);
+        if (categoryId == null) {
+          throw Exception('无法获取标签对应的分类ID');
+        }
+      } else {
+        // 默认分类ID，如果没有选择标签
+        categoryId = 1;
       }
+
+      // 调用API发布文章
+      await _postService.postArticle(
+        content: content,
+        userId: _userInfo!['id'],
+        username: _userInfo!['username'],
+        categoryId: categoryId,
+      );
 
       // 发布成功后返回上一页
       if (mounted) {
