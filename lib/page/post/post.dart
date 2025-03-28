@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 // ignore: unused_import
 import '../../models/post_article_model.dart';
+import '../../Store/storeutils.dart';
 
 /// 发布页面的无状态组件
 class PostPage extends StatefulWidget {
@@ -21,6 +22,24 @@ class _PostPageState extends State<PostPage> {
   int _characterCount = 0;
   // 最大允许字符数
   final int _maxCharacters = 280;
+  // 用户数据
+  Map<String, dynamic>? _userInfo;
+  // 是否正在发布
+  bool _isLoading = false;
+  // 选中的标签
+  String? _selectedTag;
+  // 标签列表
+  final List<String> _tags = [
+    '技术交流',
+    '生活随笔',
+    '学习笔记',
+    '旅行日记',
+    '美食分享',
+    '热点话题',
+    '职场经验',
+  ];
+  // 标签选择器是否显示
+  bool _showTagSelector = false;
 
   @override
   void initState() {
@@ -28,6 +47,16 @@ class _PostPageState extends State<PostPage> {
     // 界面加载完成后自动弹出键盘
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
+    });
+    // 获取用户信息
+    _loadUserInfo();
+  }
+
+  // 获取用户信息
+  Future<void> _loadUserInfo() async {
+    final userInfo = await SharedPrefsUtils.getUserInfo();
+    setState(() {
+      _userInfo = userInfo;
     });
   }
 
@@ -56,39 +85,73 @@ class _PostPageState extends State<PostPage> {
             padding: const EdgeInsets.all(12.0),
             child: ElevatedButton(
               // 当有内容时才能点击发布
-              onPressed: _characterCount > 0 ? _handlePost : null,
+              onPressed:
+                  _characterCount > 0 && !_isLoading ? _handlePost : null,
               style: ElevatedButton.styleFrom(
                 // 根据是否有内容设置不同的按钮颜色
                 backgroundColor:
-                    _characterCount > 0 ? Colors.blue : Colors.blue.shade300,
+                    _characterCount > 0 ? Colors.blue : Colors.grey.shade400,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                elevation: 0,
               ),
-              child: const Text(
-                '发布',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text(
+                        '发布',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
             ),
           ),
         ],
       ),
       // 主体内容区域
-      body: GestureDetector(
-        // 点击空白区域隐藏键盘
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [_buildUserInfo(), const SizedBox(height: 16)],
+      body: Stack(
+        children: [
+          GestureDetector(
+            // 点击空白区域隐藏键盘和标签选择器
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              setState(() {
+                _showTagSelector = false;
+              });
+            },
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildUserInfo(),
+                    const SizedBox(height: 20),
+                    _buildTagSelector(),
+                    const SizedBox(height: 16),
+                    _buildCharCounter(),
+                    // 添加足够的底部空间，防止内容被遮挡
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+          // 标签选择器弹出层
+          if (_showTagSelector) _buildTagSelectorPanel(),
+        ],
       ),
     );
   }
@@ -99,11 +162,15 @@ class _PostPageState extends State<PostPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 用户头像
-        const CircleAvatar(
-          radius: 22,
-          backgroundImage: NetworkImage(
-            'https://pbs.twimg.com/profile_images/1489998192095043586/4VrvN5yt_400x400.jpg',
-          ),
+        CircleAvatar(
+          radius: 24,
+          backgroundImage:
+              _userInfo != null && _userInfo!['userPic'].isNotEmpty
+                  ? NetworkImage(_userInfo!['userPic'])
+                  : const NetworkImage(
+                    'https://pbs.twimg.com/profile_images/1489998192095043586/4VrvN5yt_400x400.jpg',
+                  ),
+          backgroundColor: Colors.grey.shade200,
         ),
         const SizedBox(width: 12),
         // 用户信息和输入框
@@ -112,17 +179,20 @@ class _PostPageState extends State<PostPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 用户名称
-              const Text(
-                '霸气小肥鹅',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                _userInfo != null ? _userInfo!['nickname'] : '加载中...',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 2),
               // 用户ID
               Text(
-                '@1111',
+                _userInfo != null ? '@${_userInfo!['username']}' : '@加载中...',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               // 输入框
               TextField(
                 controller: _postController,
@@ -149,10 +219,280 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
+  /// 构建标签选择器触发按钮
+  Widget _buildTagSelector() {
+    return Container(
+      margin: const EdgeInsets.only(left: 60),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _showTagSelector = !_showTagSelector;
+          });
+          // 点击时隐藏键盘
+          FocusScope.of(context).unfocus();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color:
+                _selectedTag != null
+                    ? const Color(0xFFE1F5FE)
+                    : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  _selectedTag != null
+                      ? const Color(0xFF2196F3)
+                      : Colors.grey.shade300,
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_offer_outlined,
+                size: 16,
+                color:
+                    _selectedTag != null
+                        ? const Color(0xFF2196F3)
+                        : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _selectedTag ?? '添加标签',
+                style: TextStyle(
+                  color:
+                      _selectedTag != null
+                          ? const Color(0xFF2196F3)
+                          : Colors.grey.shade600,
+                  fontSize: 14,
+                  fontWeight:
+                      _selectedTag != null
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_drop_down,
+                color:
+                    _selectedTag != null
+                        ? const Color(0xFF2196F3)
+                        : Colors.grey.shade600,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建标签选择器面板
+  Widget _buildTagSelectorPanel() {
+    return Positioned(
+      top: 180, // 位置根据实际UI调整
+      left: 16,
+      right: 16,
+      child: Card(
+        elevation: 8,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    const Text(
+                      '选择标签',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () {
+                        setState(() {
+                          _showTagSelector = false;
+                        });
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.3,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [for (String tag in _tags) _buildTagChip(tag)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建标签选择芯片
+  Widget _buildTagChip(String tag) {
+    final isSelected = _selectedTag == tag;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedTag = isSelected ? null : tag;
+              _showTagSelector = false;
+            });
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color:
+                  isSelected ? const Color(0xFFE3F2FD) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color:
+                    isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  tag,
+                  style: TextStyle(
+                    color:
+                        isSelected
+                            ? const Color(0xFF2196F3)
+                            : Colors.grey.shade800,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: Color(0xFF2196F3),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建字符计数器
+  Widget _buildCharCounter() {
+    // 计算剩余字符数
+    final remainingChars = _maxCharacters - _characterCount;
+    final isNearLimit = remainingChars <= 20;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 60),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            '$_characterCount/$_maxCharacters',
+            style: TextStyle(
+              color: isNearLimit ? Colors.red : Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+          if (isNearLimit) ...[
+            const SizedBox(width: 8),
+            CircularProgressIndicator(
+              value: _characterCount / _maxCharacters,
+              strokeWidth: 2,
+              color: remainingChars <= 0 ? Colors.red : Colors.orange,
+              backgroundColor: Colors.grey.shade200,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   /// 处理发布操作
-  void _handlePost() {
-    // 实际项目中应调用API发布内容
-    debugPrint('发布内容: ${_postController.text}');
-    Navigator.pop(context); // 发布后返回上一页
+  void _handlePost() async {
+    // 设置加载状态
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 延迟模拟网络请求
+      await Future.delayed(const Duration(seconds: 1));
+
+      // 准备发布内容
+      final content = _postController.text;
+      final tag = _selectedTag;
+
+      // 实际项目中应调用API发布内容
+      debugPrint('发布内容: $content');
+      if (tag != null) {
+        debugPrint('标签: $tag');
+      }
+
+      // 发布成功后返回上一页
+      if (mounted) {
+        Navigator.pop(context);
+
+        // 显示发布成功提示
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('发布成功！')));
+      }
+    } catch (e) {
+      // 处理错误
+      debugPrint('发布失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('发布失败: $e')));
+      }
+    } finally {
+      // 恢复状态
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
