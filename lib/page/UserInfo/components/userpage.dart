@@ -98,6 +98,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                       ),
 
+                      // 返回按钮 - 左上角
+                      Positioned(
+                        left: 8,
+                        top: 8,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+
                       // 操作按钮
                       Positioned(
                         right: 8,
@@ -278,7 +293,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   // 分割线
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.only(top: 12, bottom: 0),
                     child: Divider(
                       height: 1,
                       thickness: 0.5,
@@ -292,15 +307,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     i < (_articleList.isEmpty ? 1 : _articleList.length);
                     i++
                   )
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child:
-                          _articleList.isNotEmpty
-                              ? Article(articleData: _articleList[i])
-                              : const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                    ),
+                    i == 0
+                        ? Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 2),
+                          child:
+                              _articleList.isNotEmpty
+                                  ? Article(articleData: _articleList[i])
+                                  : const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                        )
+                        : Padding(
+                          padding: const EdgeInsets.only(top: 2, bottom: 2),
+                          child: Article(articleData: _articleList[i]),
+                        ),
                 ],
               ),
     );
