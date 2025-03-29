@@ -31,6 +31,9 @@ class _ArticledetailState extends State<Articledetail> {
   String? _selectedImagePath; // 选择的图片路径
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   final FocusNode _commentFocusNode = FocusNode(); // 评论输入框焦点
+  bool _isLoading = false; // 加载状态
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
 
   // 当前用户信息
   Map<String, dynamic> _currentUser = {
@@ -78,9 +81,13 @@ class _ArticledetailState extends State<Articledetail> {
   }
 
   Future<void> _fetchArticleInfo() async {
-    if (widget.id == null || widget.id.isEmpty) {
+    if (widget.id == null || widget.id.isEmpty || _isLoading) {
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       GetArticleInfoService service = GetArticleInfoService();
@@ -103,7 +110,18 @@ class _ArticledetailState extends State<Articledetail> {
         });
       }
     } catch (e) {
-      // 保留错误处理，但移除调试信息
+      // 错误提示
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('获取文章详情失败，请检查网络连接')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -166,7 +184,7 @@ class _ArticledetailState extends State<Articledetail> {
           repeatcount = articleInfodata['repeatcount'] ?? 0;
         }
       } catch (e) {
-        // 保留错误处理，但移除调试信息
+        // 错误处理
       }
     }
 
@@ -185,203 +203,243 @@ class _ArticledetailState extends State<Articledetail> {
           onPressed: () => Navigator.pop(context),
         ),
         title: categoryName.isNotEmpty ? Text(categoryName) : null,
+        actions: [
+          // 添加刷新按钮
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: () => _refreshIndicatorKey.currentState?.show(),
+            tooltip: '刷新',
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User info row
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Userinfo(),
-                        ),
-                      );
-                    },
-                    child:
-                        userPic.isNotEmpty
-                            ? CircleAvatar(
-                              radius: 24,
-                              backgroundImage: NetworkImage(userPic),
-                            )
-                            : CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.grey[300],
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.grey[600],
-                              ),
+      body:
+          _isLoading && articleInfodata == null
+              ? _buildLoadingView()
+              : RefreshIndicator(
+                key: _refreshIndicatorKey,
+                onRefresh: _fetchArticleInfo,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    // User info row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const Userinfo(),
+                                ),
+                              );
+                            },
+                            child:
+                                userPic.isNotEmpty
+                                    ? CircleAvatar(
+                                      radius: 24,
+                                      backgroundImage: NetworkImage(userPic),
+                                    )
+                                    : CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: Colors.grey[300],
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  nickname,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "@$username · ${_formatCreateTime(createTime)}",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          nickname,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "@$username · ${_formatCreateTime(createTime)}",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                          IconButton(
+                            icon: const Icon(Icons.more_horiz),
+                            onPressed: () {},
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-            ),
 
-            // Article content
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(content, style: TextStyle(fontSize: 16, height: 1.4)),
-            ),
-
-            // Images
-            if (imageUrls.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: ArticleImage(imageUrls: imageUrls),
-              ),
-
-            // Stats and actions
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Text(
-                    createTime,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                  const Spacer(),
-                  if (categoryName.isNotEmpty)
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                    // Article content
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                       child: Text(
-                        categoryName,
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        content,
+                        style: TextStyle(fontSize: 16, height: 1.4),
                       ),
                     ),
-                ],
-              ),
-            ),
 
-            const Divider(height: 1),
-
-            // Action buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildActionButton(
-                    icon: Icons.mode_comment_outlined,
-                    count: commentcount.toString(),
-                    onPressed: () {},
-                  ),
-                  _buildActionButton(
-                    icon: Icons.repeat,
-                    count: repeatcount.toString(),
-                    onPressed: () {},
-                  ),
-                  _buildActionButton(
-                    icon: isLike ? Icons.favorite : Icons.favorite_border,
-                    count: likecont.toString(),
-                    isActive: isLike,
-                    onPressed: () {
-                      setState(() {
-                        _isLiked = !_isLiked;
-                        _likeCount += _isLiked ? 1 : -1;
-                      });
-                    },
-                  ),
-                  _buildActionButton(
-                    icon:
-                        _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    onPressed: () {
-                      setState(() {
-                        _isBookmarked = !_isBookmarked;
-                      });
-                    },
-                    isActive: _isBookmarked,
-                  ),
-                  _buildActionButton(icon: Icons.share, onPressed: () {}),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // Replies section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${commentsList.length} 条评论",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  if (commentsList.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          "暂无评论，快来发表你的看法吧！",
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
+                    // Images
+                    if (imageUrls.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: ArticleImage(imageUrls: imageUrls),
                       ),
-                    )
-                  else
-                    Column(
-                      children:
-                          commentsList.map((comment) {
-                            return _buildReplyItem(
-                              userPic: comment['userPic'] ?? "",
-                              name: comment['nickname'] ?? "用户",
-                              handle: "@${comment['username'] ?? ''}",
-                              content: comment['content'] ?? "",
-                              time: comment['uptonowTime'] ?? "",
-                              likes: "${comment['likecont'] ?? 0}",
-                            );
-                          }).toList(),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
 
-      // Reply input
+                    // Stats and actions
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            createTime,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (categoryName.isNotEmpty)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                categoryName,
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const Divider(height: 1),
+
+                    // Action buttons
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildActionButton(
+                            icon: Icons.mode_comment_outlined,
+                            count: commentcount.toString(),
+                            onPressed: () {
+                              // 滚动到评论区
+                              FocusScope.of(
+                                context,
+                              ).requestFocus(_commentFocusNode);
+                            },
+                          ),
+                          _buildActionButton(
+                            icon: Icons.repeat,
+                            count: repeatcount.toString(),
+                            onPressed: () {},
+                          ),
+                          _buildActionButton(
+                            icon:
+                                isLike ? Icons.favorite : Icons.favorite_border,
+                            count: likecont.toString(),
+                            isActive: isLike,
+                            onPressed: () {
+                              setState(() {
+                                _isLiked = !_isLiked;
+                                _likeCount += _isLiked ? 1 : -1;
+                              });
+                            },
+                          ),
+                          _buildActionButton(
+                            icon:
+                                _isBookmarked
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_border,
+                            onPressed: () {
+                              setState(() {
+                                _isBookmarked = !_isBookmarked;
+                              });
+                            },
+                            isActive: _isBookmarked,
+                          ),
+                          _buildActionButton(
+                            icon: Icons.share,
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Divider(height: 1),
+
+                    // Replies section
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${commentsList.length} 条评论",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (commentsList.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  "暂无评论，快来发表你的看法吧！",
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children:
+                                  commentsList.map((comment) {
+                                    return _buildReplyItem(
+                                      userPic: comment['userPic'] ?? "",
+                                      name: comment['nickname'] ?? "用户",
+                                      handle: "@${comment['username'] ?? ''}",
+                                      content: comment['content'] ?? "",
+                                      time: comment['uptonowTime'] ?? "",
+                                      likes: "${comment['likecont'] ?? 0}",
+                                    );
+                                  }).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -675,5 +733,21 @@ class _ArticledetailState extends State<Articledetail> {
             context,
           ).showSnackBar(SnackBar(content: Text('评论发送失败: $error')));
         });
+  }
+
+  Widget _buildLoadingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text(
+            '正在加载文章...',
+            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          ),
+        ],
+      ),
+    );
   }
 }

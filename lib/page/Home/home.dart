@@ -434,13 +434,7 @@ class _MyHomeState extends State<MyHome> {
         ),
         body: TabBarView(
           children: [
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(padding: EdgeInsets.all(0), child: Articlelist()),
-                ],
-              ),
-            ),
+            Articlelist(),
             LikeNotificationList(
               notifications: notifications,
               onFollowUser: (user) {
