@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutterlearn2/api/getarticleinfoAPI.dart';
 import 'package:flutterlearn2/Store/storeutils.dart'; // 导入用户信息存储工具
+import 'package:image_picker/image_picker.dart'; // 导入图片选择器
+import 'dart:io'; // 导入File类
 import 'articleimage.dart';
 import '../components/userinfo.dart';
 
@@ -21,6 +23,8 @@ class _ArticledetailState extends State<Articledetail> {
   var articleInfodata; // 改为不指定类型，以便适应不同的数据结构
   List<dynamic> commentsList = []; // 添加评论列表变量
   TextEditingController _commentController = TextEditingController(); // 评论输入控制器
+  String? _selectedImagePath; // 选择的图片路径
+  final ImagePicker _picker = ImagePicker(); // 图片选择器实例
 
   // 当前用户信息
   Map<String, dynamic> _currentUser = {
@@ -79,6 +83,31 @@ class _ArticledetailState extends State<Articledetail> {
     } catch (e) {
       // 保留错误处理，但移除调试信息
     }
+  }
+
+  // 选择图片方法
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImagePath = image.path;
+        });
+      }
+    } catch (e) {
+      print('图片选择失败: $e');
+    }
+  }
+
+  // 清除已选图片
+  void _clearSelectedImage() {
+    setState(() {
+      _selectedImagePath = null;
+    });
   }
 
   @override
@@ -335,51 +364,100 @@ class _ArticledetailState extends State<Articledetail> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade200, width: 1),
-            ),
-          ),
-          child: Row(
-            children: [
-              _currentUser['userPic'] != null &&
-                      _currentUser['userPic'].isNotEmpty
-                  ? CircleAvatar(
-                    radius: 20,
-                    backgroundImage: NetworkImage(_currentUser['userPic']),
-                  )
-                  : CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey[300],
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _commentController,
-                  decoration: InputDecoration(
-                    hintText: "发表评论...",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 显示选中的图片预览
+            if (_selectedImagePath != null)
+              Stack(
+                children: [
+                  Container(
+                    height: 100,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.shade200),
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.send, color: Colors.blue),
-                      onPressed: _submitComment,
+                    child: Image.file(
+                      File(_selectedImagePath!),
+                      height: 100,
+                      fit: BoxFit.cover,
                     ),
                   ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: GestureDetector(
+                      onTap: _clearSelectedImage,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade200, width: 1),
                 ),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  _currentUser['userPic'] != null &&
+                          _currentUser['userPic'].isNotEmpty
+                      ? CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(_currentUser['userPic']),
+                      )
+                      : CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey[300],
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(
+                        hintText: "发表评论...",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.image, color: Colors.green),
+                              onPressed: _pickImage,
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.send, color: Colors.blue),
+                              onPressed: _submitComment,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -461,16 +539,16 @@ class _ArticledetailState extends State<Articledetail> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      likes,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
+                    // Icon(
+                    //   Icons.favorite_border,
+                    //   size: 16,
+                    //   color: Colors.grey[600],
+                    // ),
+                    // const SizedBox(width: 4),
+                    // Text(
+                    //   likes,
+                    //   style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    // ),
                   ],
                 ),
               ],
@@ -520,26 +598,59 @@ class _ArticledetailState extends State<Articledetail> {
       'becomment_articleID': widget.id, // 被评论文章的ID
     };
 
+    // 如果有选择图片，添加图片路径
+    if (_selectedImagePath != null) {
+      commentParams['imagePath'] = _selectedImagePath;
+    }
+
     // 打印参数用于调试
     print('评论参数: $commentParams');
 
-    // 模拟添加新评论到列表
-    setState(() {
-      Map<String, dynamic> newComment = {
-        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'username': _currentUser['username'],
-        'nickname': _currentUser['nickname'],
-        'userPic': _currentUser['userPic'],
-        'content': commentText,
-        'createTime': DateTime.now().toString(),
-        'uptonowTime': '刚刚',
-        'likecont': 0,
-      };
-      commentsList.insert(0, newComment);
-    });
+    // 调用API发送评论
+    GetArticleInfoService service = GetArticleInfoService();
+    service
+        .postArticlecomment(commentParams)
+        .then((response) {
+          if (response != null && response['code'] == 0) {
+            // 评论发送成功后，添加到本地列表显示
+            setState(() {
+              Map<String, dynamic> newComment = {
+                'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                'username': _currentUser['username'],
+                'nickname': _currentUser['nickname'],
+                'userPic': _currentUser['userPic'],
+                'content': commentText,
+                'createTime': DateTime.now().toString(),
+                'uptonowTime': '刚刚',
+                'likecont': 0,
+                // 如果有图片，保存图片信息
+                if (_selectedImagePath != null)
+                  'coverImg': response['data']['coverImg'] ?? '',
+              };
+              commentsList.insert(0, newComment);
+              _selectedImagePath = null; // 清除已选图片
+            });
 
-    // 清空输入框并取消焦点
-    _commentController.clear();
-    FocusScope.of(context).unfocus();
+            // 清空输入框并取消焦点
+            _commentController.clear();
+            FocusScope.of(context).unfocus();
+
+            // 可以添加一个成功提示
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('评论发布成功！')));
+          } else {
+            // 处理评论发送失败情况
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('评论发布失败，请稍后重试')));
+          }
+        })
+        .catchError((error) {
+          print('评论发送错误: $error');
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('评论发送失败: $error')));
+        });
   }
 }
