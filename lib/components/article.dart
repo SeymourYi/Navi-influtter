@@ -18,8 +18,6 @@ class _ArticleState extends State<Article> {
   @override
   void initState() {
     super.initState();
-    print(widget.articleData);
-    print("111111111111111111111111111111111111");
   }
 
   @override

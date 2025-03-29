@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutterlearn2/components/article.dart';
-import 'package:flutterlearn2/page/Home/articlelist.dart';
+import 'package:flutterlearn2/api/articleAPI.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -14,11 +14,20 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
+  List<dynamic> _articleList = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _fetchArticleList();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserInfo() async {
@@ -36,24 +45,38 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _fetchArticleList() async {
+    ArticleService service = ArticleService();
+    try {
+      var result = await service.getArticleList(1);
+      setState(() {
+        _articleList = result['data'];
+      });
+    } catch (e) {
+      print('Error fetching articles: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : DefaultTabController(
-                length: 4,
-                child: CustomScrollView(
-                  slivers: [
-                    // Cover photo (app bar)
-                    SliverAppBar(
-                      expandedHeight: 150.0,
-                      floating: false,
-                      pinned: true,
-                      flexibleSpace: FlexibleSpaceBar(
-                        collapseMode: CollapseMode.pin,
-                        background:
+              : ListView(
+                controller: _scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  // 顶部背景和头像部分
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // 背景图
+                      Container(
+                        height: 160,
+                        width: double.infinity,
+                        decoration: BoxDecoration(color: Colors.grey[200]),
+                        child:
                             _userInfo != null && _userInfo!['bgImg'].isNotEmpty
                                 ? CachedNetworkImage(
                                   imageUrl: _userInfo!['bgImg'],
@@ -74,248 +97,212 @@ class _ProfilePageState extends State<ProfilePage> {
                                   fit: BoxFit.cover,
                                 ),
                       ),
-                      actions: [
-                        IconButton(
+
+                      // 操作按钮
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: IconButton(
                           icon: const Icon(
                             Icons.more_horiz,
                             color: Colors.white,
                           ),
                           onPressed: () {},
                         ),
-                      ],
-                    ),
+                      ),
 
-                    // Profile information section
-                    SliverToBoxAdapter(child: _buildProfileInfo()),
+                      // 头像和编辑资料按钮 - 定位在背景图底部
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: -40, // 向下偏移使其部分显示在背景图外
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // 头像
+                              Material(
+                                elevation: 4,
+                                shape: const CircleBorder(),
+                                clipBehavior: Clip.antiAlias,
+                                child: CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor: Colors.white,
+                                  child:
+                                      _userInfo != null &&
+                                              _userInfo!['userPic'].isNotEmpty
+                                          ? CircleAvatar(
+                                            radius: 38,
+                                            backgroundImage:
+                                                CachedNetworkImageProvider(
+                                                  _userInfo!['userPic'],
+                                                ),
+                                          )
+                                          : const CircleAvatar(
+                                            radius: 38,
+                                            backgroundImage: AssetImage(
+                                              "lib/assets/images/1.jpg",
+                                            ),
+                                          ),
+                                ),
+                              ),
 
-                    // Tab bar
-                    SliverPersistentHeader(
-                      delegate: _SliverAppBarDelegate(
-                        const TabBar(
-                          tabs: [
-                            Tab(text: '动态'),
-                            Tab(text: '回复'),
-                            Tab(text: '媒体'),
-                            Tab(text: '喜欢'),
-                          ],
-                          indicatorColor: Colors.blue,
-                          labelColor: Colors.blue,
-                          unselectedLabelColor: Colors.grey,
+                              // 编辑资料按钮
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.blue,
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.white, // 添加白色背景确保可见性
+                                ),
+                                child: TextButton(
+                                  onPressed: () {},
+                                  child: const Text(
+                                    '编辑资料',
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      pinned: true,
-                    ),
+                    ],
+                  ),
 
-                    // Tab content
-                    SliverFillRemaining(
-                      child: TabBarView(
-                        children: [
-                          _buildTweetsTab(),
-                          _buildRepliesTab(),
-                          _buildMediaTab(),
-                          _buildLikesTab(),
-                        ],
-                      ),
+                  // 用户信息区域
+                  Container(
+                    padding: const EdgeInsets.only(
+                      top: 50, // 增加顶部padding为头像预留空间
+                      left: 16,
+                      right: 16,
                     ),
-                  ],
-                ),
-              ),
-    );
-  }
-
-  Widget _buildProfileInfo() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar and follow button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Transform.translate(
-                offset: const Offset(0, -40),
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white,
-                  child:
-                      _userInfo != null && _userInfo!['userPic'].isNotEmpty
-                          ? CircleAvatar(
-                            radius: 48,
-                            backgroundImage: CachedNetworkImageProvider(
-                              _userInfo!['userPic'],
-                            ),
-                          )
-                          : const CircleAvatar(
-                            radius: 48,
-                            backgroundImage: AssetImage(
-                              "lib/assets/images/1.jpg",
-                            ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 用户名和其他信息
+                        Text(
+                          _userInfo != null ? _userInfo!['nickname'] : "加载中...",
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blue, width: 1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    '编辑资料',
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _userInfo != null
+                              ? "@${_userInfo!['username']}"
+                              : "@加载中...",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
 
-          // Adjust spacing to account for avatar overlap
-          const SizedBox(height: 8),
+                        // 个人简介
+                        Text(
+                          _userInfo != null ? _userInfo!['bio'] : "加载中...",
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 12),
 
-          // User info
-          Text(
-            _userInfo != null ? _userInfo!['nickname'] : "加载中...",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _userInfo != null ? "@${_userInfo!['username']}" : "@加载中...",
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 12),
+                        // 地点和加入日期
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _userInfo != null
+                                  ? _userInfo!['location']
+                                  : "加载中...",
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            const SizedBox(width: 16),
+                            Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _userInfo != null &&
+                                      _userInfo!['createTime'] != null
+                                  ? "加入于 ${_userInfo!['createTime'].substring(0, 10)}"
+                                  : "加入时间未知",
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
 
-          // Bio
-          Text(
-            _userInfo != null ? _userInfo!['bio'] : "加载中...",
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-
-          // Location and join date
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                _userInfo != null ? _userInfo!['location'] : "加载中...",
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-              const SizedBox(width: 16),
-              Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                _userInfo != null && _userInfo!['createTime'] != null
-                    ? "加入于 ${_userInfo!['createTime'].substring(0, 10)}"
-                    : "加入时间未知",
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Following/followers count
-          Row(
-            children: [
-              Text(
-                "542 ",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              Text("关注", style: TextStyle(color: Colors.grey[600])),
-              const SizedBox(width: 16),
-              Text(
-                "12.8K ",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              Text("粉丝", style: TextStyle(color: Colors.grey[600])),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTweetsTab() {
-    return ListView.builder(
-      physics:
-          const NeverScrollableScrollPhysics(), // Disable independent scrolling
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Articlelist(), // Your existing article widget
-        );
-      },
-    );
-  }
-
-  Widget _buildRepliesTab() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading:
-              _userInfo != null && _userInfo!['userPic'].isNotEmpty
-                  ? CircleAvatar(
-                    backgroundImage: CachedNetworkImageProvider(
-                      _userInfo!['userPic'],
+                        // 关注和粉丝
+                        Row(
+                          children: [
+                            Text(
+                              "542 ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            Text(
+                              "关注",
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              "12.8K ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            Text(
+                              "粉丝",
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  )
-                  : const CircleAvatar(
-                    backgroundImage: AssetImage("lib/assets/images/1.jpg"),
                   ),
-          title: Text("@user 回复了你"),
-          subtitle: Text("这是对你动态的回复..."),
-        );
-      },
-    );
-  }
 
-  Widget _buildMediaTab() {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: 15,
-      itemBuilder: (context, index) {
-        return Image.asset("lib/assets/images/3.jpg", fit: BoxFit.cover);
-      },
-    );
-  }
-
-  Widget _buildLikesTab() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading:
-              _userInfo != null && _userInfo!['userPic'].isNotEmpty
-                  ? CircleAvatar(
-                    backgroundImage: CachedNetworkImageProvider(
-                      _userInfo!['userPic'],
+                  // 分割线
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: Colors.grey[300],
                     ),
-                  )
-                  : const CircleAvatar(
-                    backgroundImage: AssetImage("lib/assets/images/1.jpg"),
                   ),
-          title: Text("@user 喜欢了你的动态"),
-          subtitle: Text("你的动态内容预览..."),
-        );
-      },
+
+                  // 动态列表
+                  for (
+                    int i = 0;
+                    i < (_articleList.isEmpty ? 1 : _articleList.length);
+                    i++
+                  )
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child:
+                          _articleList.isNotEmpty
+                              ? Article(articleData: _articleList[i])
+                              : const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                    ),
+                ],
+              ),
     );
   }
 }
