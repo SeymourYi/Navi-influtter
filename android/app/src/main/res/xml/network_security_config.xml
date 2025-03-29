@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- 如果需要信任用户添加的证书，取消下面这行的注释 -->
+            <!-- <certificates src="user" /> -->
+        </trust-anchors>
+    </base-config>
+</network-security-config> 

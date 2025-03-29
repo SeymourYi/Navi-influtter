@@ -18,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   List<dynamic> articleList = [];
-  var token = 'token';
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -51,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
         // 显示登录成功提示
         _showSuccessDialog();
 
-        SharedPrefsUtils.setString(token, response['data']);
+        SharedPrefsUtils.saveToken(response['data']);
         var aaaa = await userService.getUserinfo();
         SharedPrefsUtils.saveUserInfo(aaaa['data']);
 
