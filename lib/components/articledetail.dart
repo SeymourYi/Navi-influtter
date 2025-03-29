@@ -18,6 +18,9 @@ class _ArticledetailState extends State<Articledetail> {
   int _likeCount = 42;
   bool _isBookmarked = false;
   var articleInfodata; // 改为不指定类型，以便适应不同的数据结构
+  List<dynamic> commentsList = []; // 添加评论列表变量
+  TextEditingController _commentController = TextEditingController(); // 评论输入控制器
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +53,9 @@ class _ArticledetailState extends State<Articledetail> {
       print("准备获取文章ID: ${widget.id}的详情");
       GetArticleInfoService service = GetArticleInfoService();
       var result = await service.getArticleInfo(int.parse(widget.id));
-
+      var result_comments = await service.getArticlecomment(
+        int.parse(widget.id),
+      );
       if (result == null || result['data'] == null) {
         print("API返回数据为空");
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +69,18 @@ class _ArticledetailState extends State<Articledetail> {
 
       // 打印接收到的数据类型，帮助调试
       print("API返回data类型: ${result['data'].runtimeType}");
+
+      // 处理评论数据
+      if (result_comments != null &&
+          result_comments['code'] == 0 &&
+          result_comments['data'] != null) {
+        print("成功获取评论数据，评论数量: ${result_comments['data'].length}");
+        setState(() {
+          commentsList = result_comments['data'];
+        });
+      } else {
+        print("获取评论数据失败或评论为空");
+      }
 
       setState(() {
         articleInfodata = result['data']; // 不进行类型转换，保持原始类型
@@ -308,35 +325,35 @@ class _ArticledetailState extends State<Articledetail> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "24 replies",
+                  Text(
+                    "${commentsList.length} 条评论",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildReplyItem(
-                    avatar: "assets/images/user_avatar.png",
-                    name: "张三",
-                    handle: "@zhangsan",
-                    content: "这篇文章很有启发！独立开发确实需要坚持",
-                    time: "2m",
-                    likes: "12",
-                  ),
-                  _buildReplyItem(
-                    avatar: "assets/images/user_avatar.png",
-                    name: "李四",
-                    handle: "@lisi",
-                    content: "期待后续的分享！希望能看到更多这样的内容",
-                    time: "10m",
-                    likes: "8",
-                  ),
-                  _buildReplyItem(
-                    avatar: "assets/images/user_avatar.png",
-                    name: "王五",
-                    handle: "@wangwu",
-                    content: "已经分享给我的团队了，大家都很受启发",
-                    time: "30m",
-                    likes: "24",
-                  ),
+                  if (commentsList.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          "暂无评论，快来发表你的看法吧！",
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      children:
+                          commentsList.map((comment) {
+                            return _buildReplyItem(
+                              userPic: comment['userPic'] ?? "",
+                              name: comment['nickname'] ?? "用户",
+                              handle: "@${comment['username'] ?? ''}",
+                              content: comment['content'] ?? "",
+                              time: comment['uptonowTime'] ?? "",
+                              likes: "${comment['likecont'] ?? 0}",
+                            );
+                          }).toList(),
+                    ),
                 ],
               ),
             ),
@@ -358,15 +375,17 @@ class _ArticledetailState extends State<Articledetail> {
           ),
           child: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundImage: AssetImage("assets/images/user_avatar.png"),
+                backgroundColor: Colors.grey[300],
+                child: Icon(Icons.person, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
+                  controller: _commentController,
                   decoration: InputDecoration(
-                    hintText: "Tweet your reply",
+                    hintText: "发表评论...",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -376,6 +395,10 @@ class _ArticledetailState extends State<Articledetail> {
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.send, color: Colors.blue),
+                      onPressed: _submitComment,
                     ),
                   ),
                 ),
@@ -422,7 +445,7 @@ class _ArticledetailState extends State<Articledetail> {
   }
 
   Widget _buildReplyItem({
-    required String avatar,
+    required String userPic,
     required String name,
     required String handle,
     required String content,
@@ -434,11 +457,13 @@ class _ArticledetailState extends State<Articledetail> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.grey[300],
-            child: Icon(Icons.person, color: Colors.grey[600]),
-          ),
+          userPic.isNotEmpty
+              ? CircleAvatar(radius: 20, backgroundImage: NetworkImage(userPic))
+              : CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey[300],
+                child: Icon(Icons.person, color: Colors.grey[600]),
+              ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -503,5 +528,41 @@ class _ArticledetailState extends State<Articledetail> {
       print("日期格式化出错: $e");
       return timeStr;
     }
+  }
+
+  void _submitComment() {
+    String commentText = _commentController.text.trim();
+    if (commentText.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("评论内容不能为空")));
+      return;
+    }
+
+    // 这里可以添加实际的评论提交API调用
+    print("提交评论: $commentText");
+
+    // 模拟添加新评论到列表
+    setState(() {
+      Map<String, dynamic> newComment = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'username': 'user',
+        'nickname': '当前用户',
+        'userPic': '', // 这里可以设置当前用户的头像
+        'content': commentText,
+        'createTime': DateTime.now().toString(),
+        'uptonowTime': '刚刚',
+        'likecont': 0,
+      };
+      commentsList.insert(0, newComment); // 将新评论添加到列表顶部
+    });
+
+    // 清空输入框
+    _commentController.clear();
+
+    // 显示成功提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("评论发表成功"), backgroundColor: Colors.green),
+    );
   }
 }
