@@ -26,7 +26,7 @@ class _ArticlelistState extends State<Articlelist>
 
     ArticleService service = ArticleService();
     try {
-      var result = await service.getArticleList(1);
+      var result = await service.getallArticleList(1);
       setState(() {
         articleList = result['data'];
         isLoading = false;

@@ -87,8 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
           userId = _userInfo!['id'];
         }
       }
-
-      var result = await service.getArticleList(userId);
+      var result = await service.getsomebodyArticleList(widget.username!);
       if (result['code'] == 0 && result['data'] != null) {
         setState(() {
           _articleList = result['data'];
