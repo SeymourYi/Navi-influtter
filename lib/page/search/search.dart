@@ -66,7 +66,7 @@ class _SearchPageState extends State<SearchPage> {
         title: _buildSearchBar(),
         automaticallyImplyLeading: false,
       ),
-      body: _showSearchResults ? _buildSearchResults() : _buildExploreContent(),
+      body: _showSearchResults ? _buildSearchResults() : _buildEmptyState(),
     );
   }
 
@@ -74,7 +74,7 @@ class _SearchPageState extends State<SearchPage> {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText: '搜索用户、话题或关键词',
+        hintText: '搜索用户名',
         hintStyle: TextStyle(color: Colors.grey.shade600),
         filled: true,
         fillColor: Colors.grey.shade200,
@@ -108,27 +108,16 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildExploreContent() {
-    return SingleChildScrollView(
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildSectionTitle('热门话题'),
-          _buildTrendingTopic('世界杯', '体育·热门', '1,234 推文'),
-          _buildTrendingTopic('科技大会', '科技·趋势', '5,678 推文'),
-          _buildTrendingTopic('新电影', '娱乐·趋势', '9,012 推文'),
+          Icon(Icons.search, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          _buildSectionTitle('为你推荐'),
-          _buildRecommendedUser(
-            '张三',
-            '@zhangsan',
-            'lib/assets/avatars/user1.jpg',
-          ),
-          _buildRecommendedUser('李四', '@lisi', 'lib/assets/avatars/user2.jpg'),
-          _buildRecommendedUser(
-            '王五',
-            '@wangwu',
-            'lib/assets/avatars/user3.jpg',
+          Text(
+            '输入用户名进行搜索',
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -148,7 +137,7 @@ class _SearchPageState extends State<SearchPage> {
             Icon(Icons.search_off, size: 60, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              '没有找到相关结果',
+              '没有找到相关用户',
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
@@ -165,7 +154,6 @@ class _SearchPageState extends State<SearchPage> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final item = _searchResults[index];
-        // 根据返回的数据格式，这些是用户类型的结果
         return _buildUserSearchResultItem(item);
       },
     );
@@ -201,60 +189,7 @@ class _SearchPageState extends State<SearchPage> {
               : null,
       trailing: _buildFollowButton(),
       onTap: () {
-        // 处理用户点击事件
         print('点击了用户: $nickname');
-      },
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-      ),
-    );
-  }
-
-  Widget _buildTrendingTopic(String topic, String category, String tweets) {
-    return ListTile(
-      title: Text(topic, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text('$category · $tweets'),
-      trailing: const Icon(Icons.more_vert),
-      onTap: () {
-        _searchController.text = topic;
-        _fetchSearchResults();
-      },
-    );
-  }
-
-  Widget _buildRecommendedUser(String name, String handle, String avatarPath) {
-    return ListTile(
-      leading: CircleAvatar(backgroundImage: AssetImage(avatarPath)),
-      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(handle),
-      trailing: _buildFollowButton(),
-      onTap: () {
-        _searchController.text = handle;
-        _fetchSearchResults();
-      },
-    );
-  }
-
-  Widget _buildSearchResultItem(
-    String type,
-    String title,
-    String subtitle,
-    IconData icon,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: type == '用户' ? _buildFollowButton() : null,
-      onTap: () {
-        // 处理结果项点击事件
       },
     );
   }
