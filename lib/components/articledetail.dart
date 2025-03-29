@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart'; // 导入图片选择器
 import 'dart:io'; // 导入File类
 import 'articleimage.dart';
 import '../components/userinfo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class Articledetail extends StatefulWidget {
   final String id;
@@ -32,6 +34,9 @@ class _ArticledetailState extends State<Articledetail> {
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   final FocusNode _commentFocusNode = FocusNode(); // 评论输入框焦点
   bool _isLoading = false; // 加载状态
+  bool _isRepostLoading = false; // 转发加载状态
+  TextEditingController _repostController = TextEditingController(); // 转发内容控制器
+  String? _repostImagePath; // 选择的转发图片路径
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
@@ -67,6 +72,7 @@ class _ArticledetailState extends State<Articledetail> {
     // 释放资源
     _commentFocusNode.dispose();
     _commentController.dispose();
+    _repostController.dispose();
     super.dispose();
   }
 
@@ -148,6 +154,300 @@ class _ArticledetailState extends State<Articledetail> {
     setState(() {
       _selectedImagePath = null;
     });
+  }
+
+  // 处理转发/引用帖子
+  void _handleRepost() {
+    if (_currentUser['id'] == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 显示转发对话框
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // 让底部弹窗可以随着内容滚动
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return Container(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '转发帖子',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    Divider(),
+
+                    // 原帖内容预览
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage:
+                                    articleInfodata != null &&
+                                            articleInfodata['userPic'] !=
+                                                null &&
+                                            articleInfodata['userPic']
+                                                .isNotEmpty
+                                        ? NetworkImage(
+                                          articleInfodata['userPic'],
+                                        )
+                                        : null,
+                                child:
+                                    articleInfodata == null ||
+                                            articleInfodata['userPic'] ==
+                                                null ||
+                                            articleInfodata['userPic'].isEmpty
+                                        ? Icon(Icons.person, size: 16)
+                                        : null,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                articleInfodata != null
+                                    ? articleInfodata['nickname'] ?? '用户'
+                                    : '用户',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            articleInfodata != null
+                                ? articleInfodata['content'] ?? ''
+                                : '',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+                    // 添加评论输入框
+                    TextField(
+                      controller: _repostController,
+                      decoration: InputDecoration(
+                        hintText: '添加评论...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                    ),
+
+                    SizedBox(height: 8),
+
+                    // 图片选择区域
+                    if (_repostImagePath != null)
+                      Stack(
+                        children: [
+                          Container(
+                            height: 100,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.file(
+                              File(_repostImagePath!),
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  _repostImagePath = null;
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    SizedBox(height: 16),
+
+                    // 操作按钮
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.image, color: Colors.green),
+                          onPressed: () => _pickRepostImage(setModalState),
+                        ),
+                        Spacer(),
+                        ElevatedButton(
+                          onPressed:
+                              _isRepostLoading
+                                  ? null
+                                  : () => _submitRepost(context),
+                          child:
+                              _isRepostLoading
+                                  ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : Text('转发'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // 选择图片方法
+  Future<void> _pickRepostImage(StateSetter setState) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _repostImagePath = image.path;
+        });
+      }
+    } catch (e) {
+      print('图片选择失败: $e');
+    }
+  }
+
+  // 提交转发
+  Future<void> _submitRepost(BuildContext context) async {
+    if (_currentUser['id'] == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    setState(() {
+      _isRepostLoading = true;
+    });
+
+    try {
+      GetArticleInfoService service = GetArticleInfoService();
+
+      // 确保我们使用的是正确的文章ID
+      var articleId =
+          widget.id != null
+              ? widget.id.toString()
+              : (articleInfodata != null && articleInfodata['id'] != null
+                  ? articleInfodata['id'].toString()
+                  : '');
+
+      if (articleId.isEmpty) {
+        throw Exception('文章ID不能为空');
+      }
+
+      var result = await service.addReapetArticle(
+        beShareArticleId: articleId,
+        content: _repostController.text,
+        createUserId: _currentUser['id'],
+        createUserName: _currentUser['username'],
+        imagePath: _repostImagePath,
+      );
+
+      setState(() {
+        _isRepostLoading = false;
+        _repostController.clear();
+        _repostImagePath = null;
+      });
+
+      // 关闭底部表单
+      Navigator.pop(context);
+
+      // 显示成功信息
+      if (result != null && result['code'] == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('转发成功!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        String errorMsg = result != null ? result['msg'] ?? '转发失败' : '转发失败';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isRepostLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('转发失败: ${e.toString()}'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -360,7 +660,7 @@ class _ArticledetailState extends State<Articledetail> {
                           _buildActionButton(
                             icon: Icons.repeat,
                             count: repeatcount.toString(),
-                            onPressed: () {},
+                            onPressed: _handleRepost,
                           ),
                           _buildActionButton(
                             icon:

@@ -8,6 +8,8 @@ import '../api/articleAPI.dart';
 import '../api/getarticleinfoAPI.dart'; // 导入包含点赞API的服务
 import '../Store/storeutils.dart'; // 导入用户信息存储工具
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class Article extends StatefulWidget {
   const Article({super.key, required this.articleData});
@@ -21,6 +23,11 @@ class _ArticleState extends State<Article> {
   int likeCount = 0;
   String username = ''; // 存储当前用户名
   bool isLikeLoading = false; // 点赞加载状态
+  bool isRepostLoading = false; // 转发加载状态
+  Map<String, dynamic>? _currentUser; // 当前用户信息
+  TextEditingController _repostController = TextEditingController(); // 转发内容控制器
+  final ImagePicker _picker = ImagePicker(); // 图片选择器实例
+  String? _selectedImagePath; // 选择的图片路径
 
   @override
   void initState() {
@@ -34,6 +41,12 @@ class _ArticleState extends State<Article> {
     _loadCurrentUserInfo();
   }
 
+  @override
+  void dispose() {
+    _repostController.dispose();
+    super.dispose();
+  }
+
   // 加载当前用户信息
   Future<void> _loadCurrentUserInfo() async {
     try {
@@ -41,6 +54,7 @@ class _ArticleState extends State<Article> {
       if (userInfo != null && userInfo['username'] != null) {
         setState(() {
           username = userInfo['username'];
+          _currentUser = userInfo;
         });
       }
     } catch (e) {
@@ -178,6 +192,278 @@ class _ArticleState extends State<Article> {
         });
       }
     });
+  }
+
+  // 处理转发/引用帖子
+  void _handleRepost() {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 显示转发对话框
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // 让底部弹窗可以随着内容滚动
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return Container(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '转发帖子',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    Divider(),
+
+                    // 原帖内容预览
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundImage: CachedNetworkImageProvider(
+                                  widget.articleData['userPic'],
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                widget.articleData['nickname'] ?? '用户',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            widget.articleData['content'],
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+                    // 添加评论输入框
+                    TextField(
+                      controller: _repostController,
+                      decoration: InputDecoration(
+                        hintText: '添加评论...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                    ),
+
+                    SizedBox(height: 8),
+
+                    // 图片选择区域
+                    if (_selectedImagePath != null)
+                      Stack(
+                        children: [
+                          Container(
+                            height: 100,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.file(
+                              File(_selectedImagePath!),
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedImagePath = null;
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    SizedBox(height: 16),
+
+                    // 操作按钮
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.image, color: Colors.green),
+                          onPressed: () => _pickRepostImage(setState),
+                        ),
+                        Spacer(),
+                        ElevatedButton(
+                          onPressed:
+                              isRepostLoading
+                                  ? null
+                                  : () => _submitRepost(context),
+                          child:
+                              isRepostLoading
+                                  ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : Text('转发'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  // 选择图片方法
+  Future<void> _pickRepostImage(StateSetter setState) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImagePath = image.path;
+        });
+      }
+    } catch (e) {
+      print('图片选择失败: $e');
+    }
+  }
+
+  // 提交转发
+  Future<void> _submitRepost(BuildContext context) async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 检查文章ID是否存在
+    if (widget.articleData == null || widget.articleData['id'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('无效的文章'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    setState(() {
+      isRepostLoading = true;
+    });
+
+    try {
+      GetArticleInfoService service = GetArticleInfoService();
+
+      var result = await service.addReapetArticle(
+        beShareArticleId: widget.articleData['id'].toString(),
+        content: _repostController.text,
+        createUserId: _currentUser!['id'],
+        createUserName: _currentUser!['username'],
+        imagePath: _selectedImagePath,
+      );
+
+      setState(() {
+        isRepostLoading = false;
+        _repostController.clear();
+        _selectedImagePath = null;
+      });
+
+      // 关闭底部表单
+      Navigator.pop(context);
+
+      // 显示成功信息
+      if (result != null && result['code'] == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('转发成功!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        String errorMsg = result != null ? result['msg'] ?? '转发失败' : '转发失败';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        isRepostLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('转发失败: ${e.toString()}'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -423,6 +709,54 @@ class _ArticleState extends State<Article> {
                                                           style: TextStyle(
                                                             fontSize: 12,
                                                             color: Colors.blue,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 16), // 增加间距
+                                          // 转发按钮 - 独立点击区域
+                                          InkWell(
+                                            onTap: _handleRepost,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            child: Tooltip(
+                                              message: '转发',
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.repeat,
+                                                      size: 18,
+                                                      color:
+                                                          widget.articleData['repeatcount'] !=
+                                                                      null &&
+                                                                  widget.articleData['repeatcount'] >
+                                                                      0
+                                                              ? Colors.green
+                                                              : Colors.grey,
+                                                    ),
+                                                    if (widget.articleData['repeatcount'] !=
+                                                            null &&
+                                                        widget.articleData['repeatcount'] >
+                                                            0)
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              left: 4,
+                                                            ),
+                                                        child: Text(
+                                                          "${widget.articleData['repeatcount']}",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.green,
                                                             fontWeight:
                                                                 FontWeight.w500,
                                                           ),
