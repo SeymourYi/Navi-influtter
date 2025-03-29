@@ -66,14 +66,6 @@ class _ArticleState extends State<Article> {
       return;
     }
 
-    // 记录开始点赞操作 - 更详细的日志
-    print('========== 点赞操作开始 ==========');
-    print('文章ID: ${widget.articleData['id']}');
-    print('用户名: $username');
-    print('当前点赞状态: $isLiked');
-    print('当前点赞数: $likeCount');
-    print('================================');
-
     // 先在UI上直接反映点赞状态变化，提高响应速度
     bool newLikedState = !isLiked;
     int newLikeCount = newLikedState ? likeCount + 1 : likeCount - 1;
@@ -86,7 +78,7 @@ class _ArticleState extends State<Article> {
     });
 
     try {
-      // 使用真实API调用
+      // 使用API调用
       GetArticleInfoService service = GetArticleInfoService();
 
       var result = await service.likesomearticle(
@@ -94,12 +86,8 @@ class _ArticleState extends State<Article> {
         widget.articleData['id'].toString(),
       );
 
-      print('API响应: $result');
-
       // 处理API响应
       if (result != null && result['code'] == 0) {
-        print('点赞API调用成功 - 新状态: $isLiked, 点赞数: $likeCount');
-
         // 更新原始数据，保证UI一致性
         if (widget.articleData != null) {
           widget.articleData['islike'] = isLiked;
@@ -121,19 +109,13 @@ class _ArticleState extends State<Article> {
           likeCount = isLiked ? likeCount + 1 : likeCount - 1;
         });
 
-        // 显示详细错误信息
+        // 显示错误信息
         String errorMsg = '操作失败';
         if (result != null) {
           errorMsg += ': ${result['msg'] ?? result['message'] ?? '未知错误'}';
-          print('API响应数据: $result');
-          if (result['data'] != null) {
-            errorMsg += ' (${result['data']})';
-          }
         } else {
           errorMsg += ': 服务器无响应';
         }
-
-        print('点赞API调用失败: $errorMsg');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), duration: Duration(seconds: 3)),
@@ -146,12 +128,10 @@ class _ArticleState extends State<Article> {
         likeCount = isLiked ? likeCount + 1 : likeCount - 1;
       });
 
-      print('点赞请求错误详情: $e');
-
       // 提取错误信息
       String errorMessage = e.toString();
-      if (errorMessage.length > 150) {
-        errorMessage = '${errorMessage.substring(0, 147)}...';
+      if (errorMessage.length > 100) {
+        errorMessage = '${errorMessage.substring(0, 97)}...';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,7 +141,6 @@ class _ArticleState extends State<Article> {
         ),
       );
     } finally {
-      print('========== 点赞操作结束 ==========');
       // 重置加载状态
       setState(() {
         isLikeLoading = false;
@@ -360,7 +339,7 @@ class _ArticleState extends State<Article> {
                                                           valueColor:
                                                               AlwaysStoppedAnimation<
                                                                 Color
-                                                              >(Colors.blue),
+                                                              >(Colors.red),
                                                         ),
                                                       )
                                                       : Icon(
@@ -371,7 +350,7 @@ class _ArticleState extends State<Article> {
                                                         size: 18,
                                                         color:
                                                             isLiked
-                                                                ? Colors.blue
+                                                                ? Colors.red
                                                                 : Colors.grey,
                                                       ),
                                                   if (likeCount > 0)
@@ -385,7 +364,7 @@ class _ArticleState extends State<Article> {
                                                           fontSize: 12,
                                                           color:
                                                               isLiked
-                                                                  ? Colors.blue
+                                                                  ? Colors.red
                                                                   : Colors
                                                                       .grey[700],
                                                           fontWeight:
@@ -501,9 +480,7 @@ class _ArticleState extends State<Article> {
                                                         child: Icon(
                                                           Icons.favorite,
                                                           size: 14,
-                                                          color: Color(
-                                                            0xFF576B95,
-                                                          ),
+                                                          color: Colors.red,
                                                         ),
                                                       ),
                                                     ),
