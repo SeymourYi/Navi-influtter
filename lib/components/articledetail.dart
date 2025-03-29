@@ -9,8 +9,13 @@ import '../components/userinfo.dart';
 
 class Articledetail extends StatefulWidget {
   final String id;
+  final bool autoFocusComment;
 
-  const Articledetail({super.key, required this.id});
+  const Articledetail({
+    super.key,
+    required this.id,
+    this.autoFocusComment = false,
+  });
 
   @override
   State<Articledetail> createState() => _ArticledetailState();
@@ -25,6 +30,7 @@ class _ArticledetailState extends State<Articledetail> {
   TextEditingController _commentController = TextEditingController(); // 评论输入控制器
   String? _selectedImagePath; // 选择的图片路径
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
+  final FocusNode _commentFocusNode = FocusNode(); // 评论输入框焦点
 
   // 当前用户信息
   Map<String, dynamic> _currentUser = {
@@ -43,6 +49,22 @@ class _ArticledetailState extends State<Articledetail> {
     if (widget.id != null && widget.id.isNotEmpty) {
       _fetchArticleInfo();
     }
+
+    // 自动聚焦到评论框
+    if (widget.autoFocusComment) {
+      // 延迟执行以确保界面已构建完成
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_commentFocusNode);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    // 释放资源
+    _commentFocusNode.dispose();
+    _commentController.dispose();
+    super.dispose();
   }
 
   // 加载当前用户信息
@@ -426,6 +448,7 @@ class _ArticledetailState extends State<Articledetail> {
                   Expanded(
                     child: TextField(
                       controller: _commentController,
+                      focusNode: _commentFocusNode, // 使用焦点节点
                       decoration: InputDecoration(
                         hintText: "发表评论...",
                         border: OutlineInputBorder(

@@ -93,15 +93,6 @@ class _ArticleState extends State<Article> {
           widget.articleData['islike'] = isLiked;
           widget.articleData['likecont'] = likeCount;
         }
-
-        // 显示简短成功消息
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isLiked ? '点赞成功' : '取消点赞成功'),
-            duration: Duration(milliseconds: 800),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
       } else {
         // API失败，回滚状态
         setState(() {
@@ -148,7 +139,7 @@ class _ArticleState extends State<Article> {
     }
   }
 
-  void _navigateToArticleDetail() {
+  void _navigateToArticleDetail({bool focusOnComment = false}) {
     // 检查文章ID是否存在
     if (widget.articleData == null || widget.articleData['id'] == null) {
       return;
@@ -161,7 +152,7 @@ class _ArticleState extends State<Article> {
       PageRouteBuilder(
         pageBuilder:
             (context, animation, secondaryAnimation) =>
-                Articledetail(id: articleId),
+                Articledetail(id: articleId, autoFocusComment: focusOnComment),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
@@ -325,54 +316,61 @@ class _ArticleState extends State<Article> {
                                           // 点赞按钮 - 独立点击区域
                                           InkWell(
                                             onTap: _handleLike,
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8),
-                                              child: Row(
-                                                children: [
-                                                  // 显示加载状态或点赞图标
-                                                  isLikeLoading
-                                                      ? SizedBox(
-                                                        width: 18,
-                                                        height: 18,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          valueColor:
-                                                              AlwaysStoppedAnimation<
-                                                                Color
-                                                              >(Colors.red),
-                                                        ),
-                                                      )
-                                                      : Icon(
-                                                        isLiked
-                                                            ? Icons.thumb_up
-                                                            : Icons
-                                                                .thumb_up_outlined,
-                                                        size: 18,
-                                                        color:
-                                                            isLiked
-                                                                ? Colors.red
-                                                                : Colors.grey,
-                                                      ),
-                                                  if (likeCount > 0)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        left: 4,
-                                                      ),
-                                                      child: Text(
-                                                        "$likeCount",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            child: Tooltip(
+                                              message: isLiked ? '取消点赞' : '点赞',
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8),
+                                                child: Row(
+                                                  children: [
+                                                    // 显示加载状态或点赞图标
+                                                    isLikeLoading
+                                                        ? SizedBox(
+                                                          width: 18,
+                                                          height: 18,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            valueColor:
+                                                                AlwaysStoppedAnimation<
+                                                                  Color
+                                                                >(Colors.red),
+                                                          ),
+                                                        )
+                                                        : Icon(
+                                                          isLiked
+                                                              ? Icons.thumb_up
+                                                              : Icons
+                                                                  .thumb_up_outlined,
+                                                          size: 18,
                                                           color:
                                                               isLiked
                                                                   ? Colors.red
-                                                                  : Colors
-                                                                      .grey[700],
-                                                          fontWeight:
-                                                              FontWeight.w500,
+                                                                  : Colors.grey,
+                                                        ),
+                                                    if (likeCount > 0)
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              left: 4,
+                                                            ),
+                                                        child: Text(
+                                                          "$likeCount",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                isLiked
+                                                                    ? Colors.red
+                                                                    : Colors
+                                                                        .grey[700],
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -380,49 +378,58 @@ class _ArticleState extends State<Article> {
                                           // 评论按钮 - 独立点击区域
                                           InkWell(
                                             onTap: () {
-                                              // 评论操作
-                                              _navigateToArticleDetail();
+                                              // 评论操作 - 传递true表示需要聚焦到评论框
+                                              _navigateToArticleDetail(
+                                                focusOnComment: true,
+                                              );
                                             },
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    widget.articleData['commentcount'] !=
-                                                                null &&
-                                                            widget.articleData['commentcount'] >
-                                                                0
-                                                        ? Icons.mode_comment
-                                                        : Icons
-                                                            .mode_comment_outlined,
-                                                    size: 18,
-                                                    color:
-                                                        widget.articleData['commentcount'] !=
-                                                                    null &&
-                                                                widget.articleData['commentcount'] >
-                                                                    0
-                                                            ? Colors.blue
-                                                            : Colors.grey,
-                                                  ),
-                                                  if (widget.articleData['commentcount'] !=
-                                                          null &&
-                                                      widget.articleData['commentcount'] >
-                                                          0)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        left: 4,
-                                                      ),
-                                                      child: Text(
-                                                        "${widget.articleData['commentcount']}",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.blue,
-                                                          fontWeight:
-                                                              FontWeight.w500,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            child: Tooltip(
+                                              message: '点击发表评论',
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      widget.articleData['commentcount'] !=
+                                                                  null &&
+                                                              widget.articleData['commentcount'] >
+                                                                  0
+                                                          ? Icons.chat_bubble
+                                                          : Icons
+                                                              .chat_bubble_outline,
+                                                      size: 18,
+                                                      color:
+                                                          widget.articleData['commentcount'] !=
+                                                                      null &&
+                                                                  widget.articleData['commentcount'] >
+                                                                      0
+                                                              ? Colors.blue
+                                                              : Colors.grey,
+                                                    ),
+                                                    if (widget.articleData['commentcount'] !=
+                                                            null &&
+                                                        widget.articleData['commentcount'] >
+                                                            0)
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              left: 4,
+                                                            ),
+                                                        child: Text(
+                                                          "${widget.articleData['commentcount']}",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.blue,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ),
