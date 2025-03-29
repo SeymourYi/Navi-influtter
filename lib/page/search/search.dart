@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:flutterlearn2/api/searchsomeAPI.dart';
+import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -189,7 +190,35 @@ class _SearchPageState extends State<SearchPage> {
               : null,
       trailing: _buildFollowButton(),
       onTap: () {
-        print('点击了用户: $nickname');
+        // 导航到用户主页
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder:
+                (context, animation, secondaryAnimation) => ProfilePage(
+                  username: username, // 传递用户名参数
+                ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              const curve = Curves.ease;
+              var tween = Tween(
+                begin: begin,
+                end: end,
+              ).chain(CurveTween(curve: curve));
+
+              return SlideTransition(
+                position: animation.drive(tween),
+                child: child,
+              );
+            },
+          ),
+        );
       },
     );
   }
@@ -197,7 +226,14 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildFollowButton() {
     return ElevatedButton(
       onPressed: () {
-        // 处理关注/取消关注逻辑
+        // 显示提示信息
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('关注功能即将推出，敬请期待！'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.black,
