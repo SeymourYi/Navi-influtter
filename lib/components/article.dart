@@ -504,7 +504,11 @@ class _ArticleState extends State<Article> {
                               PageRouteBuilder(
                                 pageBuilder:
                                     (context, animation, secondaryAnimation) =>
-                                        ProfilePage(),
+                                        ProfilePage(
+                                          // 传递文章作者的用户名
+                                          username:
+                                              widget.articleData['username'],
+                                        ),
                                 transitionsBuilder: (
                                   context,
                                   animation,

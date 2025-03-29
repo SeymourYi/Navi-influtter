@@ -12,6 +12,17 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>> getsomeUserinfo(String username) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/user/someoneinfo?username=${username}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to load articles: $e');
+    }
+  }
+
   // 刷新和更新本地存储的用户信息
   Future<bool> refreshUserInfo() async {
     try {

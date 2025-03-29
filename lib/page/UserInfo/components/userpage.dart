@@ -3,9 +3,12 @@ import 'package:flutterlearn2/components/article.dart';
 import 'package:flutterlearn2/api/articleAPI.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutterlearn2/api/userAPI.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final String? username;
+
+  const ProfilePage({super.key, this.username});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -16,6 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
   List<dynamic> _articleList = [];
   final ScrollController _scrollController = ScrollController();
+  bool _isCurrentUser = false;
 
   @override
   void initState() {
@@ -32,11 +36,34 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserInfo() async {
     try {
-      final userInfo = await SharedPrefsUtils.getUserInfo();
-      setState(() {
-        _userInfo = userInfo;
-        _isLoading = false;
-      });
+      UserService userService = UserService();
+
+      if (widget.username == null) {
+        final userInfo = await SharedPrefsUtils.getUserInfo();
+        setState(() {
+          _userInfo = userInfo;
+          _isLoading = false;
+          _isCurrentUser = true;
+        });
+      } else {
+        var result = await userService.getsomeUserinfo(widget.username!);
+        if (result['code'] == 0 && result['data'] != null) {
+          setState(() {
+            _userInfo = result['data'];
+            _isLoading = false;
+          });
+
+          final currentUser = await SharedPrefsUtils.getUserInfo();
+          if (currentUser != null &&
+              currentUser['username'] == widget.username) {
+            setState(() {
+              _isCurrentUser = true;
+            });
+          }
+        } else {
+          throw Exception('获取用户信息失败');
+        }
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -48,12 +75,27 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _fetchArticleList() async {
     ArticleService service = ArticleService();
     try {
-      var result = await service.getArticleList(1);
-      setState(() {
-        _articleList = result['data'];
-      });
+      // 获取用户ID
+      int userId = 1; // 默认ID
+
+      if (_userInfo != null && _userInfo!['id'] != null) {
+        userId = _userInfo!['id'];
+      } else if (widget.username != null) {
+        // 如果有用户名但没有用户信息，先等待用户信息加载
+        await _loadUserInfo();
+        if (_userInfo != null && _userInfo!['id'] != null) {
+          userId = _userInfo!['id'];
+        }
+      }
+
+      var result = await service.getArticleList(userId);
+      if (result['code'] == 0 && result['data'] != null) {
+        setState(() {
+          _articleList = result['data'];
+        });
+      }
     } catch (e) {
-      print('Error fetching articles: $e');
+      print('获取文章列表失败: $e');
     }
   }
 
@@ -165,23 +207,43 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
 
                               // 编辑资料按钮
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.blue,
-                                    width: 1,
+                              _isCurrentUser
+                                  ? Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.blue,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: Colors.white, // 添加白色背景确保可见性
+                                    ),
+                                    child: TextButton(
+                                      onPressed: () {},
+                                      child: const Text(
+                                        '编辑资料',
+                                        style: TextStyle(color: Colors.blue),
+                                      ),
+                                    ),
+                                  )
+                                  : Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.blue,
+                                        width: 1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: Colors.white,
+                                    ),
+                                    child: TextButton(
+                                      onPressed: () {
+                                        // TODO: 实现关注功能
+                                      },
+                                      child: const Text(
+                                        '关注',
+                                        style: TextStyle(color: Colors.blue),
+                                      ),
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  color: Colors.white, // 添加白色背景确保可见性
-                                ),
-                                child: TextButton(
-                                  onPressed: () {},
-                                  child: const Text(
-                                    '编辑资料',
-                                    style: TextStyle(color: Colors.blue),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
