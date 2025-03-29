@@ -20,10 +20,13 @@ class _ProfilePageState extends State<ProfilePage> {
   List<dynamic> _articleList = [];
   final ScrollController _scrollController = ScrollController();
   bool _isCurrentUser = false;
+  bool _isFriend = false;
+  String? _currentUsername;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _loadUserInfo();
     _fetchArticleList();
   }
@@ -32,6 +35,39 @@ class _ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo != null && userInfo['username'] != null) {
+        _currentUsername = userInfo['username'];
+      }
+    } catch (e) {
+      print('加载当前用户信息失败: $e');
+    }
+  }
+
+  Future<void> _checkFriendStatus() async {
+    if (_currentUsername == null || widget.username == null || _isCurrentUser) {
+      return;
+    }
+
+    try {
+      UserService userService = UserService();
+      var result = await userService.whetherfriend(
+        _currentUsername!,
+        widget.username!,
+      );
+
+      if (result != null && result['code'] == 0) {
+        setState(() {
+          _isFriend = result['data'] == "1";
+        });
+      }
+    } catch (e) {
+      print('检查朋友关系失败: $e');
+    }
   }
 
   Future<void> _loadUserInfo() async {
@@ -59,6 +95,8 @@ class _ProfilePageState extends State<ProfilePage> {
             setState(() {
               _isCurrentUser = true;
             });
+          } else {
+            await _checkFriendStatus();
           }
         } else {
           throw Exception('获取用户信息失败');
@@ -227,19 +265,28 @@ class _ProfilePageState extends State<ProfilePage> {
                                   : Container(
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: Colors.blue,
+                                        color:
+                                            _isFriend
+                                                ? Colors.grey
+                                                : Colors.blue,
                                         width: 1,
                                       ),
                                       borderRadius: BorderRadius.circular(20),
-                                      color: Colors.white,
+                                      color:
+                                          _isFriend
+                                              ? Colors.grey[300]
+                                              : Colors.white,
                                     ),
                                     child: TextButton(
-                                      onPressed: () {
-                                        // TODO: 实现关注功能
-                                      },
-                                      child: const Text(
-                                        '关注',
-                                        style: TextStyle(color: Colors.blue),
+                                      onPressed: null, // 按照要求不实现关注功能
+                                      child: Text(
+                                        _isFriend ? '已关注' : '关注',
+                                        style: TextStyle(
+                                          color:
+                                              _isFriend
+                                                  ? Colors.black
+                                                  : Colors.blue,
+                                        ),
                                       ),
                                     ),
                                   ),

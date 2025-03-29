@@ -12,6 +12,17 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>> whetherfriend(String myId, String userid) async {
+    try {
+      var response = await HttpClient.dio.post(
+        "/user/whetherfriend?username=${myId}&friendname=${userid}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to load articles: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> getsomeUserinfo(String username) async {
     try {
       var response = await HttpClient.dio.get(

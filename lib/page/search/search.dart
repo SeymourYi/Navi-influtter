@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:flutterlearn2/api/searchsomeAPI.dart';
 import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
+import 'package:flutterlearn2/api/userAPI.dart'; // 导入用户API
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -15,6 +16,49 @@ class _SearchPageState extends State<SearchPage> {
   bool _showSearchResults = false;
   bool _isLoading = false;
   List<dynamic> _searchResults = [];
+  Map<String, bool> _friendStatusMap = {}; // 存储朋友关系状态
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  String? _currentUsername; // 当前用户名
+
+  // 加载当前用户信息
+  Future<void> _loadCurrentUser() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo != null && userInfo['username'] != null) {
+        setState(() {
+          _currentUsername = userInfo['username'];
+        });
+      }
+    } catch (e) {
+      print('加载用户信息失败: $e');
+    }
+  }
+
+  // 检查朋友关系
+  Future<bool> _checkFriendStatus(String username) async {
+    if (_currentUsername == null) {
+      return false;
+    }
+
+    try {
+      UserService userService = UserService();
+      var result = await userService.whetherfriend(_currentUsername!, username);
+
+      if (result != null && result['code'] == 0) {
+        return result['data'] == "1"; // "1"表示是朋友，"0"表示不是朋友
+      }
+      return false;
+    } catch (e) {
+      print('检查朋友关系失败: $e');
+      return false;
+    }
+  }
 
   Future<void> _fetchSearchResults() async {
     if (_searchController.text.trim().isEmpty) {
@@ -35,6 +79,16 @@ class _SearchPageState extends State<SearchPage> {
         if (result != null && result['code'] == 0 && result['data'] != null) {
           _searchResults = result['data'];
           print('解析到的搜索结果: $_searchResults');
+
+          // 清空之前的朋友状态
+          _friendStatusMap.clear();
+
+          // 检查每个用户的朋友状态
+          for (var user in _searchResults) {
+            if (user['username'] != null) {
+              _checkFriendStatusForUser(user['username']);
+            }
+          }
         } else {
           _searchResults = [];
         }
@@ -52,6 +106,14 @@ class _SearchPageState extends State<SearchPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('搜索失败，请稍后再试')));
     }
+  }
+
+  // 检查单个用户的朋友状态
+  Future<void> _checkFriendStatusForUser(String username) async {
+    bool isFriend = await _checkFriendStatus(username);
+    setState(() {
+      _friendStatusMap[username] = isFriend;
+    });
   }
 
   @override
@@ -188,7 +250,7 @@ class _SearchPageState extends State<SearchPage> {
           bio.isNotEmpty
               ? Text(bio, maxLines: 2, overflow: TextOverflow.ellipsis)
               : null,
-      trailing: _buildFollowButton(),
+      trailing: _buildFollowButton(username),
       onTap: () {
         // 导航到用户主页
         Navigator.push(
@@ -223,24 +285,20 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildFollowButton() {
+  Widget _buildFollowButton(String username) {
+    bool isFriend = _friendStatusMap[username] ?? false;
+
     return ElevatedButton(
-      onPressed: () {
-        // 显示提示信息
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('关注功能即将推出，敬请期待！'),
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      onPressed: null, // 按照要求不实现关注功能
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
+        backgroundColor: isFriend ? Colors.grey[300] : Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 16),
       ),
-      child: const Text('关注', style: TextStyle(color: Colors.white)),
+      child: Text(
+        isFriend ? '已关注' : '关注',
+        style: TextStyle(color: isFriend ? Colors.black : Colors.white),
+      ),
     );
   }
 }
