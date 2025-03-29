@@ -1,270 +1,6 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
-// import 'articleimage.dart';
-// import '../components/userinfo.dart';
-
-// class Articledetail extends StatefulWidget {
-//   final String id;
-
-//   const Articledetail({super.key, required this.id});
-
-//   @override
-//   State<Articledetail> createState() => _ArticledetailState();
-// }
-
-// class _ArticledetailState extends State<Articledetail> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('文章详情'),
-//         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//       ),
-//       body: SingleChildScrollView(
-//         child: Container(
-//           padding: const EdgeInsets.all(16),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               // User info and title section
-//               Row(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   // Avatar
-//                   GestureDetector(
-//                     onTap: () {
-//                       Navigator.push(
-//                         context,
-//                         PageRouteBuilder(
-//                           pageBuilder:
-//                               (context, animation, secondaryAnimation) =>
-//                                   const Userinfo(),
-//                           transitionsBuilder: (
-//                             context,
-//                             animation,
-//                             secondaryAnimation,
-//                             child,
-//                           ) {
-//                             const begin = Offset(1.0, 0.0);
-//                             const end = Offset.zero;
-//                             const curve = Curves.ease;
-
-//                             var tween = Tween(
-//                               begin: begin,
-//                               end: end,
-//                             ).chain(CurveTween(curve: curve));
-
-//                             return SlideTransition(
-//                               position: animation.drive(tween),
-//                               child: child,
-//                             );
-//                           },
-//                         ),
-//                       );
-//                     },
-//                     child: const CircleAvatar(
-//                       radius: 20,
-//                       backgroundImage: AssetImage(
-//                         "assets/images/user_avatar.png",
-//                       ),
-//                     ),
-//                   ),
-//                   const SizedBox(width: 12),
-//                   // Username and time
-//                   Expanded(
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         const Text(
-//                           "霸气小肥鹅",
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.bold,
-//                             fontFamily: "Inter-Regular",
-//                           ),
-//                         ),
-//                         const SizedBox(height: 4),
-//                         Text(
-//                           "五分钟以前",
-//                           style: TextStyle(
-//                             fontSize: 13,
-//                             fontFamily: "Inter-Regular",
-//                             color: Colors.grey[600],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
-//               ),
-
-//               const SizedBox(height: 16),
-
-//               // Article content
-//               const Text(
-//                 "社区有个小伙伴，刚跟我吐槽职场环境，结果上周他自己的 App 爆发，得到了应用市场的推荐，数据爆炸。他的产品其实已经默默开发 2 年多了，去年还问我怎么把收到的100 刀提出来，如今已经在琢磨如何利用好这 破天富贵，期待他有空了发个帖子分享一下。做独立开发者就是这样，有努力、有运气，有坚持。",
-//                 style: TextStyle(
-//                   color: Colors.black,
-//                   fontSize: 16,
-//                   fontFamily: "Inter-Regular",
-//                   height: 1.5,
-//                 ),
-//               ),
-
-//               const SizedBox(height: 16),
-
-//               // Article images
-//               ArticleImage(
-//                 imageUrls: [
-//                   "lib/assets/images/3.jpg",
-//                   "lib/assets/images/3.jpg",
-//                   "lib/assets/images/3.jpg",
-//                   "lib/assets/images/3.jpg",
-//                   "lib/assets/images/3.jpg",
-//                   "lib/assets/images/3.jpg",
-//                 ],
-//               ),
-
-//               const SizedBox(height: 24),
-
-//               // Like and comment count
-//               Row(
-//                 children: [
-//                   Icon(Icons.favorite, size: 18, color: Colors.grey[600]),
-//                   const SizedBox(width: 4),
-//                   Text(
-//                     "10",
-//                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-//                   ),
-//                   const SizedBox(width: 16),
-//                   Icon(
-//                     Icons.mode_comment_outlined,
-//                     size: 18,
-//                     color: Colors.grey[600],
-//                   ),
-//                   const SizedBox(width: 4),
-//                   Text(
-//                     "3",
-//                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-//                   ),
-//                 ],
-//               ),
-
-//               const Divider(height: 32, thickness: 1),
-
-//               // Comments section
-//               const Text(
-//                 "评论",
-//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//               ),
-
-//               const SizedBox(height: 16),
-
-//               // Comment list
-//               _buildCommentItem(
-//                 username: "张三",
-//                 content: "这篇文章很有启发！",
-//                 time: "2分钟前",
-//               ),
-
-//               _buildCommentItem(
-//                 username: "李四",
-//                 content: "独立开发确实需要坚持，佩服！",
-//                 time: "10分钟前",
-//               ),
-
-//               _buildCommentItem(
-//                 username: "王五",
-//                 content: "期待后续的分享！",
-//                 time: "30分钟前",
-//               ),
-
-//               const SizedBox(height: 16),
-
-//               // Comment input area
-//               Container(
-//                 padding: const EdgeInsets.symmetric(
-//                   horizontal: 12,
-//                   vertical: 8,
-//                 ),
-//                 decoration: BoxDecoration(
-//                   color: Colors.grey[100],
-//                   borderRadius: BorderRadius.circular(20),
-//                 ),
-//                 child: Row(
-//                   children: [
-//                     Expanded(
-//                       child: TextField(
-//                         decoration: InputDecoration(
-//                           hintText: "写评论...",
-//                           border: InputBorder.none,
-//                           contentPadding: const EdgeInsets.symmetric(
-//                             horizontal: 8,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                     IconButton(
-//                       icon: const Icon(Icons.send),
-//                       color: Theme.of(context).primaryColor,
-//                       onPressed: () {},
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildCommentItem({
-//     required String username,
-//     required String content,
-//     required String time,
-//   }) {
-//     return Padding(
-//       padding: const EdgeInsets.only(bottom: 16),
-//       child: Row(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const CircleAvatar(
-//             radius: 16,
-//             backgroundImage: AssetImage("assets/images/user_avatar.png"),
-//           ),
-//           const SizedBox(width: 12),
-//           Expanded(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   username,
-//                   style: const TextStyle(
-//                     fontWeight: FontWeight.bold,
-//                     fontSize: 14,
-//                   ),
-//                 ),
-//                 const SizedBox(height: 4),
-//                 Text(content, style: const TextStyle(fontSize: 14)),
-//                 const SizedBox(height: 4),
-//                 Text(
-//                   time,
-//                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutterlearn2/api/getarticleinfoAPI.dart';
 import 'articleimage.dart';
 import '../components/userinfo.dart';
 
@@ -281,9 +17,128 @@ class _ArticledetailState extends State<Articledetail> {
   bool _isLiked = false;
   int _likeCount = 42;
   bool _isBookmarked = false;
+  var articleInfodata; // 改为不指定类型，以便适应不同的数据结构
+  @override
+  void initState() {
+    super.initState();
+    // 检查ID是否有效
+    if (widget.id == null || widget.id.isEmpty) {
+      // ID为空时显示错误提示
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("错误: 没有接收到文章ID"),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      });
+    } else {
+      // ID有效时正常获取文章信息
+      print("收到文章ID: ${widget.id}");
+      _fetchArticleInfo();
+    }
+  }
+
+  Future<void> _fetchArticleInfo() async {
+    if (widget.id == null || widget.id.isEmpty) {
+      print("文章ID无效，无法获取文章信息");
+      return;
+    }
+
+    try {
+      print("准备获取文章ID: ${widget.id}的详情");
+      GetArticleInfoService service = GetArticleInfoService();
+      var result = await service.getArticleInfo(int.parse(widget.id));
+
+      if (result == null || result['data'] == null) {
+        print("API返回数据为空");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("获取文章详情失败: 返回数据为空"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // 打印接收到的数据类型，帮助调试
+      print("API返回data类型: ${result['data'].runtimeType}");
+
+      setState(() {
+        articleInfodata = result['data']; // 不进行类型转换，保持原始类型
+      });
+
+      // 根据data类型选择合适的方式显示数据长度
+      String dataInfo = "";
+      if (articleInfodata is List) {
+        dataInfo = "数据长度: ${articleInfodata.length}";
+      } else if (articleInfodata is Map) {
+        dataInfo = "数据字段数: ${articleInfodata.keys.length}";
+      } else {
+        dataInfo = "数据类型: ${articleInfodata.runtimeType}";
+      }
+
+      print("文章详情获取成功，$dataInfo");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("成功获取文章ID: ${widget.id}的详情 ($dataInfo)"),
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('获取文章详情时出错: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("获取文章详情失败: $e"), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // 提取文章内容，适应不同的数据结构
+    String title = "";
+    String content = "加载中...";
+    String nickname = "用户";
+    String username = "";
+    String userPic = "";
+    String categoryName = "";
+    String coverImg = "";
+    String createTime = "刚刚";
+    int likecont = 0;
+    bool isLike = false;
+    int commentcount = 0;
+    int repeatcount = 0;
+
+    // 如果获取到了有效的文章数据，则使用API返回的数据
+    if (articleInfodata != null) {
+      try {
+        if (articleInfodata is Map) {
+          // 使用API返回的字段
+          content = articleInfodata['content'] ?? content;
+          nickname = articleInfodata['nickname'] ?? nickname;
+          username = articleInfodata['username'] ?? username;
+          userPic = articleInfodata['userPic'] ?? userPic;
+          categoryName = articleInfodata['categoryName'] ?? categoryName;
+          coverImg = articleInfodata['coverImg'] ?? coverImg;
+          createTime = articleInfodata['createTime'] ?? createTime;
+          likecont = articleInfodata['likecont'] ?? 0;
+          isLike = articleInfodata['islike'] ?? false;
+          commentcount = articleInfodata['commentcount'] ?? 0;
+          repeatcount = articleInfodata['repeatcount'] ?? 0;
+        }
+      } catch (e) {
+        print("解析文章数据时出错: $e");
+      }
+    }
+
+    // 整理图片URL列表
+    List<String> imageUrls = [];
+    if (coverImg != null && coverImg.isNotEmpty) {
+      imageUrls.add(coverImg);
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -292,6 +147,7 @@ class _ArticledetailState extends State<Articledetail> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        title: categoryName.isNotEmpty ? Text(categoryName) : null,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -311,20 +167,28 @@ class _ArticledetailState extends State<Articledetail> {
                         ),
                       );
                     },
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundImage: AssetImage(
-                        "assets/images/user_avatar.png",
-                      ),
-                    ),
+                    child:
+                        userPic.isNotEmpty
+                            ? CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(userPic),
+                            )
+                            : CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.grey[300],
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.grey[600],
+                              ),
+                            ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "霸气小肥鹅",
+                        Text(
+                          nickname,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -332,7 +196,7 @@ class _ArticledetailState extends State<Articledetail> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "@baqixiaofeie · 5m",
+                          "@$username · ${_formatCreateTime(createTime)}",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -350,28 +214,17 @@ class _ArticledetailState extends State<Articledetail> {
             ),
 
             // Article content
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                "社区有个小伙伴，刚跟我吐槽职场环境，结果上周他自己的 App 爆发，得到了应用市场的推荐，数据爆炸。他的产品其实已经默默开发 2 年多了，去年还问我怎么把收到的100 刀提出来，如今已经在琢磨如何利用好这破天富贵，期待他有空了发个帖子分享一下。做独立开发者就是这样，有努力、有运气，有坚持。",
-                style: TextStyle(fontSize: 16, height: 1.4),
-              ),
+              child: Text(content, style: TextStyle(fontSize: 16, height: 1.4)),
             ),
 
             // Images
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: ArticleImage(
-                imageUrls: [
-                  "lib/assets/images/3.jpg",
-                  "lib/assets/images/3.jpg",
-                  "lib/assets/images/3.jpg",
-                  "lib/assets/images/3.jpg",
-                  "lib/assets/images/3.jpg",
-                  "lib/assets/images/3.jpg",
-                ],
+            if (imageUrls.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: ArticleImage(imageUrls: imageUrls),
               ),
-            ),
 
             // Stats and actions
             Padding(
@@ -379,14 +232,26 @@ class _ArticledetailState extends State<Articledetail> {
               child: Row(
                 children: [
                   Text(
-                    "10:30 AM · Mar 27, 2023",
+                    createTime,
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   const Spacer(),
-                  Text(
-                    "1.2K Views",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
+                  if (categoryName.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        categoryName,
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -401,18 +266,18 @@ class _ArticledetailState extends State<Articledetail> {
                 children: [
                   _buildActionButton(
                     icon: Icons.mode_comment_outlined,
-                    count: "24",
+                    count: commentcount.toString(),
                     onPressed: () {},
                   ),
                   _buildActionButton(
                     icon: Icons.repeat,
-                    count: "142",
+                    count: repeatcount.toString(),
                     onPressed: () {},
                   ),
                   _buildActionButton(
-                    icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-                    count: _likeCount.toString(),
-                    isActive: _isLiked,
+                    icon: isLike ? Icons.favorite : Icons.favorite_border,
+                    count: likecont.toString(),
+                    isActive: isLike,
                     onPressed: () {
                       setState(() {
                         _isLiked = !_isLiked;
@@ -569,7 +434,11 @@ class _ArticledetailState extends State<Articledetail> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(radius: 20, backgroundImage: AssetImage(avatar)),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.grey[300],
+            child: Icon(Icons.person, color: Colors.grey[600]),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -610,5 +479,29 @@ class _ArticledetailState extends State<Articledetail> {
         ],
       ),
     );
+  }
+
+  // 格式化时间方法
+  String _formatCreateTime(String timeStr) {
+    try {
+      // 简单格式化，只返回月份和日期
+      if (timeStr == null || timeStr.isEmpty) return "刚刚";
+
+      DateTime dateTime = DateTime.parse(timeStr);
+      DateTime now = DateTime.now();
+
+      if (now.difference(dateTime).inMinutes < 60) {
+        return "${now.difference(dateTime).inMinutes}分钟前";
+      } else if (now.difference(dateTime).inHours < 24) {
+        return "${now.difference(dateTime).inHours}小时前";
+      } else if (now.difference(dateTime).inDays < 30) {
+        return "${now.difference(dateTime).inDays}天前";
+      } else {
+        return "${dateTime.month}月${dateTime.day}日";
+      }
+    } catch (e) {
+      print("日期格式化出错: $e");
+      return timeStr;
+    }
   }
 }

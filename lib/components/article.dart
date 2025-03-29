@@ -21,29 +21,63 @@ class _ArticleState extends State<Article> {
   }
 
   void _navigateToArticleDetail() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder:
-            (context, animation, secondaryAnimation) =>
-                Articledetail(id: "123"),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
+    // 检查文章ID是否存在
+    if (widget.articleData == null || widget.articleData['id'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("错误: 文章ID不存在"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      print("错误: 文章ID不存在，无法跳转到详情页");
+      return;
+    }
 
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
+    String articleId = "${widget.articleData['id']}";
 
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
+    // 使用SnackBar直接在界面上显示消息
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("跳转到文章ID: $articleId"),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.blue,
       ),
     );
+
+    print("======= 即将跳转文章 =======");
+    print("文章ID: $articleId");
+    print("1111111111111111");
+
+    // 延迟跳转，确保调试信息先显示
+    Future.delayed(Duration(milliseconds: 300), () {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  Articledetail(id: articleId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
+
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
+
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        ),
+      ).then((_) {
+        // 导航返回后打印信息
+        print("从文章详情页返回");
+      });
+    });
   }
 
   @override
@@ -161,7 +195,7 @@ class _ArticleState extends State<Article> {
                                 child: Row(
                                   children: [
                                     Text(
-                                      "五分钟以前",
+                                      "${widget.articleData['uptonowTime']}",
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontFamily: "Inter-Regular",
