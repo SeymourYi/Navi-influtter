@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../utils/mydio.dart';
+import 'dart:io';
 
 class PostService {
   // 发布普通文章
@@ -8,15 +9,27 @@ class PostService {
     required int userId,
     required String username,
     required int categoryId,
+    File? imageFile,
   }) async {
     try {
       // 创建FormData对象
-      FormData formData = FormData.fromMap({
+      Map<String, dynamic> formMap = {
         'content': content,
         'createUserId': userId,
         'categoryId': categoryId,
         'username': username,
-      });
+      };
+
+      // 如果有图片文件，添加到表单数据中
+      if (imageFile != null) {
+        String fileName = imageFile.path.split('/').last;
+        formMap['file'] = await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        );
+      }
+
+      FormData formData = FormData.fromMap(formMap);
 
       // 发送请求
       var response = await HttpClient.dio.post("/article", data: formData);

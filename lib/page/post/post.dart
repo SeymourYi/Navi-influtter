@@ -637,6 +637,7 @@ class _PostPageState extends State<PostPage> {
         userId: _userInfo!['id'],
         username: _userInfo!['username'],
         categoryId: categoryId,
+        imageFile: _selectedImage, // 传递选择的图片文件
       );
 
       // 发布成功后返回上一页
