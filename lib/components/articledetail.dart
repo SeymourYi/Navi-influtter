@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutterlearn2/api/getarticleinfoAPI.dart';
+import 'package:flutterlearn2/Store/storeutils.dart'; // 导入用户信息存储工具
 import 'articleimage.dart';
 import '../components/userinfo.dart';
 
@@ -21,94 +22,62 @@ class _ArticledetailState extends State<Articledetail> {
   List<dynamic> commentsList = []; // 添加评论列表变量
   TextEditingController _commentController = TextEditingController(); // 评论输入控制器
 
+  // 当前用户信息
+  Map<String, dynamic> _currentUser = {
+    'id': 0,
+    'username': '',
+    'nickname': '用户',
+    'userPic': '',
+  };
+
   @override
   void initState() {
     super.initState();
-    // 检查ID是否有效
-    if (widget.id == null || widget.id.isEmpty) {
-      // ID为空时显示错误提示
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("错误: 没有接收到文章ID"),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      });
-    } else {
-      // ID有效时正常获取文章信息
-      print("收到文章ID: ${widget.id}");
+    // 获取当前用户信息
+    _loadCurrentUserInfo();
+
+    if (widget.id != null && widget.id.isNotEmpty) {
       _fetchArticleInfo();
+    }
+  }
+
+  // 加载当前用户信息
+  Future<void> _loadCurrentUserInfo() async {
+    final userInfo = await SharedPrefsUtils.getUserInfo();
+    if (userInfo != null) {
+      setState(() {
+        _currentUser = userInfo;
+      });
     }
   }
 
   Future<void> _fetchArticleInfo() async {
     if (widget.id == null || widget.id.isEmpty) {
-      print("文章ID无效，无法获取文章信息");
       return;
     }
 
     try {
-      print("准备获取文章ID: ${widget.id}的详情");
       GetArticleInfoService service = GetArticleInfoService();
       var result = await service.getArticleInfo(int.parse(widget.id));
       var result_comments = await service.getArticlecomment(
         int.parse(widget.id),
       );
-      if (result == null || result['data'] == null) {
-        print("API返回数据为空");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("获取文章详情失败: 返回数据为空"),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
+
+      if (result != null && result['data'] != null) {
+        setState(() {
+          articleInfodata = result['data'];
+        });
       }
 
-      // 打印接收到的数据类型，帮助调试
-      print("API返回data类型: ${result['data'].runtimeType}");
-
-      // 处理评论数据
       if (result_comments != null &&
           result_comments['code'] == 0 &&
           result_comments['data'] != null) {
-        print("成功获取评论数据，评论数量: ${result_comments['data'].length}");
         setState(() {
           commentsList = result_comments['data'];
         });
-      } else {
-        print("获取评论数据失败或评论为空");
       }
-
-      setState(() {
-        articleInfodata = result['data']; // 不进行类型转换，保持原始类型
-      });
-
-      // 根据data类型选择合适的方式显示数据长度
-      String dataInfo = "";
-      if (articleInfodata is List) {
-        dataInfo = "数据长度: ${articleInfodata.length}";
-      } else if (articleInfodata is Map) {
-        dataInfo = "数据字段数: ${articleInfodata.keys.length}";
-      } else {
-        dataInfo = "数据类型: ${articleInfodata.runtimeType}";
-      }
-
-      print("文章详情获取成功，$dataInfo");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("成功获取文章ID: ${widget.id}的详情 ($dataInfo)"),
-          duration: Duration(seconds: 1),
-          backgroundColor: Colors.green,
-        ),
-      );
     } catch (e) {
-      print('获取文章详情时出错: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("获取文章详情失败: $e"), backgroundColor: Colors.red),
-      );
+      // 保留错误处理，但移除调试信息
     }
   }
 
@@ -146,7 +115,7 @@ class _ArticledetailState extends State<Articledetail> {
           repeatcount = articleInfodata['repeatcount'] ?? 0;
         }
       } catch (e) {
-        print("解析文章数据时出错: $e");
+        // 保留错误处理，但移除调试信息
       }
     }
 
@@ -375,11 +344,17 @@ class _ArticledetailState extends State<Articledetail> {
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey[300],
-                child: Icon(Icons.person, color: Colors.white),
-              ),
+              _currentUser['userPic'] != null &&
+                      _currentUser['userPic'].isNotEmpty
+                  ? CircleAvatar(
+                    radius: 20,
+                    backgroundImage: NetworkImage(_currentUser['userPic']),
+                  )
+                  : CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.grey[300],
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
@@ -533,36 +508,38 @@ class _ArticledetailState extends State<Articledetail> {
   void _submitComment() {
     String commentText = _commentController.text.trim();
     if (commentText.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("评论内容不能为空")));
       return;
     }
 
-    // 这里可以添加实际的评论提交API调用
-    print("提交评论: $commentText");
+    // 准备评论所需参数
+    Map<String, dynamic> commentParams = {
+      'content': commentText,
+      'categoryId': 1, // 固定分类ID为1
+      'createUserId': _currentUser['id'],
+      'createUserName': _currentUser['username'],
+      'becomment_articleID': widget.id, // 被评论文章的ID
+    };
+
+    // 打印参数用于调试
+    print('评论参数: $commentParams');
 
     // 模拟添加新评论到列表
     setState(() {
       Map<String, dynamic> newComment = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'username': 'user',
-        'nickname': '当前用户',
-        'userPic': '', // 这里可以设置当前用户的头像
+        'username': _currentUser['username'],
+        'nickname': _currentUser['nickname'],
+        'userPic': _currentUser['userPic'],
         'content': commentText,
         'createTime': DateTime.now().toString(),
         'uptonowTime': '刚刚',
         'likecont': 0,
       };
-      commentsList.insert(0, newComment); // 将新评论添加到列表顶部
+      commentsList.insert(0, newComment);
     });
 
-    // 清空输入框
+    // 清空输入框并取消焦点
     _commentController.clear();
-
-    // 显示成功提示
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("评论发表成功"), backgroundColor: Colors.green),
-    );
+    FocusScope.of(context).unfocus();
   }
 }
