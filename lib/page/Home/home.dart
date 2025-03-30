@@ -4,6 +4,7 @@ import 'package:flutterlearn2/components/like_notification_list.dart';
 import 'package:flutterlearn2/models/like_notification.dart';
 import 'package:flutterlearn2/page/Home/articlelist.dart';
 import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
+import 'package:flutterlearn2/page/chat/chat.dart';
 import 'package:flutterlearn2/page/edit/editpage.dart';
 import 'package:flutterlearn2/page/friends/friendspage.dart';
 import 'package:flutterlearn2/page/post/post.dart';
@@ -434,7 +435,7 @@ class _MyHomeState extends State<MyHome> {
     }
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -507,6 +508,7 @@ class _MyHomeState extends State<MyHome> {
               tabs: [
                 Tab(text: "主页", icon: Icon(Icons.home, size: 20)),
                 Tab(text: "消息", icon: Icon(Icons.email, size: 20)),
+                Tab(text: "聊天", icon: Icon(Icons.chat, size: 20)),
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,
@@ -528,6 +530,7 @@ class _MyHomeState extends State<MyHome> {
                 ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
               },
             ),
+            chatpage(),
           ],
         ),
         floatingActionButton: FloatingActionButton(
