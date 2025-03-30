@@ -4,7 +4,7 @@ import 'package:flutterlearn2/components/like_notification_list.dart';
 import 'package:flutterlearn2/models/like_notification.dart';
 import 'package:flutterlearn2/page/Home/articlelist.dart';
 import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
-import 'package:flutterlearn2/page/chat/chat.dart';
+import 'package:flutterlearn2/page/chat/screen/chat_screen.dart';
 import 'package:flutterlearn2/page/edit/editpage.dart';
 import 'package:flutterlearn2/page/friends/friendspage.dart';
 import 'package:flutterlearn2/page/post/post.dart';
@@ -13,7 +13,7 @@ import 'package:flutterlearn2/page/login/login.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-// 创建一个单独的抽屉组件，以便能够缓存起来
+// PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {
   final Map<String, dynamic>? userInfo;
   final VoidCallback onRefreshUserInfo;
@@ -41,7 +41,6 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
   @override
   void didUpdateWidget(PersistentDrawer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 当用户信息更新时，重新初始化图片
     if (oldWidget.userInfo != widget.userInfo) {
       _initImageProviders();
     }
@@ -49,21 +48,19 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
 
   void _initImageProviders() {
     if (widget.userInfo != null) {
-      // 初始化背景图片提供者
       if (widget.userInfo!['bgImg'].isNotEmpty) {
         _backgroundImageProvider = CachedNetworkImageProvider(
           widget.userInfo!['bgImg'],
-          maxWidth: 800, // 设置最大宽度以优化内存使用
+          maxWidth: 800,
         );
       } else {
         _backgroundImageProvider = null;
       }
 
-      // 初始化头像图片提供者
       if (widget.userInfo!['userPic'].isNotEmpty) {
         _avatarImageProvider = CachedNetworkImageProvider(
           widget.userInfo!['userPic'],
-          maxWidth: 200, // 设置最大宽度以优化内存使用
+          maxWidth: 200,
         );
       } else {
         _avatarImageProvider = null;
@@ -225,7 +222,6 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                 ),
               );
 
-              // 当从EditProfilePage返回时刷新用户信息
               if (result == true || result == null) {
                 widget.onRefreshUserInfo();
               }
@@ -348,8 +344,8 @@ class MyHome extends StatefulWidget {
 class _MyHomeState extends State<MyHome> {
   Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
-  // 创建一个持久化的drawer实例
   PersistentDrawer? _persistentDrawer;
+  int _currentTabIndex = 0; // Track current tab index
 
   final List<LikeNotification> notifications = [
     LikeNotification(
@@ -365,7 +361,6 @@ class _MyHomeState extends State<MyHome> {
       ),
       likedAt: DateTime(2023, 7, 20, 14, 30),
     ),
-    // 可以添加更多数据...
   ];
 
   @override
@@ -374,7 +369,6 @@ class _MyHomeState extends State<MyHome> {
     _loadUserInfo();
   }
 
-  // 添加didChangeDependencies方法，处理返回到这个页面时刷新数据
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -387,7 +381,6 @@ class _MyHomeState extends State<MyHome> {
       setState(() {
         _userInfo = userInfo;
         _isLoading = false;
-        // 初始化持久化drawer
         if (_persistentDrawer == null) {
           _persistentDrawer = PersistentDrawer(
             userInfo: _userInfo,
@@ -403,14 +396,12 @@ class _MyHomeState extends State<MyHome> {
     }
   }
 
-  // 添加一个方法来刷新用户信息，但不显示加载指示器
   Future<void> _refreshUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
       if (mounted) {
         setState(() {
           _userInfo = userInfo;
-          // 当用户信息更新时，更新drawer
           if (_persistentDrawer != null) {
             _persistentDrawer = PersistentDrawer(
               userInfo: _userInfo,
@@ -426,7 +417,6 @@ class _MyHomeState extends State<MyHome> {
 
   @override
   Widget build(BuildContext context) {
-    // 确保在构建前已初始化drawer
     if (_persistentDrawer == null && !_isLoading && _userInfo != null) {
       _persistentDrawer = PersistentDrawer(
         userInfo: _userInfo,
@@ -505,6 +495,11 @@ class _MyHomeState extends State<MyHome> {
           child: SizedBox(
             height: 50,
             child: TabBar(
+              onTap: (index) {
+                setState(() {
+                  _currentTabIndex = index; // Update current tab index
+                });
+              },
               tabs: [
                 Tab(text: "主页", icon: Icon(Icons.home, size: 20)),
                 Tab(text: "消息", icon: Icon(Icons.email, size: 20)),
@@ -530,39 +525,44 @@ class _MyHomeState extends State<MyHome> {
                 ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
               },
             ),
-            chatpage(),
+            const ChatScreen(),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder:
-                    (context, animation, secondaryAnimation) => PostPage(),
-                transitionsBuilder: (
-                  context,
-                  animation,
-                  secondaryAnimation,
-                  child,
-                ) {
-                  const begin = Offset(0.0, 1.0);
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  var tween = Tween(
-                    begin: begin,
-                    end: end,
-                  ).chain(CurveTween(curve: curve));
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
-              ),
-            );
-          },
-          child: Icon(Icons.add),
-        ),
+        floatingActionButton:
+            _currentTabIndex ==
+                    0 // Only show FAB on home tab
+                ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                PostPage(),
+                        transitionsBuilder: (
+                          context,
+                          animation,
+                          secondaryAnimation,
+                          child,
+                        ) {
+                          const begin = Offset(0.0, 1.0);
+                          const end = Offset.zero;
+                          const curve = Curves.ease;
+                          var tween = Tween(
+                            begin: begin,
+                            end: end,
+                          ).chain(CurveTween(curve: curve));
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: Icon(Icons.add),
+                )
+                : null,
       ),
     );
   }
