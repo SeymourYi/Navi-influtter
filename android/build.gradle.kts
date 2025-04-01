@@ -1,10 +1,26 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://maven.google.com") }
+      
+    }
+    
+    dependencies {
+        classpath("com.google.gms:google-services:4.3.4")
+     
+        classpath("cn.jiguang.sdk.plugin:xiaomi:5.6.0")
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://maven.google.com") }
+      
     }
 }
-
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 

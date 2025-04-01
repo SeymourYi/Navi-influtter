@@ -28,6 +28,12 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+  manifestPlaceholders["JPUSH_PKGNAME"] = "com.example.flutterlearn2"
+        manifestPlaceholders["JPUSH_APPKEY"] = "37bb58f488aa4f8dd7e43516" // NOTE: JPush 上注册的包名对应的 Appkey.
+        manifestPlaceholders["JPUSH_CHANNEL"] = "flutterlearn2" //暂时填写默认值即可.
+  manifestPlaceholders["XIAOMI_APPID"] = "2882303761520401700" //暂时填写默认值即可.
+  manifestPlaceholders["XIAOMI_APPKEY"] = "5912040133700" //暂时填写默认值即可.
+
     }
 
     buildTypes {
