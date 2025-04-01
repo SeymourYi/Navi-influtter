@@ -3,6 +3,7 @@ import 'package:flutterlearn2/page/Home/home.dart';
 import '../../api/loginAPI.dart';
 import '../../Store/storeutils.dart';
 import '../../api/userAPI.dart';
+import '../../utils/mydio.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -35,46 +36,87 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _getToken() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showErrorDialog('请输入手机号和密码');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    LoginService loginservice = LoginService();
-    UserService userService = UserService();
     try {
-      var response = await loginservice.Login(
+      // 1. 登录获取token
+      final loginService = LoginService();
+      final response = await loginService.Login(
         _emailController.text,
         _passwordController.text,
       );
-      if (response['code'] == 0) {
-        // 显示登录成功提示
-        _showSuccessDialog();
 
-        SharedPrefsUtils.saveToken(response['data']);
-        var aaaa = await userService.getUserinfo();
-        SharedPrefsUtils.saveUserInfo(aaaa['data']);
+      print('登录响应: $response'); // 调试日志
 
-        // 延迟跳转，让用户看到成功提示
-        Future.delayed(Duration(milliseconds: 1200), () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => MyHome()),
-            (route) => false,
+      if (response['code'] == 0 && response['data'] != null) {
+        // 2. 保存token
+        final token = response['data'].toString();
+        print('保存token: $token'); // 调试日志
+        await SharedPrefsUtils.saveToken(token);
+
+        // 3. 重新初始化 HttpClient 以使用新token
+        await HttpClient.init();
+
+        // 4. 获取用户信息
+        final userService = UserService();
+        final userInfoResponse = await userService.getUserinfo();
+
+        print('用户信息响应: $userInfoResponse'); // 调试日志
+
+        if (userInfoResponse['code'] == 0 && userInfoResponse['data'] != null) {
+          // 5. 保存用户信息
+          await SharedPrefsUtils.saveUserInfo(userInfoResponse['data']);
+
+          // 6. 显示成功提示并设置登录状态
+          await SharedPrefsUtils.setBool('is_logged_in', true);
+
+          if (!mounted) return;
+
+          // 7. 显示成功提示
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('登录成功'),
+              duration: Duration(seconds: 1),
+            ),
           );
-        });
+
+          // 8. 使用替换路由而不是移除所有路由
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MyHome()),
+            );
+          }
+        } else {
+          throw Exception(userInfoResponse['msg'] ?? '获取用户信息失败');
+        }
       } else {
-        // 显示错误信息
-        _showErrorDialog(response['msg'] ?? '登录失败，请稍后重试');
-        print(response['msg']);
+        throw Exception(response['msg'] ?? '登录失败');
       }
     } catch (e) {
-      // 显示网络错误
-      _showErrorDialog('网络错误，请检查网络连接');
-      print("e");
+      print('登录错误: $e'); // 调试日志
+      // 清理可能保存的token
+      await SharedPrefsUtils.clearToken();
+      if (mounted) {
+        _showErrorDialog(
+          e.toString().contains('Exception:')
+              ? e.toString().split('Exception: ')[1]
+              : '网络错误，请检查网络连接',
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../config/app_config.dart';
 import '../screen/role_selection_screen.dart';
+import 'package:http/http.dart' as http;
 
 // 私聊会话类
 class PrivateChat {
@@ -438,5 +439,73 @@ class ChatService {
 
   String _getCurrentTime() {
     return DateFormat('HH:mm:ss').format(DateTime.now());
+  }
+
+  // 获取历史聊天记录
+  Future<void> loadHistoricalMessages(String otherUserId) async {
+    if (!isConnected) return;
+
+    try {
+      // 构建API URL
+      final url =
+          '${AppConfig.httpUrl}/api/messages/private?userId1=${character.id}&userId2=$otherUserId';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        List<dynamic> messagesJson = jsonDecode(response.body);
+        List<ChatMessage> messages =
+            messagesJson.map((json) => ChatMessage.fromJson(json)).toList();
+
+        // 将历史消息添加到私聊
+        if (!privateChats.containsKey(otherUserId)) {
+          final user = onlineUsers.firstWhere(
+            (u) => u.id == otherUserId,
+            orElse:
+                () => CharacterRole(
+                  id: otherUserId,
+                  name: otherUserId,
+                  description: '',
+                  imageAsset: '',
+                  color: Colors.grey,
+                ),
+          );
+
+          privateChats[otherUserId] = PrivateChat(
+            userId: otherUserId,
+            userName: user.name,
+            userRole: user.name,
+          );
+        }
+
+        // 清除现有消息并添加历史消息
+        privateChats[otherUserId]!.messages.clear();
+
+        // 按时间排序
+        messages.sort((a, b) {
+          if (a.time.isEmpty || b.time.isEmpty) return 0;
+          return a.time.compareTo(b.time);
+        });
+
+        privateChats[otherUserId]!.messages.addAll(messages);
+
+        // 通知消息已加载
+        for (var message in messages) {
+          onMessageReceived(message);
+        }
+
+        print('已加载 ${messages.length} 条历史消息');
+      } else {
+        print('获取历史消息失败: ${response.statusCode}');
+        if (onError != null) {
+          onError!('获取历史消息失败: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print('获取历史消息错误: $e');
+      if (onError != null) {
+        onError!('获取历史消息错误: $e');
+      }
+    }
   }
 }

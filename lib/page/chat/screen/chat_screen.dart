@@ -3,6 +3,32 @@ import '../models/chat_message.dart';
 import '../services/chat_service.dart';
 import '../config/app_config.dart';
 import 'role_selection_screen.dart';
+import '../../../api/getfriendlist.dart';
+import '../../../Store/storeutils.dart';
+
+// Friend类定义
+class Friend {
+  final String name;
+  final String username;
+  final String avatarUrl;
+  final String? bio;
+
+  Friend({
+    required this.name,
+    required this.username,
+    required this.avatarUrl,
+    this.bio,
+  });
+
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
+      name: json['nickname'] ?? '',
+      username: json['username'] ?? '',
+      avatarUrl: json['userPic'] ?? 'https://via.placeholder.com/150',
+      bio: json['bio'] ?? '',
+    );
+  }
+}
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -11,7 +37,11 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // 保持页面状态
+
   final TextEditingController _messageController = TextEditingController();
   CharacterRole? _selectedCharacter;
   CharacterRole? _chatWithCharacter; // 当前选择聊天的角色
@@ -20,15 +50,49 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isConnecting = false;
   String _errorMessage = "";
   List<CharacterRole> _onlineCharacters = [];
+  List<Friend> _friends = [];
+  bool _isLoadingFriends = true;
   final ScrollController _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    _loadFriends();
+  }
+
+  Future<void> _loadFriends() async {
+    try {
+      GetFriendListService service = GetFriendListService();
+      var username = await SharedPrefsUtils.getUsername();
+      var result = await service.GetFriendList(username.toString());
+
+      if (result['code'] == 0 && result['data'] is List) {
+        setState(() {
+          _friends =
+              (result['data'] as List)
+                  .map((item) => Friend.fromJson(item))
+                  .toList();
+          _isLoadingFriends = false;
+        });
+      }
+    } catch (e) {
+      print('加载好友列表失败: $e');
+      setState(() {
+        _isLoadingFriends = false;
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  void _ensureDisconnect() {
     if (_isConnected) {
       _chatService.disconnect();
     }
-    _messageController.dispose();
-    super.dispose();
   }
 
   void _handleCharacterSelected(CharacterRole character) {
@@ -111,6 +175,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
 
     final content = _messageController.text;
+    // 无论是否在线都发送消息
     _chatService.sendPrivateMessage(_chatWithCharacter!.id, content);
     _messageController.clear();
 
@@ -125,9 +190,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _chatWithCharacter = character;
     });
 
-    // 滚动到消息列表底部
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
+    // 加载历史消息
+    _chatService.loadHistoricalMessages(character.id).then((_) {
+      // 滚动到消息列表底部
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
     });
   }
 
@@ -143,13 +211,18 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用super.build
+
     if (_selectedCharacter == null) {
       return RoleSelectionScreen(onRoleSelected: _handleCharacterSelected);
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${_selectedCharacter!.name}的聊天'),
+        title:
+            _chatWithCharacter == null
+                ? Text('${_selectedCharacter!.name}的聊天')
+                : Text('与 ${_chatWithCharacter!.name} 聊天'),
         backgroundColor: _selectedCharacter!.color,
         actions:
             _isConnected
@@ -162,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () {
-                      _chatService.disconnect();
+                      _ensureDisconnect();
                       setState(() {
                         _isConnected = false;
                         _errorMessage = "";
@@ -181,7 +254,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
       ),
-      body: _isConnected ? _buildChatScreen() : _buildLoadingScreen(),
+      body:
+          _isConnected
+              ? (_chatWithCharacter == null
+                  ? _buildUserSelectionScreen()
+                  : _buildChatScreen())
+              : _buildLoadingScreen(),
     );
   }
 
@@ -266,7 +344,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    _chatService.disconnect();
+                                    _ensureDisconnect();
                                     setState(() {
                                       _isConnected = false;
                                       _errorMessage = "";
@@ -350,204 +428,277 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildChatScreen() {
-    return Row(
+  Widget _buildUserSelectionScreen() {
+    return Column(
       children: [
-        // 聊天区域
-        Expanded(
-          flex: 3,
-          child: Column(
-            children: [
-              // 顶部状态栏 - 显示当前聊天状态
-              Container(
-                padding: const EdgeInsets.all(8.0),
-                color: Colors.grey.shade200,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor:
-                          _chatWithCharacter?.color.withOpacity(0.3) ??
-                          Colors.grey,
-                      radius: 15,
-                      child: Text(
-                        _chatWithCharacter?.name.substring(0, 1) ?? '?',
-                        style: TextStyle(
-                          color: _chatWithCharacter?.color ?? Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _chatWithCharacter == null
-                          ? '选择一个角色开始私聊'
-                          : '与 ${_chatWithCharacter!.name} 的私聊',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const Spacer(),
-                    // 显示当前用户角色
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _selectedCharacter!.color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _selectedCharacter!.color,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(width: 4),
-                          Text(
-                            _selectedCharacter!.name,
-                            style: TextStyle(
-                              color: _selectedCharacter!.color,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 消息区域
-              Expanded(child: _buildMessageList()),
-
-              // 输入区域
-              _chatWithCharacter == null
-                  ? _buildSelectCharacterPrompt()
-                  : _buildMessageInput(),
-            ],
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            '选择一个好友开始聊天',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: _selectedCharacter!.color,
+            ),
           ),
         ),
+        if (_isLoadingFriends)
+          const Center(child: CircularProgressIndicator())
+        else if (_friends.isEmpty)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  '你还没有关注任何人',
+                  style: TextStyle(color: Colors.grey, fontSize: 18),
+                ),
+              ],
+            ),
+          )
+        else
+          Expanded(
+            child: ListView.builder(
+              itemCount: _friends.length,
+              itemBuilder: (context, index) {
+                final friend = _friends[index];
+                final isOnline = _onlineCharacters.any(
+                  (char) => char.id == friend.username,
+                );
 
-        // 在线角色列表
-        SizedBox(width: 200, child: _buildOnlineCharactersList()),
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    leading: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundImage: NetworkImage(friend.avatarUrl),
+                        ),
+                        if (isOnline)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    title: Row(
+                      children: [
+                        Text(
+                          friend.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isOnline)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              '在线',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              '离线',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(
+                          friend.bio ?? '点击开始聊天',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      // 创建一个CharacterRole对象用于聊天
+                      final chatRole = CharacterRole(
+                        id: friend.username,
+                        name: friend.name,
+                        description: friend.bio ?? '',
+                        imageAsset: friend.avatarUrl,
+                        color: isOnline ? Colors.green : Colors.grey,
+                      );
+                      _selectCharacterToChat(chatRole);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            '提示：离线好友将在上线后收到消息',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSelectCharacterPrompt() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      alignment: Alignment.center,
-      child: const Text(
-        '请从右侧列表选择一个角色开始私聊',
-        style: TextStyle(fontSize: 16, color: Colors.grey),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildMessageList() {
-    if (_chatWithCharacter == null) {
-      return const Center(child: Text('选择一个角色开始聊天'));
-    }
-
+  Widget _buildChatScreen() {
     // 获取与当前选中角色的私聊消息
     final messages = _chatService.getPrivateChatMessages(
       _chatWithCharacter!.id,
     );
 
-    return messages.isEmpty
-        ? Center(
-          child: Text(
-            '与 ${_chatWithCharacter!.name} 的聊天记录为空',
-            style: const TextStyle(color: Colors.grey),
-          ),
-        )
-        : ListView.builder(
-          controller: _scrollController,
-          itemCount: messages.length,
+    return Column(
+      children: [
+        // 头部状态栏 - 显示当前聊天状态
+        Container(
           padding: const EdgeInsets.all(8.0),
-          itemBuilder: (context, index) {
-            final message = messages[index];
-            return _buildMessageItem(message);
-          },
-        );
-  }
-
-  Widget _buildOnlineCharactersList() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: Colors.grey.shade300)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12.0),
-            color: _selectedCharacter?.color ?? Colors.blue,
-            width: double.infinity,
-            child: const Text(
-              '在线角色',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          color: Colors.grey.shade200,
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: _chatWithCharacter!.color.withOpacity(0.3),
+                radius: 15,
+                child: Text(
+                  _chatWithCharacter!.name.substring(0, 1),
+                  style: TextStyle(
+                    color: _chatWithCharacter!.color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child:
-                _onlineCharacters.isEmpty
-                    ? const Center(child: Text('没有其他在线角色'))
-                    : ListView.builder(
-                      itemCount: _onlineCharacters.length,
-                      itemBuilder: (context, index) {
-                        final character = _onlineCharacters[index];
-                        final isSelected =
-                            character.id == _chatWithCharacter?.id;
-
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: character.color.withOpacity(0.3),
-                            child: Text(
-                              character.name.substring(0, 1),
-                              style: TextStyle(
-                                color: character.color,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            character.name,
-                            style: TextStyle(
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                              color: isSelected ? character.color : null,
-                            ),
-                          ),
-                          subtitle: Text(
-                            character.description.isEmpty
-                                ? '点击开始私聊'
-                                : character.description,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          onTap: () => _selectCharacterToChat(character),
-                          tileColor:
-                              isSelected
-                                  ? character.color.withOpacity(0.1)
-                                  : null,
-                        );
-                      },
+              const SizedBox(width: 8),
+              Text(
+                '与 ${_chatWithCharacter!.name} 的私聊',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              // 显示当前用户角色
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _selectedCharacter!.color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _selectedCharacter!.color,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 4),
+                    Text(
+                      _selectedCharacter!.name,
+                      style: TextStyle(
+                        color: _selectedCharacter!.color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.people_outline, size: 20),
+                onPressed: () {
+                  setState(() {
+                    _chatWithCharacter = null;
+                  });
+                },
+                tooltip: '返回用户列表',
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        // 消息区域
+        Expanded(
+          child:
+              messages.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '与 ${_chatWithCharacter!.name} 的聊天记录为空',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        const CircularProgressIndicator(), // 加载指示器
+                        const SizedBox(height: 8),
+                        const Text(
+                          '正在加载历史消息...',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.builder(
+                    controller: _scrollController,
+                    itemCount: messages.length,
+                    padding: const EdgeInsets.all(8.0),
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      return _buildMessageItem(message);
+                    },
+                  ),
+        ),
+
+        // 输入区域
+        _buildMessageInput(),
+      ],
     );
   }
 
@@ -658,6 +809,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
+    final isOnline = _onlineCharacters.any(
+      (char) => char.id == _chatWithCharacter!.id,
+    );
+
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
@@ -666,24 +821,39 @@ class _ChatScreenState extends State<ChatScreen> {
           BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 2),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: '发送消息给 ${_chatWithCharacter!.name}...',
-                border: const OutlineInputBorder(),
-                fillColor: _chatWithCharacter!.color.withOpacity(0.05),
-                filled: true,
+          if (!isOnline)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              width: double.infinity,
+              color: Colors.grey.shade100,
+              child: Text(
+                '对方当前离线，消息将在对方上线后收到',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                textAlign: TextAlign.center,
               ),
-              onSubmitted: (_) => _sendMessage(),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: _sendMessage,
-            color: _chatWithCharacter!.color,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: '发送消息给 ${_chatWithCharacter!.name}...',
+                    border: const OutlineInputBorder(),
+                    fillColor: _chatWithCharacter!.color.withOpacity(0.05),
+                    filled: true,
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: _sendMessage,
+                color: _chatWithCharacter!.color,
+              ),
+            ],
           ),
         ],
       ),

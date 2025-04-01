@@ -1,16 +1,25 @@
 import 'package:dio/dio.dart';
+import '../Store/storeutils.dart';
 
 class HttpClient {
   static const String baseUrl = "http://122.51.93.212:5361";
-  static Dio dio = Dio(BaseOptions(baseUrl: baseUrl));
-  static void init() {
+  static late Dio dio;
+
+  static Future<void> init() async {
+    dio = Dio(BaseOptions(baseUrl: baseUrl));
+
     // 请求拦截器
     dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           // 添加公共的请求头，如 Authorization
-          options.headers["Authorization"] =
-              "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJjbGFpbXMiOnsicGhvbmVOdW1iZXIiOiIxOTEzNzA1NjE2NSIsImlkIjoxLCJ1c2VybmFtZSI6IjExMTEifX0.5yWOXiEDh8McMC49fmnczQBbzgmOFm_6hYRwqPwFdAs";
+          final token = await SharedPrefsUtils.getToken();
+          if (token != null && token.isNotEmpty) {
+            options.headers["Authorization"] = token;
+            print('添加token: $token'); // 调试日志
+          } else {
+            print('无token'); // 调试日志
+          }
           return handler.next(options);
         },
       ),
@@ -20,11 +29,17 @@ class HttpClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onResponse: (response, handler) {
-          // 可以在这里对返回的数据进行统一处理
-          return handler.next(response..data["data"]);
+          print('响应状态码: ${response.statusCode}'); // 调试日志
+          print('响应数据: ${response.data}'); // 调试日志
+          return handler.next(response);
         },
         onError: (DioException e, handler) {
-          // 可以在这里对错误进行统一处理
+          print('请求错误: ${e.message}'); // 调试日志
+          print('错误响应: ${e.response?.data}'); // 调试日志
+          if (e.response?.statusCode == 401) {
+            // token失效，清除本地token
+            SharedPrefsUtils.clearToken();
+          }
           return handler.next(e);
         },
       ),

@@ -5,10 +5,10 @@ import 'package:flutterlearn2/page/login/login.dart';
 import 'package:flutterlearn2/utils/mydio.dart';
 import '../../Store/storeutils.dart';
 
-void main(List<String> args) {
+void main(List<String> args) async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
-  HttpClient.init();
+  await HttpClient.init();
   runApp(MyApp());
 }
 
