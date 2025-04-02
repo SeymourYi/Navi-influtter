@@ -12,6 +12,8 @@ import 'package:flutterlearn2/page/search/search.dart';
 import 'package:flutterlearn2/page/login/login.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:jpush_flutter/jpush_flutter.dart';
+import '../../utils/myjpush.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {
@@ -378,6 +380,7 @@ class _MyHomeState extends State<MyHome> {
   Future<void> _loadUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
+      Myjpush().initPlatformState(userInfo!['username']);
       setState(() {
         _userInfo = userInfo;
         _isLoading = false;
@@ -399,6 +402,7 @@ class _MyHomeState extends State<MyHome> {
   Future<void> _refreshUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
+      Myjpush().initPlatformState(userInfo!['username']);
       if (mounted) {
         setState(() {
           _userInfo = userInfo;

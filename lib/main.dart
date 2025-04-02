@@ -37,7 +37,6 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _checkToken();
-    initPlatformState();
   }
 
   Future<void> _checkToken() async {
@@ -55,77 +54,6 @@ class _MyAppState extends State<MyApp> {
         loginstate = 1; // 到主页
       }
     });
-  }
-
-  Future<void> initPlatformState() async {
-    try {
-      jpush.setup(
-        appKey: "37bb58f488aa4f8dd7e43516",
-        channel: "flutterlearn2",
-        production: false,
-        debug: true, //是否打印debug日志
-      );
-
-      // 添加通知回调
-      jpush.addEventHandler(
-        onReceiveNotification: (Map<String, dynamic> message) async {
-          print("收到通知: $message");
-          // 通知已经由极光SDK自动处理并显示在通知栏
-        },
-        onOpenNotification: (Map<String, dynamic> message) async {
-          print("点击通知: $message");
-
-          // 使用 navigatorKey 进行导航
-          MyApp.navigatorKey.currentState?.push(
-            PageRouteBuilder(
-              pageBuilder:
-                  (context, animation, secondaryAnimation) =>
-                      Articledetail(id: "530", autoFocusComment: false),
-              transitionsBuilder: (
-                context,
-                animation,
-                secondaryAnimation,
-                child,
-              ) {
-                const begin = Offset(1.0, 0.0);
-                const end = Offset.zero;
-                const curve = Curves.ease;
-
-                var tween = Tween(
-                  begin: begin,
-                  end: end,
-                ).chain(CurveTween(curve: curve));
-
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
-                );
-              },
-            ),
-          );
-        },
-        onReceiveMessage: (Map<String, dynamic> message) async {
-          print("收到自定义消息: $message");
-        },
-        onReceiveNotificationAuthorization: (
-          Map<String, dynamic> message,
-        ) async {
-          print("通知授权状态改变: $message");
-        },
-      );
-
-      // 申请通知权限
-      jpush.applyPushAuthority(
-        new NotificationSettingsIOS(sound: true, alert: true, badge: true),
-      );
-
-      // 获取注册ID
-      jpush.getRegistrationID().then((rid) {
-        print("注册成功，极光推送 Registration ID: $rid");
-      });
-    } catch (e) {
-      print("极光推送初始化失败: $e");
-    }
   }
 
   @override
