@@ -5,6 +5,8 @@ import '../config/app_config.dart';
 import 'role_selection_screen.dart';
 import '../../../api/getfriendlist.dart';
 import '../../../Store/storeutils.dart';
+import 'dart:async';
+import 'package:intl/intl.dart';
 
 // Friend类定义
 class Friend {
@@ -53,6 +55,10 @@ class _ChatScreenState extends State<ChatScreen>
   List<Friend> _friends = [];
   bool _isLoadingFriends = true;
   final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMessages = true;
+
+  // 添加连接状态检查定时器
+  Timer? _connectionCheckTimer;
 
   @override
   void initState() {
@@ -86,7 +92,44 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void dispose() {
     _messageController.dispose();
+    _stopConnectionCheck();
+    _ensureDisconnect();
     super.dispose();
+  }
+
+  // 启动连接状态检查
+  void _startConnectionCheck() {
+    // 停止可能存在的旧定时器
+    _stopConnectionCheck();
+
+    // 每45秒检查一次连接状态
+    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 45), (
+      timer,
+    ) {
+      if (_selectedCharacter != null) {
+        // 检查服务实例是否已经初始化
+        if (_chatService != null) {
+          if (!_chatService.isConnected && _isConnected) {
+            print('检测到连接已断开，尝试重新连接...');
+            setState(() {
+              _isConnected = false;
+              _errorMessage = "连接已断开，正在尝试重新连接...";
+            });
+            // 重新连接
+            _connectToChat();
+          }
+        }
+      } else {
+        // 如果没有选择角色，停止检查
+        _stopConnectionCheck();
+      }
+    });
+  }
+
+  // 停止连接状态检查
+  void _stopConnectionCheck() {
+    _connectionCheckTimer?.cancel();
+    _connectionCheckTimer = null;
   }
 
   void _ensureDisconnect() {
@@ -98,8 +141,12 @@ class _ChatScreenState extends State<ChatScreen>
   void _handleCharacterSelected(CharacterRole character) {
     setState(() {
       _selectedCharacter = character;
+      _isConnected = true; // 立即设置为连接状态
+      _isConnecting = false;
     });
     _connectToChat();
+    // 启动连接检查
+    _startConnectionCheck();
   }
 
   void _connectToChat() {
@@ -118,6 +165,7 @@ class _ChatScreenState extends State<ChatScreen>
       onError: (error) {
         setState(() {
           _errorMessage = error;
+          _isConnected = false; // 连接失败时才更新连接状态
           _isConnecting = false;
         });
       },
@@ -188,15 +236,33 @@ class _ChatScreenState extends State<ChatScreen>
   void _selectCharacterToChat(CharacterRole character) {
     setState(() {
       _chatWithCharacter = character;
+      // 打开加载中状态
+      _isLoadingMessages = true;
     });
 
     // 加载历史消息
-    _chatService.loadHistoricalMessages(character.id).then((_) {
-      // 滚动到消息列表底部
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-      });
-    });
+    _chatService
+        .loadHistoricalMessages(character.id)
+        .then((_) {
+          if (mounted) {
+            setState(() {
+              // 关闭加载中状态
+              _isLoadingMessages = false;
+            });
+            // 滚动到消息列表底部
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
+          }
+        })
+        .catchError((error) {
+          if (mounted) {
+            setState(() {
+              _isLoadingMessages = false;
+              _errorMessage = "加载历史消息失败: $error";
+            });
+          }
+        });
   }
 
   void _scrollToBottom() {
@@ -666,22 +732,34 @@ class _ChatScreenState extends State<ChatScreen>
         // 消息区域
         Expanded(
           child:
-              messages.isEmpty
+              messages.isEmpty || _isLoadingMessages
                   ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '与 ${_chatWithCharacter!.name} 的聊天记录为空',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        if (_isLoadingMessages)
+                          const Text(
+                            '正在加载聊天记录...',
+                            style: TextStyle(color: Colors.grey),
+                          )
+                        else
+                          Text(
+                            '与 ${_chatWithCharacter!.name} 的聊天记录为空',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         const SizedBox(height: 8),
-                        const CircularProgressIndicator(), // 加载指示器
+                        if (_isLoadingMessages)
+                          const CircularProgressIndicator(),
                         const SizedBox(height: 8),
-                        const Text(
-                          '正在加载历史消息...',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
+                        if (_errorMessage.isNotEmpty)
+                          Text(
+                            _errorMessage,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                       ],
                     ),
                   )
@@ -727,6 +805,18 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         ),
       );
+    }
+
+    // 格式化时间显示
+    String formattedTime = message.time;
+    try {
+      if (message.time.length > 8) {
+        // 判断是否是完整时间戳
+        final dateTime = DateFormat('yyyy-MM-dd HH:mm:ss').parse(message.time);
+        formattedTime = DateFormat('MM-dd HH:mm').format(dateTime);
+      }
+    } catch (e) {
+      print('时间格式化错误: ${message.time}, $e');
     }
 
     return Container(
@@ -797,7 +887,7 @@ class _ChatScreenState extends State<ChatScreen>
                 Text(message.content),
                 const SizedBox(height: 4),
                 Text(
-                  message.time,
+                  formattedTime,
                   style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],

@@ -12,8 +12,8 @@ class AppConfig {
 
   // 服务器配置
   // 可以在运行时通过setServerConfig方法修改
-  // static String serverHost = '122.51.93.212'; // 默认服务器IP
-  static String serverHost = '192.168.88.1'; // 默认服务器IP
+  static String serverHost = '122.51.93.212'; // 默认服务器IP
+  // static String serverHost = '192.168.88.1'; // 默认服务器IP
   static int serverPort = 5487; // 默认服务器端口
   static bool enableSockJS = true; // 是否启用SockJS备用连接
 
