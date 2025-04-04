@@ -4,6 +4,8 @@ import 'package:flutterlearn2/api/articleAPI.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutterlearn2/api/userAPI.dart';
+import 'package:flutterlearn2/page/chat/screen/chat_screen.dart';
+import 'package:flutterlearn2/page/chat/screen/role_selection_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -46,6 +48,23 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       print('加载当前用户信息失败: $e');
     }
+  }
+
+  void _navigateToChat() async {
+    if (widget.username == null || _userInfo == null) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ChatScreen(
+              initialChatUsername: widget.username,
+              initialChatName: _userInfo!['nickname'] ?? widget.username,
+              initialChatAvatar: _userInfo!['userPic'] ?? '',
+              initialChatBio: _userInfo!['bio'] ?? '',
+            ),
+      ),
+    );
   }
 
   Future<void> _checkFriendStatus() async {
@@ -393,6 +412,34 @@ class _ProfilePageState extends State<ProfilePage> {
                               "粉丝",
                               style: TextStyle(color: Colors.grey[600]),
                             ),
+                            const Spacer(),
+                            // 添加私聊按钮 - 只为非当前用户显示
+                            if (!_isCurrentUser && widget.username != null)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.blue,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextButton.icon(
+                                  icon: const Icon(
+                                    Icons.chat_bubble_outline,
+                                    color: Colors.blue,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    '私聊',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  onPressed: _navigateToChat,
+                                ),
+                              ),
                           ],
                         ),
                       ],

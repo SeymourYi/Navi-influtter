@@ -33,7 +33,19 @@ class Friend {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  // 添加初始聊天用户参数
+  final String? initialChatUsername;
+  final String? initialChatName;
+  final String? initialChatAvatar;
+  final String? initialChatBio;
+
+  const ChatScreen({
+    super.key,
+    this.initialChatUsername,
+    this.initialChatName,
+    this.initialChatAvatar,
+    this.initialChatBio,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -56,28 +68,88 @@ class _ChatScreenState extends State<ChatScreen>
   bool _isLoadingFriends = true;
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMessages = true;
+  bool _hasInitialChat = false; // 标记是否有初始聊天对象
 
   // 添加连接状态检查定时器
   Timer? _connectionCheckTimer;
 
+  // 在类开头添加静态缓存变量
+  static List<Friend>? _cachedFriendList;
+  static DateTime? _lastFriendListFetchTime;
+  static const Duration _friendListCacheValidity = Duration(minutes: 5);
+
   @override
   void initState() {
     super.initState();
+
+    // 检查是否有初始聊天对象
+    _hasInitialChat =
+        widget.initialChatUsername != null && widget.initialChatName != null;
+
+    // 如果是从用户主页跳转过来的直接聊天
+    if (_hasInitialChat) {
+      // 显示连接中状态
+      setState(() {
+        _isConnecting = true;
+        _errorMessage = "正在连接到聊天服务器...";
+      });
+
+      // 显示提示信息
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('正在建立聊天连接，请稍候...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      });
+
+      // 如果是直接聊天，立即触发角色选择和连接流程
+      _preloadUserRoleAndConnect();
+    }
+
     _loadFriends();
   }
 
   Future<void> _loadFriends() async {
+    // 检查是否有有效缓存
+    final bool hasCachedFriends =
+        _cachedFriendList != null &&
+        _lastFriendListFetchTime != null &&
+        DateTime.now().difference(_lastFriendListFetchTime!) <
+            _friendListCacheValidity;
+
+    if (hasCachedFriends) {
+      // 使用缓存数据
+      print('使用缓存的好友列表数据');
+      setState(() {
+        _friends = _cachedFriendList!;
+        _isLoadingFriends = false;
+      });
+      return;
+    }
+
     try {
+      setState(() {
+        _isLoadingFriends = true;
+      });
+
       GetFriendListService service = GetFriendListService();
       var username = await SharedPrefsUtils.getUsername();
       var result = await service.GetFriendList(username.toString());
 
       if (result['code'] == 0 && result['data'] is List) {
+        final friendList =
+            (result['data'] as List)
+                .map((item) => Friend.fromJson(item))
+                .toList();
+
+        // 更新缓存
+        _cachedFriendList = friendList;
+        _lastFriendListFetchTime = DateTime.now();
+
         setState(() {
-          _friends =
-              (result['data'] as List)
-                  .map((item) => Friend.fromJson(item))
-                  .toList();
+          _friends = friendList;
           _isLoadingFriends = false;
         });
       }
@@ -173,8 +245,8 @@ class _ChatScreenState extends State<ChatScreen>
 
     _chatService.connect();
 
-    // 5秒后检查连接状态
-    Future.delayed(const Duration(seconds: 5), () {
+    // 缩短连接状态检查时间（原来是5秒）
+    Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
           _isConnected = _chatService.isConnected;
@@ -185,6 +257,11 @@ class _ChatScreenState extends State<ChatScreen>
             // 连接成功后，主动请求在线用户列表
             print('连接成功，请求在线用户列表');
             _chatService.requestOnlineUsers();
+
+            // 连接成功后，如果有初始聊天对象，立即初始化聊天（无需等待）
+            if (_hasInitialChat && widget.initialChatUsername != null) {
+              _initializeDirectChat();
+            }
           }
         });
       }
@@ -240,15 +317,65 @@ class _ChatScreenState extends State<ChatScreen>
       _isLoadingMessages = true;
     });
 
+    print('选择聊天对象: ${character.id} - ${character.name}');
+
+    // 确保连接已建立
+    if (!_chatService.isConnected) {
+      print('连接尚未建立，等待连接...');
+      // 减少等待时间（从3秒减到1秒）
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          if (_chatService.isConnected) {
+            print('连接已建立，加载历史消息');
+            _loadChatMessages(character.id);
+          } else {
+            setState(() {
+              _isLoadingMessages = false;
+              _errorMessage = "连接未建立，无法加载历史消息";
+            });
+            print('连接仍未建立，无法加载历史消息');
+          }
+        }
+      });
+    } else {
+      // 连接已建立，直接加载消息
+      _loadChatMessages(character.id);
+    }
+  }
+
+  // 提取加载消息的逻辑为单独的方法，便于重试
+  void _loadChatMessages(String userId) {
+    print('开始加载与 $userId 的历史消息');
+
+    // 如果已经有消息了，先显示缓存的消息
+    final List<ChatMessage> cachedMessages = _chatService
+        .getPrivateChatMessages(userId);
+    if (cachedMessages.isNotEmpty) {
+      print('显示缓存的历史消息 (${cachedMessages.length} 条)');
+      setState(() {
+        _isLoadingMessages = false;
+      });
+
+      // 滚动到消息列表底部
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+
+      // 后台继续加载更多消息
+      _loadMoreMessages(userId);
+      return;
+    }
+
     // 加载历史消息
     _chatService
-        .loadHistoricalMessages(character.id)
+        .loadHistoricalMessages(userId)
         .then((_) {
           if (mounted) {
             setState(() {
               // 关闭加载中状态
               _isLoadingMessages = false;
             });
+            print('历史消息加载成功');
             // 滚动到消息列表底部
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _scrollToBottom();
@@ -256,13 +383,39 @@ class _ChatScreenState extends State<ChatScreen>
           }
         })
         .catchError((error) {
+          print('加载历史消息失败: $error');
           if (mounted) {
             setState(() {
               _isLoadingMessages = false;
               _errorMessage = "加载历史消息失败: $error";
             });
+
+            // 添加一个按钮，允许用户点击重试
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('加载历史消息失败'),
+                action: SnackBarAction(
+                  label: '重试',
+                  onPressed: () {
+                    setState(() {
+                      _isLoadingMessages = true;
+                      _errorMessage = "";
+                    });
+                    _loadChatMessages(userId);
+                  },
+                ),
+              ),
+            );
           }
         });
+  }
+
+  // 后台加载更多消息
+  void _loadMoreMessages(String userId) {
+    print('后台加载更多消息...');
+    _chatService.loadHistoricalMessages(userId).catchError((error) {
+      print('后台加载更多消息失败: $error');
+    });
   }
 
   void _scrollToBottom() {
@@ -461,6 +614,11 @@ class _ChatScreenState extends State<ChatScreen>
                             textAlign: TextAlign.left,
                           ),
                           const SizedBox(height: 16),
+                          if (_hasInitialChat) // 如果是私聊模式，添加直接返回按钮
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('返回上一页'),
+                            ),
                         ],
                       ),
                     ),
@@ -477,9 +635,20 @@ class _ChatScreenState extends State<ChatScreen>
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _connectToChat,
-                    child: const Text('重新连接'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _connectToChat,
+                        child: const Text('重新连接'),
+                      ),
+                      const SizedBox(width: 16),
+                      if (_hasInitialChat) // 如果是私聊模式，添加直接返回按钮
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('返回上一页'),
+                        ),
+                    ],
                   ),
                   TextButton(
                     onPressed: () {
@@ -738,18 +907,27 @@ class _ChatScreenState extends State<ChatScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (_isLoadingMessages)
-                          const Text(
-                            '正在加载聊天记录...',
-                            style: TextStyle(color: Colors.grey),
+                          Column(
+                            children: [
+                              const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                '正在加载聊天记录...',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
                           )
                         else
                           Text(
                             '与 ${_chatWithCharacter!.name} 的聊天记录为空',
                             style: const TextStyle(color: Colors.grey),
                           ),
-                        const SizedBox(height: 8),
-                        if (_isLoadingMessages)
-                          const CircularProgressIndicator(),
                         const SizedBox(height: 8),
                         if (_errorMessage.isNotEmpty)
                           Text(
@@ -791,7 +969,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (message.type == ChatMessage.TYPE_JOIN ||
         message.type == ChatMessage.TYPE_LEAVE) {
       return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        margin: const EdgeInsets.symmetric(vertical: 4.0), // 减小间距
         child: Center(
           child: Text(
             message.content,
@@ -801,13 +979,14 @@ class _ChatScreenState extends State<ChatScreen>
                       ? Colors.green
                       : Colors.red,
               fontStyle: FontStyle.italic,
+              fontSize: 12, // 减小字体
             ),
           ),
         ),
       );
     }
 
-    // 格式化时间显示
+    // 格式化时间显示 - 提前计算一次，避免重复计算
     String formattedTime = message.time;
     try {
       if (message.time.length > 8) {
@@ -816,11 +995,11 @@ class _ChatScreenState extends State<ChatScreen>
         formattedTime = DateFormat('MM-dd HH:mm').format(dateTime);
       }
     } catch (e) {
-      print('时间格式化错误: ${message.time}, $e');
+      // 格式解析失败，使用原始时间
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.symmetric(vertical: 6.0), // 减小间距
       child: Column(
         crossAxisAlignment: align,
         children: [
@@ -868,8 +1047,11 @@ class _ChatScreenState extends State<ChatScreen>
             ],
           ),
           Container(
-            margin: const EdgeInsets.only(top: 4.0),
-            padding: const EdgeInsets.all(12.0),
+            margin: const EdgeInsets.only(top: 2.0), // 减小间距
+            padding: const EdgeInsets.symmetric(
+              vertical: 8.0,
+              horizontal: 12.0,
+            ), // 减小内边距
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(16.0),
@@ -885,10 +1067,13 @@ class _ChatScreenState extends State<ChatScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(message.content),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2), // 减小间距
                 Text(
                   formattedTime,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: Colors.grey,
+                  ), // 减小字体
                 ),
               ],
             ),
@@ -904,23 +1089,33 @@ class _ChatScreenState extends State<ChatScreen>
     );
 
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8.0,
+        vertical: 4.0,
+      ), // 减小内边距
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 2),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 1,
+          ), // 减少阴影效果
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // 确保只占用最小空间
         children: [
           if (!isOnline)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 2), // 减小内边距
               width: double.infinity,
               color: Colors.grey.shade100,
               child: Text(
                 '对方当前离线，消息将在对方上线后收到',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 10,
+                ), // 减小字体
                 textAlign: TextAlign.center,
               ),
             ),
@@ -931,22 +1126,77 @@ class _ChatScreenState extends State<ChatScreen>
                   controller: _messageController,
                   decoration: InputDecoration(
                     hintText: '发送消息给 ${_chatWithCharacter!.name}...',
+                    hintStyle: TextStyle(fontSize: 14), // 减小字体
                     border: const OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ), // 减小内边距
                     fillColor: _chatWithCharacter!.color.withOpacity(0.05),
                     filled: true,
                   ),
                   onSubmitted: (_) => _sendMessage(),
+                  textInputAction: TextInputAction.send, // 设置键盘发送按钮
+                  keyboardType: TextInputType.text, // 使用标准文本键盘
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.send),
                 onPressed: _sendMessage,
                 color: _chatWithCharacter!.color,
+                iconSize: 22, // 稍微减小图标尺寸
+                padding: EdgeInsets.zero, // 减少内边距
+                constraints: BoxConstraints(
+                  minWidth: 36,
+                  minHeight: 36,
+                ), // 设置较小的约束
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  // 添加初始化直接聊天的方法
+  void _initializeDirectChat() {
+    if (!_hasInitialChat) return;
+
+    print('初始化直接聊天，用户名: ${widget.initialChatUsername}');
+
+    // 创建一个CharacterRole对象用于聊天
+    final chatRole = CharacterRole(
+      id: widget.initialChatUsername!,
+      name: widget.initialChatName!,
+      description: widget.initialChatBio ?? '',
+      imageAsset: widget.initialChatAvatar ?? '',
+      color: Colors.blue, // 默认颜色
+    );
+
+    // 立即初始化聊天，不再使用延迟
+    _selectCharacterToChat(chatRole);
+    _hasInitialChat = false; // 重置标记，防止多次触发
+  }
+
+  // 添加预加载用户角色并连接的方法
+  Future<void> _preloadUserRoleAndConnect() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo != null && mounted) {
+        // 创建角色并直接触发连接
+        final userRole = CharacterRole(
+          id: userInfo['username'],
+          name: userInfo['nickname'] ?? userInfo['username'] ?? '我自己',
+          description: '以自己的身份进行聊天',
+          imageAsset: userInfo['userPic'] ?? '',
+          color: Colors.purple.shade700,
+        );
+
+        // 直接选择角色，跳过角色选择界面
+        _handleCharacterSelected(userRole);
+      }
+    } catch (e) {
+      print('预加载用户角色失败: $e');
+    }
   }
 }
