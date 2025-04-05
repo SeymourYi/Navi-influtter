@@ -7,6 +7,7 @@ import '../../../api/getfriendlist.dart';
 import '../../../Store/storeutils.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import '../../../utils/myjpush.dart'; // 导入极光推送工具类
 
 // Friend类定义
 class Friend {
@@ -304,10 +305,56 @@ class _ChatScreenState extends State<ChatScreen>
     _chatService.sendPrivateMessage(_chatWithCharacter!.id, content);
     _messageController.clear();
 
+    // 检查对方是否在线，如果不在线，考虑发送推送通知
+    final isOnline = _onlineCharacters.any(
+      (char) => char.id == _chatWithCharacter!.id,
+    );
+
+    if (!isOnline) {
+      _considerSendingChatNotification(content);
+    }
+
     // 发送后自动滚动到底部
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
+  }
+
+  // 考虑发送聊天通知 - 实际应用中可以根据需要调整
+  void _considerSendingChatNotification(String message) async {
+    // 此方法仅作为示例，应该在服务端实现
+    // 在实际应用中，服务器会处理消息推送
+
+    try {
+      // 获取当前用户信息
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo == null) return;
+
+      final myUsername = userInfo['username'];
+      final myNickname = userInfo['nickname'] ?? myUsername;
+      final myAvatar = userInfo['userPic'];
+      final myBio = userInfo['bio'];
+
+      // 打印一条日志，说明我们希望发送通知
+      print('对方离线，应该发送通知: 从 $myNickname 到 ${_chatWithCharacter!.name}');
+      print('通知内容: $message');
+
+      // 以下代码仅作为展示，实际应该在服务端实现
+      Myjpush jpush = Myjpush();
+      jpush.sendChatNotification(
+        targetUsername: _chatWithCharacter!.id,
+        senderUsername: myUsername,
+        senderNickname: myNickname,
+        senderAvatar: myAvatar,
+        senderBio: myBio,
+        message: message,
+      );
+
+      // 在实际应用中，离线消息通知应该由服务器在收到WebSocket消息后，
+      // 检查接收者是否在线，如果不在线，则发送推送通知
+    } catch (e) {
+      print('准备发送聊天通知时出错: $e');
+    }
   }
 
   void _selectCharacterToChat(CharacterRole character) {

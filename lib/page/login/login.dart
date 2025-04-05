@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutterlearn2/page/Home/home.dart';
+import 'package:flutterlearn2/page/login/smsregister.dart';
+import 'package:flutterlearn2/page/login/smslogin.dart';
 import '../../api/loginAPI.dart';
 import '../../Store/storeutils.dart';
 import '../../api/userAPI.dart';
@@ -261,11 +263,34 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      // 忘记密码功能
+                    },
+                    child: const Text('忘记密码?'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SmsLoginPage()),
+                      );
+                    },
+                    child: const Text('短信验证码登录'),
+                  ),
+                ],
+              ),
               TextButton(
                 onPressed: () {
-                  // Add forgot password functionality
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SmsRegisterPage()),
+                  );
                 },
-                child: const Text('忘记密码?'),
+                child: const Text('注册账号'),
               ),
             ],
           ),
