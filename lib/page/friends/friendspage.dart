@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/api/getfriendlist.dart';
+import 'package:Navi/api/getfriendlist.dart';
 import '../../api/articleAPI.dart';
 import '../../Store/storeutils.dart';
 

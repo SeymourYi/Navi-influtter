@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
@@ -153,7 +153,7 @@ class _ArticleState extends State<Article> {
     }
   }
 
-  void _navigateToArticleDetail({bool focusOnComment = false}) {
+  void _NavigateToArticleDetail({bool focusOnComment = false}) {
     // 检查文章ID是否存在
     if (widget.articleData == null || widget.articleData['id'] == null) {
       return;
@@ -482,7 +482,7 @@ class _ArticleState extends State<Article> {
                   child: InkWell(
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
-                    onTap: _navigateToArticleDetail,
+                    onTap: _NavigateToArticleDetail,
                   ),
                 ),
               ),
@@ -562,7 +562,7 @@ class _ArticleState extends State<Article> {
                                 padding: EdgeInsets.only(top: 4, right: 12),
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
-                                  onTap: _navigateToArticleDetail,
+                                  onTap: _NavigateToArticleDetail,
                                   child: Text(
                                     "${widget.articleData['content']}",
                                     style: TextStyle(
@@ -669,7 +669,7 @@ class _ArticleState extends State<Article> {
                                           InkWell(
                                             onTap: () {
                                               // 评论操作 - 传递true表示需要聚焦到评论框
-                                              _navigateToArticleDetail(
+                                              _NavigateToArticleDetail(
                                                 focusOnComment: true,
                                               );
                                             },
@@ -785,7 +785,7 @@ class _ArticleState extends State<Article> {
                                           widget.articleData['commentcount'] >
                                               0)
                                   ? GestureDetector(
-                                    onTap: _navigateToArticleDetail,
+                                    onTap: _NavigateToArticleDetail,
                                     child: Container(
                                       width: double.infinity,
                                       margin: EdgeInsets.only(

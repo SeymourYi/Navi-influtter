@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/components/articledetail.dart';
-import 'package:flutterlearn2/models/like_notification.dart';
-import 'package:flutterlearn2/page/Home/home.dart';
-import 'package:flutterlearn2/page/Splash/splashpage.dart';
-import 'package:flutterlearn2/page/chat/screen/components/friendlist.dart';
-import 'package:flutterlearn2/page/login/login.dart';
-import 'package:flutterlearn2/page/search/search.dart';
-import 'package:flutterlearn2/utils/mydio.dart';
+import 'package:Navi/components/articledetail.dart';
+import 'package:Navi/models/like_notification.dart';
+import 'package:Navi/page/Home/home.dart';
+import 'package:Navi/page/Splash/splashpage.dart';
+import 'package:Navi/page/chat/screen/components/friendlist.dart';
+import 'package:Navi/page/login/login.dart';
+import 'package:Navi/page/search/search.dart';
+import 'package:Navi/utils/mydio.dart';
 import '../../Store/storeutils.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 
@@ -20,8 +20,8 @@ void main(List<String> args) async {
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // 添加全局 navigatorKey
-  static final GlobalKey<NavigatorState> navigatorKey =
+  // 添加全局 NavigatorKey
+  static final GlobalKey<NavigatorState> NavigatorKey =
       GlobalKey<NavigatorState>();
 
   @override
@@ -59,7 +59,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: MyApp.navigatorKey, // 添加 navigatorKey
+      navigatorKey: MyApp.NavigatorKey, // 添加 NavigatorKey
       title: "Navi",
       home: SplashScreen(
         x: loginstate, // 这里可以动态传入1或2

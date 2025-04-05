@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/api/articleAPI.dart';
-import 'package:flutterlearn2/components/article.dart';
+import 'package:Navi/api/articleAPI.dart';
+import 'package:Navi/components/article.dart';
 
 class Articlelist extends StatefulWidget {
   const Articlelist({super.key});

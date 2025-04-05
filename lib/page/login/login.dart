@@ -1,8 +1,8 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutterlearn2/page/Home/home.dart';
-import 'package:flutterlearn2/page/login/smsregister.dart';
-import 'package:flutterlearn2/page/login/smslogin.dart';
-import 'package:flutterlearn2/page/login/user_agreement.dart';
+import 'package:Navi/page/Home/home.dart';
+import 'package:Navi/page/login/smsregister.dart';
+import 'package:Navi/page/login/smslogin.dart';
+import 'package:Navi/page/login/user_agreement.dart';
 import 'dart:io';
 import '../../api/loginAPI.dart';
 import '../../Store/storeutils.dart';
@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('用户协议与隐私政策'),
+          title: const Text('隐私政策'),
           content: SizedBox(
             width: double.maxFinite,
             height: 400,
@@ -72,19 +72,19 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('欢迎使用我们的应用！在使用前，请阅读并同意以下条款：'),
+                  Text('欢迎使用Navi！在使用前，请阅读并同意我们的隐私政策：'),
                   SizedBox(height: 16),
-                  Text('1. 我们会收集您的必要个人信息，如手机号、设备信息等，用于提供服务。'),
+                  Text('1. 我们会收集您的手机号等必要个人信息，用于账号登录和服务提供。'),
                   SizedBox(height: 8),
-                  Text('2. 我们会采取合理措施保护您的个人信息安全。'),
+                  Text('2. 我们使用腾讯云短信SDK进行短信验证，极光推送SDK进行消息推送。'),
                   SizedBox(height: 8),
-                  Text('3. 我们可能会向您推送通知，您可以在设置中关闭。'),
+                  Text('3. 您的个人信息将安全存储在中国境内，不会进行跨境传输。'),
                   SizedBox(height: 8),
-                  Text('4. 使用我们的服务需遵守相关法律法规。'),
+                  Text('4. 我们采取多种安全措施保护您的个人信息安全。'),
                   SizedBox(height: 16),
                   Text('请点击"同意"继续使用，或点击"不同意"退出应用。'),
                   SizedBox(height: 8),
-                  Text('点击"查看完整协议"可查看详细条款。'),
+                  Text('点击"查看完整政策"可查看详细内容。'),
                 ],
               ),
             ),
@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 );
               },
-              child: const Text('查看完整协议'),
+              child: const Text('查看完整政策'),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -410,7 +410,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       );
                     },
-                    child: const Text('用户协议与隐私政策'),
+                    child: const Text('隐私政策'),
                   ),
                 ],
               ),

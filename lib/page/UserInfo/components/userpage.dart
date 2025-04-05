@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/components/article.dart';
-import 'package:flutterlearn2/api/articleAPI.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
+import 'package:Navi/components/article.dart';
+import 'package:Navi/api/articleAPI.dart';
+import 'package:Navi/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutterlearn2/api/userAPI.dart';
-import 'package:flutterlearn2/page/chat/screen/chat_screen.dart';
-import 'package:flutterlearn2/page/chat/screen/role_selection_screen.dart';
+import 'package:Navi/api/userAPI.dart';
+import 'package:Navi/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/chat/screen/role_selection_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -50,7 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _navigateToChat() async {
+  void _NavigateToChat() async {
     if (widget.username == null || _userInfo == null) return;
 
     await Navigator.push(
@@ -437,7 +437,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       fontSize: 14,
                                     ),
                                   ),
-                                  onPressed: _navigateToChat,
+                                  onPressed: _NavigateToChat,
                                 ),
                               ),
                           ],

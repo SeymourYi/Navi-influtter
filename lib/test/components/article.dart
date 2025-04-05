@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/test/components/articledetail.dart';
+import 'package:Navi/test/components/articledetail.dart';
 
 class Article2 extends StatelessWidget {
   const Article2({super.key});

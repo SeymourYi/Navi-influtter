@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/api/getfriendlist.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
+import 'package:Navi/api/getfriendlist.dart';
+import 'package:Navi/Store/storeutils.dart';
 
 class Friend {
   final String name;

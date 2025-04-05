@@ -2,8 +2,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:flutterlearn2/api/userAPI.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
+import 'package:Navi/api/userAPI.dart';
+import 'package:Navi/Store/storeutils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 

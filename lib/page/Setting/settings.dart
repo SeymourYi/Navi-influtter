@@ -1,8 +1,8 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
-import 'package:flutterlearn2/page/login/login.dart';
-import 'package:flutterlearn2/page/login/user_agreement.dart';
-import 'package:flutterlearn2/api/userRegisterAPI.dart';
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/page/login/login.dart';
+import 'package:Navi/page/login/user_agreement.dart';
+import 'package:Navi/api/userRegisterAPI.dart';
 
 class settings extends StatefulWidget {
   const settings({super.key});
@@ -236,7 +236,7 @@ class _settingsState extends State<settings> {
                                 Icons.article_outlined,
                                 color: Color(0xFF7461CA),
                               ),
-                              title: Text('用户协议与隐私政策'),
+                              title: Text('隐私政策'),
                               trailing: Icon(Icons.arrow_forward_ios, size: 16),
                               dense: true,
                               contentPadding: EdgeInsets.symmetric(

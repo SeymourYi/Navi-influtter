@@ -1,20 +1,20 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutterlearn2/components/like_notification_list.dart';
-import 'package:flutterlearn2/models/like_notification.dart';
-import 'package:flutterlearn2/page/Home/articlelist.dart';
-import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
-import 'package:flutterlearn2/page/chat/screen/chat_screen.dart';
-import 'package:flutterlearn2/page/edit/editpage.dart';
-import 'package:flutterlearn2/page/friends/friendspage.dart';
-import 'package:flutterlearn2/page/post/post.dart';
-import 'package:flutterlearn2/page/search/search.dart';
-import 'package:flutterlearn2/page/login/login.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
+import 'package:Navi/components/like_notification_list.dart';
+import 'package:Navi/models/like_notification.dart';
+import 'package:Navi/page/Home/articlelist.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/edit/editpage.dart';
+import 'package:Navi/page/friends/friendspage.dart';
+import 'package:Navi/page/post/post.dart';
+import 'package:Navi/page/search/search.dart';
+import 'package:Navi/page/login/login.dart';
+import 'package:Navi/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import '../../utils/myjpush.dart';
-import 'package:flutterlearn2/page/Setting/settings.dart';
+import 'package:Navi/page/Setting/settings.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {

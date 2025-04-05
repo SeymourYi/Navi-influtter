@@ -1,4 +1,4 @@
-package com.example.flutterlearn2
+package com.Navi
 
 import io.flutter.embedding.android.FlutterActivity
 

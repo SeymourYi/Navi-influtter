@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/components/articledetail.dart';
-import 'package:flutterlearn2/main.dart';
+import 'package:Navi/components/articledetail.dart';
+import 'package:Navi/main.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
-import 'package:flutterlearn2/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/chat/screen/chat_screen.dart';
 
 class Myjpush {
   final JPush jpush = JPush(); // 添加 JPush 实例
@@ -43,7 +43,7 @@ class Myjpush {
     try {
       jpush.setup(
         appKey: "37bb58f488aa4f8dd7e43516",
-        channel: "flutterlearn2",
+        channel: "Navi",
         production: false,
         debug: true, //是否打印debug日志
       );
@@ -97,8 +97,8 @@ class Myjpush {
                 if (senderUsername != null && senderNickname != null) {
                   print("跳转到与 $senderNickname 的私聊");
 
-                  // 使用 navigatorKey 导航到聊天界面
-                  final currentContext = MyApp.navigatorKey.currentContext;
+                  // 使用 NavigatorKey 导航到聊天界面
+                  final currentContext = MyApp.NavigatorKey.currentContext;
                   if (currentContext != null) {
                     // 查看当前是否已经在聊天界面
                     final currentRoute = ModalRoute.of(currentContext);
@@ -112,7 +112,7 @@ class Myjpush {
                       print("已经在聊天界面，创建新页面");
                     }
 
-                    MyApp.navigatorKey.currentState?.push(
+                    MyApp.NavigatorKey.currentState?.push(
                       MaterialPageRoute(
                         settings: RouteSettings(name: '/chat'),
                         builder:
@@ -133,8 +133,8 @@ class Myjpush {
                 var articleId = extras['articleId'] as String?;
 
                 if (articleId != null) {
-                  // 使用 navigatorKey 导航到文章详情
-                  MyApp.navigatorKey.currentState?.push(
+                  // 使用 NavigatorKey 导航到文章详情
+                  MyApp.NavigatorKey.currentState?.push(
                     MaterialPageRoute(
                       builder:
                           (context) => Articledetail(
@@ -149,7 +149,7 @@ class Myjpush {
             }
 
             // 默认跳转(如果没有匹配到特定类型或信息不完整)
-            MyApp.navigatorKey.currentState?.push(
+            MyApp.NavigatorKey.currentState?.push(
               MaterialPageRoute(
                 builder:
                     (context) =>
@@ -159,7 +159,7 @@ class Myjpush {
           } catch (e) {
             print("处理推送通知跳转出错: $e");
             // 发生错误时使用默认跳转
-            MyApp.navigatorKey.currentState?.push(
+            MyApp.NavigatorKey.currentState?.push(
               MaterialPageRoute(
                 builder:
                     (context) =>

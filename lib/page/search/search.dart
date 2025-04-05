@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutterlearn2/Store/storeutils.dart';
-import 'package:flutterlearn2/api/searchsomeAPI.dart';
-import 'package:flutterlearn2/page/UserInfo/components/userpage.dart';
-import 'package:flutterlearn2/api/userAPI.dart'; // 导入用户API
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/api/searchsomeAPI.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/api/userAPI.dart'; // 导入用户API
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);

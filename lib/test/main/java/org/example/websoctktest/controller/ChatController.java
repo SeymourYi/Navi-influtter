@@ -1,6 +1,6 @@
-package org.example.websoctktest.controller;
+package org.websoctktest.controller;
 
-import org.example.websoctktest.model.ChatMessage;
+import org.websoctktest.model.ChatMessage;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;

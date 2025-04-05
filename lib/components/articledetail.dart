@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutterlearn2/api/getarticleinfoAPI.dart';
-import 'package:flutterlearn2/Store/storeutils.dart'; // 导入用户信息存储工具
+import 'package:Navi/api/getarticleinfoAPI.dart';
+import 'package:Navi/Store/storeutils.dart'; // 导入用户信息存储工具
 import 'package:image_picker/image_picker.dart'; // 导入图片选择器
 import 'dart:io'; // 导入File类
 import 'articleimage.dart';
