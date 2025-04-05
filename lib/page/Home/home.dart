@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutterlearn2/components/like_notification_list.dart';
 import 'package:flutterlearn2/models/like_notification.dart';
@@ -14,6 +14,7 @@ import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import '../../utils/myjpush.dart';
+import 'package:flutterlearn2/page/Setting/settings.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {

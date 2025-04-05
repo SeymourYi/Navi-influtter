@@ -80,7 +80,7 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
         _startCountDown();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('验证码已发送！')));
+        ).showSnackBar(SnackBar(content: Text('验证码已发送: $_generatedCode')));
       } else {
         throw Exception(response['msg'] ?? '发送验证码失败');
       }

@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutterlearn2/page/Home/home.dart';
 import 'package:flutterlearn2/page/login/smsregister.dart';
 import 'package:flutterlearn2/page/login/smslogin.dart';
+import 'package:flutterlearn2/page/login/user_agreement.dart';
+import 'dart:io';
 import '../../api/loginAPI.dart';
 import '../../Store/storeutils.dart';
 import '../../api/userAPI.dart';
@@ -19,6 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _agreementAccepted = false;
   List<dynamic> articleList = [];
 
   @override
@@ -31,9 +34,110 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+
+    // 检查是否已经接受过协议
+    _checkAgreementStatus();
+  }
+
+  // 检查协议状态并显示对话框
+  Future<void> _checkAgreementStatus() async {
+    // 可以添加本地存储检查逻辑，这里简化为首次进入都显示
+    bool hasAccepted =
+        await SharedPrefsUtils.getBool('agreement_accepted') ?? false;
+
+    if (!hasAccepted && mounted) {
+      // 延迟显示对话框，确保界面已完全加载
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _showAgreementDialog();
+      });
+    } else {
+      setState(() {
+        _agreementAccepted = true;
+      });
+    }
+  }
+
+  // 显示用户协议对话框
+  void _showAgreementDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('用户协议与隐私政策'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('欢迎使用我们的应用！在使用前，请阅读并同意以下条款：'),
+                  SizedBox(height: 16),
+                  Text('1. 我们会收集您的必要个人信息，如手机号、设备信息等，用于提供服务。'),
+                  SizedBox(height: 8),
+                  Text('2. 我们会采取合理措施保护您的个人信息安全。'),
+                  SizedBox(height: 8),
+                  Text('3. 我们可能会向您推送通知，您可以在设置中关闭。'),
+                  SizedBox(height: 8),
+                  Text('4. 使用我们的服务需遵守相关法律法规。'),
+                  SizedBox(height: 16),
+                  Text('请点击"同意"继续使用，或点击"不同意"退出应用。'),
+                  SizedBox(height: 8),
+                  Text('点击"查看完整协议"可查看详细条款。'),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // 如果用户不同意，退出应用
+                exit(0);
+              },
+              child: const Text('不同意'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserAgreementPage(),
+                  ),
+                );
+              },
+              child: const Text('查看完整协议'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 126, 121, 211),
+              ),
+              onPressed: () async {
+                // 保存用户同意状态
+                await SharedPrefsUtils.setBool('agreement_accepted', true);
+                setState(() {
+                  _agreementAccepted = true;
+                });
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('同意'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _login() async {
+    // 确保用户已同意协议
+    if (!_agreementAccepted) {
+      _showAgreementDialog();
+      return;
+    }
+
     _getToken();
   }
 
@@ -283,14 +387,32 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SmsRegisterPage()),
-                  );
-                },
-                child: const Text('注册账号'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SmsRegisterPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('注册账号'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserAgreementPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('用户协议与隐私政策'),
+                  ),
+                ],
               ),
             ],
           ),
