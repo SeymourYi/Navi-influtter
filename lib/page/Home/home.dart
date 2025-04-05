@@ -279,45 +279,10 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                 Expanded(child: SizedBox.shrink()),
                 TextButton(
                   onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder:
-                          (context) => AlertDialog(
-                            title: Text("设置"),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  leading: Icon(
-                                    Icons.exit_to_app,
-                                    color: Colors.red,
-                                  ),
-                                  title: Text("退出登录"),
-                                  onTap: () async {
-                                    await SharedPrefsUtils.clearUserInfo();
-                                    await SharedPrefsUtils.clearToken();
-
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => LoginPage(),
-                                      ),
-                                      (route) => false,
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text("取消"),
-                              ),
-                            ],
-                          ),
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => settings()),
                     );
                   },
                   child: Text(

@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutterlearn2/Store/storeutils.dart';
 import 'package:flutterlearn2/page/login/login.dart';
+import 'package:flutterlearn2/page/login/user_agreement.dart';
 import 'package:flutterlearn2/api/userRegisterAPI.dart';
 
 class settings extends StatefulWidget {
@@ -223,6 +224,33 @@ class _settingsState extends State<settings> {
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 8.0,
                               ),
+                            ),
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 8,
+                              endIndent: 8,
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                Icons.article_outlined,
+                                color: Color(0xFF7461CA),
+                              ),
+                              title: Text('用户协议与隐私政策'),
+                              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                              dense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => const UserAgreementPage(),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
