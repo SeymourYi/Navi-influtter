@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:Navi/page/Home/components/things.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/components/like_notification_list.dart';
 import 'package:Navi/models/like_notification.dart';
@@ -395,7 +396,7 @@ class _MyHomeState extends State<MyHome> {
     }
 
     return DefaultTabController(
-      length: 3,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -471,9 +472,11 @@ class _MyHomeState extends State<MyHome> {
                 });
               },
               tabs: [
-                Tab(text: "主页", icon: Icon(Icons.home, size: 20)),
-                Tab(text: "消息", icon: Icon(Icons.email, size: 20)),
+                Tab(text: "动态", icon: Icon(Icons.home, size: 20)),
                 Tab(text: "聊天", icon: Icon(Icons.chat, size: 20)),
+                Tab(text: "通讯录", icon: Icon(Icons.people, size: 20)),
+                Tab(text: "通知", icon: Icon(Icons.notifications, size: 20)),
+                Tab(text: "我", icon: Icon(Icons.person, size: 20)),
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,
@@ -486,7 +489,9 @@ class _MyHomeState extends State<MyHome> {
         ),
         body: TabBarView(
           children: [
-            Articlelist(),
+            things(),
+            const ChatScreen(),
+            const FriendsList(),
             LikeNotificationList(
               notifications: notifications,
               onFollowUser: (user) {
@@ -495,7 +500,6 @@ class _MyHomeState extends State<MyHome> {
                 ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
               },
             ),
-            const ChatScreen(),
           ],
         ),
         floatingActionButton:

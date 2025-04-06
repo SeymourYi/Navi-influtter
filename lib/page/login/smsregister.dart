@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:Navi/page/Home/home.dart';
 import 'dart:async';
 import 'dart:math';
 import '../../api/smsSender.dart';
 import '../../api/registerAPI.dart';
-import '../Home/home.dart';
 import '../../Store/storeutils.dart';
 import '../../utils/mydio.dart';
 import '../../api/userAPI.dart';
@@ -257,9 +257,7 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
               },
               child: Text(
                 '确定',
-                style: TextStyle(
-                  color: const Color.fromARGB(255, 126, 121, 211),
-                ),
+                style: TextStyle(color: const Color(0xFF6F6BCC)),
               ),
             ),
           ],
@@ -271,182 +269,375 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('手机验证码注册'), centerTitle: true),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const FlutterLogo(size: 80),
-              const SizedBox(height: 40),
-
-              // 手机号输入
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: '手机号',
-                  prefixIcon: Icon(Icons.phone_android),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(11),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入手机号';
-                  }
-                  if (value.length != 11) {
-                    return '请输入11位手机号';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // 验证码输入
-              Row(
+      backgroundColor: Color(0xFF121214),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF121214),
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('注册账号', style: TextStyle(color: Colors.white)),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+                  SizedBox(height: 30),
+
+                  // 标题
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "创建 ",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white,
+                          ),
+                        ),
+                        TextSpan(
+                          text: "Navi",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6F6BCC),
+                          ),
+                        ),
+                        TextSpan(
+                          text: " 账号",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 10),
+
+                  Text(
+                    "注册即可开始探索",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: const Color.fromARGB(255, 158, 158, 158),
+                    ),
+                  ),
+
+                  SizedBox(height: 40),
+
+                  // 手机号输入框
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFF1A1A1C),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[800]!, width: 1),
+                    ),
                     child: TextFormField(
-                      controller: _smsCodeController,
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                       decoration: InputDecoration(
-                        labelText: '验证码',
-                        prefixIcon: Icon(Icons.verified_user),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
+                        hintText: "手机号",
+                        hintStyle: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.phone_android,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
                         ),
                       ),
-                      keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(6),
+                        LengthLimitingTextInputFormatter(11),
                       ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return '请输入验证码';
+                          return '请输入手机号';
+                        }
+                        if (value.length != 11) {
+                          return '请输入11位手机号';
                         }
                         return null;
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 120,
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _countDown < 60 && _countDown > 0
-                                ? Colors.grey
-                                : const Color.fromARGB(255, 126, 121, 211),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
+
+                  SizedBox(height: 16),
+
+                  // 验证码输入框和获取按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFF1A1A1C),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey[800]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: TextFormField(
+                            controller: _smsCodeController,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            decoration: InputDecoration(
+                              hintText: "验证码",
+                              hintStyle: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.security,
+                                color: Colors.grey[600],
+                                size: 20,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 16,
+                              ),
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(6),
+                            ],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return '请输入验证码';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
                       ),
-                      onPressed:
-                          (_countDown < 60 && _countDown > 0) || _isSendingSms
-                              ? null
-                              : _sendSmsCode,
+                      SizedBox(width: 12),
+                      Container(
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                (_countDown < 60 && _countDown > 0)
+                                    ? Colors.grey[800]
+                                    : Color(0xFF6F6BCC),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                          ),
+                          onPressed:
+                              (_countDown < 60 && _countDown > 0) ||
+                                      _isSendingSms
+                                  ? null
+                                  : _sendSmsCode,
+                          child:
+                              _isSendingSms
+                                  ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.0,
+                                    ),
+                                  )
+                                  : Text(
+                                    _countDown < 60 ? '$_countDown秒' : '获取验证码',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // 密码输入框
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFF1A1A1C),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[800]!, width: 1),
+                    ),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: "密码（仅限中文）",
+                        hintStyle: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        helperText: '请输入纯中文密码',
+                        helperStyle: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                      obscureText: false, // 密码不掩盖
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请输入密码';
+                        }
+                        if (!_isChineseOnly(value)) {
+                          return '密码只能包含中文字符';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+
+                  SizedBox(height: 40),
+
+                  // 注册按钮
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF6F6BCC),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                       child:
-                          _isSendingSms
+                          _isLoading
                               ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
-                                  strokeWidth: 2.0,
+                                  strokeWidth: 2,
                                 ),
                               )
                               : Text(
-                                _countDown < 60 ? '${_countDown}秒' : '获取验证码',
-                                style: TextStyle(fontSize: 14),
-                              ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 中文密码输入
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: '密码（仅限中文）',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  helperText: '请输入纯中文密码',
-                ),
-                obscureText: false, // 密码不掩盖
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入密码';
-                  }
-                  if (!_isChineseOnly(value)) {
-                    return '密码只能包含中文字符';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // 注册按钮
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 126, 121, 211),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  onPressed: _isLoading ? null : _register,
-                  child:
-                      _isLoading
-                          ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.0,
+                                "注册",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(width: 12),
-                              Text('注册中...', style: TextStyle(fontSize: 16)),
-                            ],
-                          )
-                          : Text('注册', style: TextStyle(fontSize: 16)),
-                ),
-              ),
+                    ),
+                  ),
 
-              const SizedBox(height: 16),
+                  SizedBox(height: 40),
 
-              // 返回登录
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('已有账号？返回登录'),
-                ),
+                  // 分隔线
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(height: 1, color: Colors.grey[800]),
+                      ),
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF1A1A1C),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: Colors.grey[800]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          "已有账号",
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(height: 1, color: Colors.grey[800]),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 20),
+
+                  // 返回登录按钮
+                  Container(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.transparent,
+                        side: BorderSide(color: Color(0xFF6F6BCC), width: 1),
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        "返回登录",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 20),
+
+                  // 隐私政策
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        // 显示隐私政策
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[500],
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                      ),
+                      child: Text(
+                        "点击注册按钮，即表示您同意我们的隐私政策",
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 30),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
