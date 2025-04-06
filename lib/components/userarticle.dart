@@ -166,7 +166,7 @@ class _ArticleState extends State<Article> {
       PageRouteBuilder(
         pageBuilder:
             (context, animation, secondaryAnimation) =>
-                Articledetail(id: articleId, autoFocusComment: focusOnComment),
+                Articledetail(articleData: widget.articleData),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

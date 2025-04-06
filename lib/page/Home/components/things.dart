@@ -1,4 +1,5 @@
 import 'package:Navi/page/Home/articlelist.dart';
+import 'package:Navi/page/Home/friendarticlelist.dart';
 import 'package:flutter/material.dart';
 
 class things extends StatefulWidget {
@@ -50,7 +51,7 @@ class _thingsState extends State<things> with SingleTickerProviderStateMixin {
               // 为你推荐标签页
               Articlelist(),
               // 正在关注标签页
-              Articlelist(),
+              FriendArticlelist(),
             ],
           ),
         ),

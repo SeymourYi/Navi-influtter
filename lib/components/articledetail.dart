@@ -1,3 +1,7 @@
+import 'package:Navi/api/articleAPI.dart';
+import 'package:Navi/api/getarticleinfoAPI.dart';
+import 'package:Navi/components/CommentWidget%20.dart';
+import 'package:Navi/page/Home/articlelist.dart';
 import 'package:flutter/material.dart';
 import 'articleimage.dart';
 import '../components/userinfo.dart';
@@ -11,6 +15,27 @@ class Articledetail extends StatefulWidget {
 }
 
 class _ArticledetailState extends State<Articledetail> {
+  ArticleService service = ArticleService();
+  List<dynamic> articleComments = [];
+  @override
+  void initState() {
+    super.initState();
+    getarticleComments();
+  }
+
+  void getarticleComments() async {
+    final result = await ArticleService().getArticleComments(
+      // widget.articleData['id'],
+      194,
+    );
+    print(result);
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    print(widget.articleData['id']);
+    setState(() {
+      articleComments = result['data'];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -190,6 +215,8 @@ class _ArticledetailState extends State<Articledetail> {
             ),
           ),
           const Divider(height: 0.5, color: Color.fromARGB(69, 158, 158, 158)),
+          if (articleComments.isNotEmpty)
+            CommentWidget(comments: articleComments),
         ],
       ),
     );
