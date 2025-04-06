@@ -396,7 +396,7 @@ class _MyHomeState extends State<MyHome> {
     }
 
     return DefaultTabController(
-      length: 5,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -473,10 +473,10 @@ class _MyHomeState extends State<MyHome> {
               },
               tabs: [
                 Tab(text: "动态", icon: Icon(Icons.home, size: 20)),
-                Tab(text: "聊天", icon: Icon(Icons.chat, size: 20)),
-                Tab(text: "通讯录", icon: Icon(Icons.people, size: 20)),
+                // Tab(text: "聊天", icon: Icon(Icons.chat, size: 20)),
+                // Tab(text: "通讯录", icon: Icon(Icons.people, size: 20)),
                 Tab(text: "通知", icon: Icon(Icons.notifications, size: 20)),
-                Tab(text: "我", icon: Icon(Icons.person, size: 20)),
+                // Tab(text: "我", icon: Icon(Icons.person, size: 20)),
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,
@@ -490,8 +490,8 @@ class _MyHomeState extends State<MyHome> {
         body: TabBarView(
           children: [
             things(),
-            const ChatScreen(),
-            const FriendsList(),
+            // const ChatScreen(),
+            // const FriendsList(),
             LikeNotificationList(
               notifications: notifications,
               onFollowUser: (user) {
