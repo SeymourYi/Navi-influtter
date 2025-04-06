@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 
 class FullScreenImageView extends StatefulWidget {
   final List<String> imageUrls;
@@ -34,6 +37,46 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
     super.dispose();
   }
 
+  Future<void> _saveImage() async {
+    try {
+      // 请求存储权限
+      var status = await Permission.storage.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('需要存储权限才能保存图片')));
+        return;
+      }
+
+      // 下载图片
+      final response = await http.get(
+        Uri.parse(widget.imageUrls[_currentIndex]),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('下载图片失败');
+      }
+
+      // 保存到相册
+      final result = await ImageGallerySaver.saveImage(
+        response.bodyBytes,
+        quality: 100,
+        name: "image_${DateTime.now().millisecondsSinceEpoch}",
+      );
+
+      if (result['isSuccess']) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('图片已保存到相册')));
+      } else {
+        throw Exception('保存失败');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('保存失败: ${e.toString()}')));
+    }
+  }
+
   void _showActionMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -47,6 +90,14 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.save_alt),
+                  title: const Text('保存到相册'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _saveImage();
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.close),
                   title: const Text('取消'),

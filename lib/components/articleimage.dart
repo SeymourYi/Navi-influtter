@@ -78,7 +78,7 @@ class ArticleImage extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, right: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -109,19 +109,24 @@ class ArticleImage extends StatelessWidget {
       onTap: () => _showFullScreenImage(context, index),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Hero(
-          tag: 'article_image_$index',
-          child: Image.network(
-            imageUrls[index],
-            width: double.infinity,
-            height: 200,
-            fit: BoxFit.cover,
-            errorBuilder:
-                (context, error, stackTrace) => Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, color: Colors.grey),
-                ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 500),
+          child: Hero(
+            tag: 'article_image_$index',
+            child: Image.network(
+              imageUrls[index],
+              width: double.infinity,
+              height: double.infinity, // 让高度尽可能填充可用空间
+              fit: BoxFit.cover,
+              alignment: Alignment.center, // 确保裁剪时居中
+              errorBuilder:
+                  (context, error, stackTrace) => Container(
+                    width: double.infinity,
+                    height: double.infinity, // 错误时也填充相同高度
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                  ),
+            ),
           ),
         ),
       ),

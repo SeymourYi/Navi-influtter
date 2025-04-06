@@ -136,11 +136,7 @@ class Myjpush {
                   // 使用 NavigatorKey 导航到文章详情
                   MyApp.NavigatorKey.currentState?.push(
                     MaterialPageRoute(
-                      builder:
-                          (context) => Articledetail(
-                            id: articleId,
-                            autoFocusComment: false,
-                          ),
+                      builder: (context) => Articledetail(articleData: null),
                     ),
                   );
                   return;
@@ -151,9 +147,7 @@ class Myjpush {
             // 默认跳转(如果没有匹配到特定类型或信息不完整)
             MyApp.NavigatorKey.currentState?.push(
               MaterialPageRoute(
-                builder:
-                    (context) =>
-                        Articledetail(id: "530", autoFocusComment: false),
+                builder: (context) => Articledetail(articleData: null),
               ),
             );
           } catch (e) {
@@ -161,9 +155,7 @@ class Myjpush {
             // 发生错误时使用默认跳转
             MyApp.NavigatorKey.currentState?.push(
               MaterialPageRoute(
-                builder:
-                    (context) =>
-                        Articledetail(id: "530", autoFocusComment: false),
+                builder: (context) => Articledetail(articleData: null),
               ),
             );
           }

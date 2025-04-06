@@ -166,7 +166,7 @@ class _ArticleState extends State<Article> {
       PageRouteBuilder(
         pageBuilder:
             (context, animation, secondaryAnimation) =>
-                Articledetail(id: articleId, autoFocusComment: focusOnComment),
+                Articledetail(articleData: widget.articleData),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
@@ -637,6 +637,7 @@ class _ArticleState extends State<Article> {
                                     style: TextStyle(
                                       color: Colors.black,
                                       fontSize: 16,
+                                      height: 1.2, // 调整这个值来改变行间距
                                       fontFamily: "Inter",
                                     ),
                                   ),
@@ -708,8 +709,8 @@ class _ArticleState extends State<Article> {
                                                               right: 4,
                                                             ),
                                                         child: Icon(
-                                                          Icons.favorite,
-                                                          size: 14,
+                                                          Icons.favorite_border,
+                                                          size: 20,
                                                           color:
                                                               const Color.fromRGBO(
                                                                 237,
@@ -740,7 +741,12 @@ class _ArticleState extends State<Article> {
                                                   "${widget.articleData['commentcount']}条评论",
                                                   style: TextStyle(
                                                     fontSize: 14,
-                                                    color: Color(0xFF576B95),
+                                                    color: Color.fromRGBO(
+                                                      104,
+                                                      118,
+                                                      132,
+                                                      1.00,
+                                                    ),
                                                     fontFamily: "Inter-Regular",
                                                   ),
                                                 ),
@@ -757,186 +763,168 @@ class _ArticleState extends State<Article> {
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment
-                                          .spaceEvenly, // 使用 spaceEvenly 平均分配空间
+                                          .spaceBetween, // 改为 spaceBetween
                                   children: [
-                                    // 微信风格操作按钮 - 不再需要额外的 Material 和 Row 包装
-                                    // 点赞按钮
-                                    Expanded(
-                                      // 使用 Expanded 让每个按钮占据相同空间
-                                      child: InkWell(
-                                        onTap: _handleLike,
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Tooltip(
-                                          message: isLiked ? '取消点赞' : '点赞',
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8),
-                                            child: Center(
-                                              // 居中内容
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .center, // 行内居中
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  isLikeLoading
-                                                      ? SizedBox(
-                                                        width: 18,
-                                                        height: 18,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          valueColor:
-                                                              AlwaysStoppedAnimation<
-                                                                Color
-                                                              >(Colors.red),
-                                                        ),
-                                                      )
-                                                      : Icon(
-                                                        isLiked
-                                                            ? Icons.thumb_up
-                                                            : Icons
-                                                                .thumb_up_outlined,
-                                                        size: 18,
-                                                        color:
-                                                            isLiked
-                                                                ? Colors.red
-                                                                : Colors.grey,
-                                                      ),
-                                                  if (likeCount > 0)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        left: 4,
-                                                      ),
-                                                      child: Text(
-                                                        "$likeCount",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              isLiked
-                                                                  ? Colors.red
-                                                                  : Colors
-                                                                      .grey[700],
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 评论按钮
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: () {
-                                          _NavigateToArticleDetail(
-                                            focusOnComment: true,
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Tooltip(
-                                          message: '点击发表评论',
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8),
-                                            child: Center(
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
+                                    // 左边按钮（评论）
+                                    InkWell(
+                                      onTap: () {
+                                        _NavigateToArticleDetail(
+                                          focusOnComment: true,
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Tooltip(
+                                        message: '点击发表评论',
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                widget.articleData['commentcount'] !=
+                                                            null &&
+                                                        widget.articleData['commentcount'] >
+                                                            0
+                                                    ? Icons.chat_bubble_rounded
+                                                    : Icons
+                                                        .chat_bubble_outline_rounded,
+                                                size: 18,
+                                                color:
                                                     widget.articleData['commentcount'] !=
                                                                 null &&
                                                             widget.articleData['commentcount'] >
                                                                 0
-                                                        ? Icons.chat_bubble
-                                                        : Icons
-                                                            .chat_bubble_outline,
-                                                    size: 18,
-                                                    color:
-                                                        widget.articleData['commentcount'] !=
-                                                                    null &&
-                                                                widget.articleData['commentcount'] >
-                                                                    0
-                                                            ? Colors.blue
-                                                            : Colors.grey,
-                                                  ),
-                                                  if (widget.articleData['commentcount'] !=
-                                                          null &&
-                                                      widget.articleData['commentcount'] >
-                                                          0)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        left: 4,
-                                                      ),
-                                                      child: Text(
-                                                        "${widget.articleData['commentcount']}",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.blue,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
+                                                        ? Colors.blue
+                                                        : Colors.grey,
                                               ),
-                                            ),
+                                              if (widget.articleData['commentcount'] !=
+                                                      null &&
+                                                  widget.articleData['commentcount'] >
+                                                      0)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    left: 4,
+                                                  ),
+                                                  child: Text(
+                                                    "${widget.articleData['commentcount']}",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.blue,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       ),
                                     ),
 
-                                    // 转发按钮
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: _handleRepost,
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: Tooltip(
-                                          message: '转发',
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8),
-                                            child: Center(
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.repeat,
+                                    // 中间按钮（转发）
+                                    InkWell(
+                                      onTap: _handleRepost,
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Tooltip(
+                                        message: '转发',
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.repeat,
+                                                size: 18,
+                                                color:
+                                                    widget.articleData['repeatcount'] !=
+                                                                null &&
+                                                            widget.articleData['repeatcount'] >
+                                                                0
+                                                        ? Colors.green
+                                                        : Colors.grey,
+                                              ),
+                                              if (widget.articleData['repeatcount'] !=
+                                                      null &&
+                                                  widget.articleData['repeatcount'] >
+                                                      0)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    left: 4,
+                                                  ),
+                                                  child: Text(
+                                                    "${widget.articleData['repeatcount']}",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.green,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    // 右边按钮（点赞）
+                                    InkWell(
+                                      onTap: _handleLike,
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Tooltip(
+                                        message: isLiked ? '取消点赞' : '点赞',
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              isLikeLoading
+                                                  ? SizedBox(
+                                                    width: 8,
+                                                    height: 18,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.red),
+                                                    ),
+                                                  )
+                                                  : Icon(
+                                                    isLiked
+                                                        ? Icons.favorite_border
+                                                        : Icons.favorite_border,
                                                     size: 18,
                                                     color:
-                                                        widget.articleData['repeatcount'] !=
-                                                                    null &&
-                                                                widget.articleData['repeatcount'] >
-                                                                    0
-                                                            ? Colors.green
+                                                        isLiked
+                                                            ? const Color.fromRGBO(
+                                                              237,
+                                                              144,
+                                                              131,
+                                                              1,
+                                                            )
                                                             : Colors.grey,
                                                   ),
-                                                  if (widget.articleData['repeatcount'] !=
-                                                          null &&
-                                                      widget.articleData['repeatcount'] >
-                                                          0)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                        left: 4,
-                                                      ),
-                                                      child: Text(
-                                                        "${widget.articleData['repeatcount']}",
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.green,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
+                                              if (likeCount > 0)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    left: 4,
+                                                  ),
+                                                  child: Text(
+                                                    "$likeCount",
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          isLiked
+                                                              ? Colors.red
+                                                              : Colors
+                                                                  .grey[700],
+                                                      fontWeight:
+                                                          FontWeight.w500,
                                                     ),
-                                                ],
-                                              ),
-                                            ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       ),

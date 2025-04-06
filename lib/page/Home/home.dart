@@ -534,7 +534,14 @@ class _MyHomeState extends State<MyHome> {
                       ),
                     );
                   },
-                  child: Icon(Icons.add),
+                  backgroundColor: Color(0xFF6F6BCC), // 设置背景色为6F6BCC
+                  shape: CircleBorder(), // 确保按钮是完美的圆形
+                  child: SvgPicture.asset(
+                    "lib/assets/icons/postbuttonicon.svg",
+                    width: 24, // 设置合适大小
+                    height: 24,
+                    color: Colors.white,
+                  ),
                 )
                 : null,
       ),
