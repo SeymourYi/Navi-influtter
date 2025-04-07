@@ -1,3 +1,5 @@
+import 'package:Navi/components/litarticle.dart';
+import 'package:Navi/page/post/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
@@ -653,6 +655,10 @@ class _ArticleState extends State<Article> {
                                   )
                                   : Container(),
 
+                              widget.articleData['userShare'] == true
+                                  ? LitArticle(articleData: widget.articleData)
+                                  : Container(),
+
                               // 时间和操作按钮区域
                               // 点赞和评论行 - 仅在需要时显示
                               likeCount > 0 ||
@@ -767,11 +773,18 @@ class _ArticleState extends State<Article> {
                                   children: [
                                     // 左边按钮（评论）
                                     InkWell(
-                                      onTap: () {
-                                        _NavigateToArticleDetail(
-                                          focusOnComment: true,
-                                        );
-                                      },
+                                      onTap:
+                                          () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => PostPage(
+                                                    type: '评论',
+                                                    articelData:
+                                                        widget.articleData,
+                                                  ),
+                                            ),
+                                          ),
                                       borderRadius: BorderRadius.circular(20),
                                       child: Tooltip(
                                         message: '点击发表评论',
@@ -823,7 +836,18 @@ class _ArticleState extends State<Article> {
 
                                     // 中间按钮（转发）
                                     InkWell(
-                                      onTap: _handleRepost,
+                                      onTap:
+                                          () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => PostPage(
+                                                    type: '转发',
+                                                    articelData:
+                                                        widget.articleData,
+                                                  ),
+                                            ),
+                                          ),
                                       borderRadius: BorderRadius.circular(20),
                                       child: Tooltip(
                                         message: '转发',

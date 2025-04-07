@@ -22,13 +22,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _isSaving = false;
   Map<String, dynamic>? _userInfo;
 
-  // 用于保存用户输入的文本控制器
+  // Controllers for text fields
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
+  final TextEditingController _categoryName1Controller =
+      TextEditingController();
+  final TextEditingController _categoryName2Controller =
+      TextEditingController();
+  final TextEditingController _categoryName3Controller =
+      TextEditingController();
+  final TextEditingController _categoryId1Controller = TextEditingController();
+  final TextEditingController _categoryId2Controller = TextEditingController();
+  final TextEditingController _categoryId3Controller = TextEditingController();
 
-  // 用于处理图片
+  // Image files
   File? _userPicFile;
   File? _bgImgFile;
 
@@ -44,6 +53,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _bioController.dispose();
     _locationController.dispose();
     _professionController.dispose();
+    _categoryName1Controller.dispose();
+    _categoryName2Controller.dispose();
+    _categoryName3Controller.dispose();
+    _categoryId1Controller.dispose();
+    _categoryId2Controller.dispose();
+    _categoryId3Controller.dispose();
     super.dispose();
   }
 
@@ -53,7 +68,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
 
     try {
-      // 获取本地存储的用户信息
       final userInfo = await SharedPrefsUtils.getUserInfo();
       if (userInfo != null) {
         setState(() {
@@ -62,6 +76,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _bioController.text = userInfo['bio'] ?? '';
           _locationController.text = userInfo['location'] ?? '';
           _professionController.text = userInfo['profession'] ?? '';
+          _categoryName1Controller.text = userInfo['categoryName1'] ?? '';
+          _categoryName2Controller.text = userInfo['categoryName2'] ?? '';
+          _categoryName3Controller.text = userInfo['categoryName3'] ?? '';
+          _categoryId1Controller.text =
+              userInfo['categoryId1']?.toString() ?? '';
+          _categoryId2Controller.text =
+              userInfo['categoryId2']?.toString() ?? '';
+          _categoryId3Controller.text =
+              userInfo['categoryId3']?.toString() ?? '';
         });
       }
     } catch (e) {
@@ -82,7 +105,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       });
 
       try {
-        // 准备图片文件
+        // Prepare image files
         MultipartFile? userPicMultipartFile;
         if (_userPicFile != null) {
           userPicMultipartFile = await MultipartFile.fromFile(
@@ -99,7 +122,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           );
         }
 
-        // 调用API更新用户信息
+        // Call API to update user info
         final result = await _userService.updateUserInfo(
           id: _userInfo!['id'],
           username: _userInfo!['username'],
@@ -109,9 +132,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
           profession: _professionController.text,
           userPicFile: userPicMultipartFile,
           bgImgFile: bgImgMultipartFile,
+          categoryId1: int.parse(_categoryId1Controller.text),
+          categoryId2: int.parse(_categoryId2Controller.text),
+          categoryId3: int.parse(_categoryId3Controller.text),
+          categoryName1: _categoryName1Controller.text,
+          categoryName2: _categoryName2Controller.text,
+          categoryName3: _categoryName3Controller.text,
         );
 
-        // 使用专用方法刷新用户信息
+        // Refresh user info
         bool refreshSuccessful = await _userService.refreshUserInfo();
 
         if (refreshSuccessful) {
@@ -119,14 +148,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
             context,
           ).showSnackBar(const SnackBar(content: Text('个人信息已更新，数据已刷新')));
         } else {
-          // 如果刷新失败，只更新本地修改的字段
+          // Fallback if refresh fails
           final updatedUserInfo = Map<String, dynamic>.from(_userInfo!);
           updatedUserInfo['nickname'] = _nicknameController.text;
           updatedUserInfo['bio'] = _bioController.text;
           updatedUserInfo['location'] = _locationController.text;
           updatedUserInfo['profession'] = _professionController.text;
+          updatedUserInfo['categoryName1'] = _categoryName1Controller.text;
+          updatedUserInfo['categoryName2'] = _categoryName2Controller.text;
+          updatedUserInfo['categoryName3'] = _categoryName3Controller.text;
 
-          // 如果服务器返回了新的图片URL，更新本地存储
           if (result.containsKey('userPic') && result['userPic'] != null) {
             updatedUserInfo['userPic'] = result['userPic'];
           }
@@ -135,13 +166,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
           }
 
           await SharedPrefsUtils.saveUserInfo(updatedUserInfo);
-
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('个人信息已更新')));
         }
 
-        // 返回上一页，并传递true表示更新成功
         Navigator.pop(context, true);
       } catch (e) {
         ScaffoldMessenger.of(
@@ -262,6 +291,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       _buildTextField('职业', _professionController, false),
                       const SizedBox(height: 16),
                       _buildTextField('地点', _locationController, false),
+                      const SizedBox(height: 24),
+                      _buildTextField('标签1', _categoryName1Controller, false),
+                      const SizedBox(height: 24),
+                      _buildTextField('标签2', _categoryName2Controller, false),
+                      const SizedBox(height: 24),
+                      _buildTextField('标签3', _categoryName3Controller, false),
                       const SizedBox(height: 24),
                       _buildSaveButton(),
                     ],

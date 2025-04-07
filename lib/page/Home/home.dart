@@ -512,7 +512,7 @@ class _MyHomeState extends State<MyHome> {
                       PageRouteBuilder(
                         pageBuilder:
                             (context, animation, secondaryAnimation) =>
-                                PostPage(),
+                                PostPage(type: "发布"),
                         transitionsBuilder: (
                           context,
                           animation,

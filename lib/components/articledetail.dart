@@ -1,6 +1,7 @@
 import 'package:Navi/api/articleAPI.dart';
 import 'package:Navi/api/getarticleinfoAPI.dart';
 import 'package:Navi/components/CommentWidget%20.dart';
+import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/page/Home/articlelist.dart';
 import 'package:flutter/material.dart';
 import 'articleimage.dart';
@@ -25,12 +26,8 @@ class _ArticledetailState extends State<Articledetail> {
 
   void getarticleComments() async {
     final result = await ArticleService().getArticleComments(
-      // widget.articleData['id'],
-      194,
+      int.parse(widget.articleData['id']),
     );
-    print(result);
-    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-    print(widget.articleData['id']);
     setState(() {
       articleComments = result['data'];
     });
@@ -128,6 +125,11 @@ class _ArticledetailState extends State<Articledetail> {
           widget.articleData['coverImg'] != ""
               ? ArticleImage(imageUrls: ["${widget.articleData['coverImg']}"])
               : Container(),
+
+          widget.articleData['userShare'] == true
+              ? LitArticle(articleData: widget.articleData)
+              : Container(),
+
           // Stats and actions
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),

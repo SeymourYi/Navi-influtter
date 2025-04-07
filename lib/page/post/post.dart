@@ -1,4 +1,6 @@
 // post_page.dart - 发布页面
+import 'package:Navi/components/litarticle.dart';
+import 'package:Navi/components/postlitarticle.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 // ignore: unused_import
@@ -9,7 +11,16 @@ import '../../utils/imagepick.dart';
 
 /// 发布页面的无状态组件
 class PostPage extends StatefulWidget {
-  const PostPage({Key? key}) : super(key: key);
+  const PostPage({
+    Key? key,
+    this.articelData, // Optional article data
+    required this.type,
+  }) : super(key: key);
+
+  final dynamic
+  articelData; // Consider using a specific type instead of dynamic
+  final String
+  type; // Changed from dynamic to String since we know it's a string
 
   @override
   State<PostPage> createState() => _PostPageState();
@@ -34,15 +45,7 @@ class _PostPageState extends State<PostPage> {
   // 选择的图片
   File? _selectedImage;
   // 标签列表
-  final List<String> _tags = [
-    '技术交流',
-    '生活随笔',
-    '学习笔记',
-    '旅行日记',
-    '美食分享',
-    '热点话题',
-    '职场经验',
-  ];
+
   // 标签选择器是否显示
   bool _showTagSelector = false;
   // 文章服务
@@ -89,18 +92,18 @@ class _PostPageState extends State<PostPage> {
     super.dispose();
   }
 
-  // 获取标签对应的分类ID
   int? _getCategoryIdFromTag(String tag) {
-    // 这里简化处理，实际应用中可能需要从API获取真实的分类ID
+    if (_userInfo == null) return null;
+
     final Map<String, int> tagToCategory = {
-      '技术交流': 1,
-      '生活随笔': 2,
-      '学习笔记': 3,
-      '旅行日记': 4,
-      '美食分享': 5,
-      '热点话题': 6,
-      '职场经验': 7,
+      if (_userInfo?['categoryName1'] != null)
+        _userInfo!['categoryName1']: _userInfo?['categoryId1'] ?? 0,
+      if (_userInfo?['categoryName2'] != null)
+        _userInfo!['categoryName2']: _userInfo?['categoryId2'] ?? 0,
+      if (_userInfo?['categoryName3'] != null)
+        _userInfo!['categoryName3']: _userInfo?['categoryId3'] ?? 0,
     };
+
     return tagToCategory[tag];
   }
 
@@ -114,7 +117,10 @@ class _PostPageState extends State<PostPage> {
           onPressed: () => Navigator.pop(context),
         ),
         // 页面标题
-        title: const Text('发布', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          widget.type.toString(),
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         // 右侧操作按钮
         actions: [
           Padding(
@@ -147,9 +153,9 @@ class _PostPageState extends State<PostPage> {
                           color: Colors.white,
                         ),
                       )
-                      : const Text(
-                        '发布',
-                        style: TextStyle(
+                      : Text(
+                        widget.type.toString(),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -189,6 +195,8 @@ class _PostPageState extends State<PostPage> {
                     const SizedBox(height: 16),
                     _buildCharCounter(),
                     // 添加足够的底部空间，防止内容被遮挡
+                    PostLitArticle(articleData: widget.articelData),
+
                     SizedBox(height: MediaQuery.of(context).size.height * 0.4),
                   ],
                 ),
@@ -393,7 +401,11 @@ class _PostPageState extends State<PostPage> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [for (String tag in _tags) _buildTagChip(tag)],
+                    children: [
+                      _buildTagChip(_userInfo?['categoryName1'] ?? ''),
+                      _buildTagChip(_userInfo?['categoryName2'] ?? ''),
+                      _buildTagChip(_userInfo?['categoryName3'] ?? ''),
+                    ],
                   ),
                 ),
               ),
@@ -626,19 +638,41 @@ class _PostPageState extends State<PostPage> {
         categoryId = 1;
       }
 
-      // 输出选择的图片信息
-      if (_selectedImage != null) {
-        debugPrint('发布带图文章，图片路径: ${_selectedImage!.path}');
-      }
+      // 确保文章数据中的 ID 是整数类型
+      final int articleId =
+          widget.articelData['id'] is int
+              ? widget.articelData['id']
+              : int.parse(widget.articelData['id'].toString());
 
       // 调用API发布文章
-      await _postService.postArticle(
-        content: content,
-        userId: _userInfo!['id'],
-        username: _userInfo!['username'],
-        categoryId: categoryId,
-        imageFile: _selectedImage, // 传递选择的图片文件
-      );
+      if (widget.type == '评论') {
+        await _postService.postComment(
+          content: content,
+          userId: _userInfo!['id'],
+          username: _userInfo!['username'],
+          articleId: articleId,
+          categoryId: categoryId,
+          becommentarticleId: articleId,
+          imageFile: _selectedImage, // 传递选择的图片文件
+        );
+      } else if (widget.type == '转发') {
+        await _postService.postShareArticle(
+          originalArticleId: articleId,
+          content: content,
+          userId: _userInfo!['id'],
+          username: _userInfo!['username'],
+          categoryId: categoryId,
+          imageFile: _selectedImage, // 传递选择的图片文件
+        );
+      } else {
+        await _postService.postArticle(
+          content: content,
+          userId: _userInfo!['id'],
+          username: _userInfo!['username'],
+          categoryId: categoryId,
+          imageFile: _selectedImage, // 传递选择的图片文件
+        );
+      }
 
       // 发布成功后返回上一页
       if (mounted) {

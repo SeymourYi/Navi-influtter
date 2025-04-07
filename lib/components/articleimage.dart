@@ -115,8 +115,8 @@ class ArticleImage extends StatelessWidget {
             tag: 'article_image_$index',
             child: Image.network(
               imageUrls[index],
-              width: double.infinity,
-              height: double.infinity, // 让高度尽可能填充可用空间
+              // width: double.infinity,
+              // height: double.infinity, // 让高度尽可能填充可用空间
               fit: BoxFit.cover,
               alignment: Alignment.center, // 确保裁剪时居中
               errorBuilder:

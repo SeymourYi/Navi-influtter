@@ -16,7 +16,12 @@ class SharedPrefsUtils {
   static const String _phoneNumberKey = 'phone_number';
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _isdeletKey = 'is_delet';
-
+  static const String _categoryName1 = 'category_name1';
+  static const String _categoryName2 = 'category_name2';
+  static const String _categoryName3 = 'category_name3';
+  static const String _categoryId1 = 'category_id1';
+  static const String _categoryId2 = 'category_id2';
+  static const String _categoryId3 = 'category_id3';
   // 存储任意字符串值
   static Future<void> setString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -100,6 +105,12 @@ class SharedPrefsUtils {
       prefs.setString(_phoneNumberKey, userInfo['phoneNumber'] ?? ''),
       prefs.setBool(_isdeletKey, userInfo['isdelet'] ?? false),
       prefs.setBool(_isLoggedInKey, true),
+      prefs.setString(_categoryName1, userInfo['categoryName1'] ?? ''),
+      prefs.setString(_categoryName2, userInfo['categoryName2'] ?? ''),
+      prefs.setString(_categoryName3, userInfo['categoryName3'] ?? ''),
+      prefs.setInt(_categoryId1, userInfo['categoryId1'] ?? 0),
+      prefs.setInt(_categoryId2, userInfo['categoryId2'] ?? 0),
+      prefs.setInt(_categoryId3, userInfo['categoryId3'] ?? 0),
     ]);
   }
 
@@ -121,6 +132,12 @@ class SharedPrefsUtils {
       'updateTime': prefs.getString(_updateTimeKey) ?? '',
       'phoneNumber': prefs.getString(_phoneNumberKey) ?? '',
       'isdelet': prefs.getBool(_isdeletKey) ?? false,
+      'categoryName1': prefs.getString(_categoryName1) ?? '',
+      'categoryName2': prefs.getString(_categoryName2) ?? '',
+      'categoryName3': prefs.getString(_categoryName3) ?? '',
+      'categoryId1': prefs.getInt(_categoryId1) ?? 0,
+      'categoryId2': prefs.getInt(_categoryId2) ?? 0,
+      'categoryId3': prefs.getInt(_categoryId3) ?? 0,
     };
   }
 
@@ -145,6 +162,12 @@ class SharedPrefsUtils {
       prefs.remove(_phoneNumberKey),
       prefs.remove(_isdeletKey),
       prefs.remove(_isLoggedInKey),
+      prefs.remove(_categoryName1),
+      prefs.remove(_categoryName2),
+      prefs.remove(_categoryName3),
+      prefs.remove(_categoryId1),
+      prefs.remove(_categoryId2),
+      prefs.remove(_categoryId3),
     ]);
   }
 

@@ -59,6 +59,13 @@ class UserService {
     String? location,
     MultipartFile? userPicFile,
     MultipartFile? bgImgFile,
+    int? categoryId1,
+    int? categoryId2,
+    int? categoryId3,
+    String? categoryName1,
+    String? categoryName2,
+    String? categoryName3,
+    String? phoneNumber,
   }) async {
     try {
       // 创建FormData对象
@@ -70,10 +77,13 @@ class UserService {
         'bio': bio ?? '',
         'location': location ?? '',
         // 添加默认的分类名称
-        'categoryName1': '默认分类1',
-        'categoryName2': '默认分类2',
-        'categoryName3': '默认分类3',
-        'phoneNumber': '',
+        'categoryName1': categoryName1 ?? '',
+        'categoryName2': categoryName2 ?? '',
+        'categoryName3': categoryName3 ?? '',
+        'phoneNumber': phoneNumber ?? '',
+        'categoryId1': categoryId1 ?? '',
+        'categoryId2': categoryId2 ?? '',
+        'categoryId3': categoryId3 ?? '',
       });
 
       // 如果有头像文件，添加到表单

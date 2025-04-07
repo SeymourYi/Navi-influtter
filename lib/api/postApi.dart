@@ -46,17 +46,29 @@ class PostService {
     required String username,
     required int categoryId,
     required int originalArticleId,
+    File? imageFile,
   }) async {
     try {
       // 创建FormData对象
-      FormData formData = FormData.fromMap({
+      Map<String, dynamic> formMap = {
         'content': content,
         'createUserId': userId,
         'categoryId': categoryId,
         'username': username,
-        'BeSharearticleID': originalArticleId,
+        'BeSharearticleID': originalArticleId.toString(),
         'createUserName': username,
-      });
+      };
+
+      // 如果有图片文件，添加到表单数据中
+      if (imageFile != null) {
+        String fileName = imageFile.path.split('/').last;
+        formMap['file'] = await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        );
+      }
+
+      FormData formData = FormData.fromMap(formMap);
 
       // 发送请求
       var response = await HttpClient.dio.post(
@@ -75,19 +87,38 @@ class PostService {
     required int userId,
     required String username,
     required int articleId,
+    required int categoryId,
+    required int becommentarticleId,
+    File? imageFile,
   }) async {
     try {
       // 创建FormData对象
-      FormData formData = FormData.fromMap({
+      Map<String, dynamic> formMap = {
         'content': content,
         'createUserId': userId,
         'articleId': articleId,
         'username': username,
-        'categoryId': 1,
-      });
+        'categoryId': categoryId,
+        'becomment_articleID': becommentarticleId,
+        'createUserName': username,
+      };
+
+      // 如果有图片文件，添加到表单数据中
+      if (imageFile != null) {
+        String fileName = imageFile.path.split('/').last;
+        formMap['file'] = await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        );
+      }
+
+      FormData formData = FormData.fromMap(formMap);
 
       // 发送请求
-      var response = await HttpClient.dio.post("/article", data: formData);
+      var response = await HttpClient.dio.post(
+        "/article/replayArticle",
+        data: formData,
+      );
       return response.data;
     } catch (e) {
       throw Exception('评论文章失败: $e');
