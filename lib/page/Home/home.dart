@@ -1,4 +1,5 @@
 ﻿import 'package:Navi/page/Email/components/infopage.dart';
+import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -579,7 +580,8 @@ class _MyHomeState extends State<MyHome> {
               onAddPostPressed: _navigateToPost,
             ),
             // 使用新创建的带AppBar的NotificationsTab
-            ChineseSocialMediaPage(),
+            // ChineseSocialMediaPage(),
+            EmailList(),
           ],
         ),
       ),
