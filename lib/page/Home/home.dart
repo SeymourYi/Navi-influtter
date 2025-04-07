@@ -1,4 +1,5 @@
-﻿import 'package:Navi/page/Home/components/things.dart';
+﻿import 'package:Navi/page/Email/components/infopage.dart';
+import 'package:Navi/page/Home/components/things.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/components/like_notification_list.dart';
@@ -303,6 +304,100 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
   }
 }
 
+// 创建动态页面TabView，包含自己的AppBar
+class HomeTab extends StatelessWidget {
+  final Map<String, dynamic>? userInfo;
+  final VoidCallback onSearchPressed;
+  final VoidCallback onAddPostPressed;
+
+  const HomeTab({
+    Key? key,
+    required this.userInfo,
+    required this.onSearchPressed,
+    required this.onAddPostPressed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          "Navi",
+          style: TextStyle(
+            fontSize: 23,
+            fontFamily: "Inter-Regular",
+            color: const Color.fromARGB(71, 116, 55, 202),
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: onSearchPressed,
+            icon: SvgPicture.asset(
+              "lib/assets/icons/adduser.svg",
+              height: 20,
+              width: 20,
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Container(color: Color.fromARGB(67, 98, 73, 73), height: 0.3),
+        ),
+      ),
+      body: things(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: onAddPostPressed,
+        backgroundColor: Color(0xFF6F6BCC),
+        shape: CircleBorder(),
+        child: SvgPicture.asset(
+          "lib/assets/icons/postbuttonicon.svg",
+          width: 24,
+          height: 24,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+// 创建通知页面TabView，包含自己的AppBar
+class NotificationsTab extends StatelessWidget {
+  final List<LikeNotification> notifications;
+
+  const NotificationsTab({Key? key, required this.notifications})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          "通知",
+          style: TextStyle(
+            fontSize: 23,
+            fontFamily: "Inter-Regular",
+            color: const Color.fromARGB(71, 116, 55, 202),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Container(color: Color.fromARGB(67, 98, 73, 73), height: 0.3),
+        ),
+      ),
+      body: LikeNotificationList(
+        notifications: notifications,
+        onFollowUser: (user) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
+        },
+      ),
+    );
+  }
+}
+
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
 
@@ -314,7 +409,7 @@ class _MyHomeState extends State<MyHome> {
   Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
   PersistentDrawer? _persistentDrawer;
-  int _currentTabIndex = 0; // Track current tab index
+  int _currentTabIndex = 0;
 
   final List<LikeNotification> notifications = [
     LikeNotification(
@@ -386,6 +481,51 @@ class _MyHomeState extends State<MyHome> {
     }
   }
 
+  void _navigateToSearch() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => SearchPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  void _navigateToPost() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) => PostPage(type: "发布"),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_persistentDrawer == null && !_isLoading && _userInfo != null) {
@@ -398,61 +538,7 @@ class _MyHomeState extends State<MyHome> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text(
-            "Navi",
-            style: TextStyle(
-              fontSize: 23,
-              fontFamily: "Inter-Regular",
-              color: const Color.fromARGB(71, 116, 55, 202),
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder:
-                        (context, animation, secondaryAnimation) =>
-                            SearchPage(),
-                    transitionsBuilder: (
-                      context,
-                      animation,
-                      secondaryAnimation,
-                      child,
-                    ) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      var tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                  ),
-                );
-              },
-              icon: SvgPicture.asset(
-                "lib/assets/icons/adduser.svg",
-                height: 20,
-                width: 20,
-              ),
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(1.0),
-            child: Container(
-              color: Color.fromARGB(67, 98, 73, 73),
-              height: 0.3,
-            ),
-          ),
-        ),
+        // 移除主Scaffold的AppBar，AppBar将在各个Tab中定义
         drawer:
             _isLoading
                 ? Drawer(child: Center(child: CircularProgressIndicator()))
@@ -468,15 +554,12 @@ class _MyHomeState extends State<MyHome> {
             child: TabBar(
               onTap: (index) {
                 setState(() {
-                  _currentTabIndex = index; // Update current tab index
+                  _currentTabIndex = index;
                 });
               },
               tabs: [
                 Tab(text: "动态", icon: Icon(Icons.home, size: 20)),
-                // Tab(text: "聊天", icon: Icon(Icons.chat, size: 20)),
-                // Tab(text: "通讯录", icon: Icon(Icons.people, size: 20)),
                 Tab(text: "通知", icon: Icon(Icons.notifications, size: 20)),
-                // Tab(text: "我", icon: Icon(Icons.person, size: 20)),
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,
@@ -489,61 +572,16 @@ class _MyHomeState extends State<MyHome> {
         ),
         body: TabBarView(
           children: [
-            things(),
-            // const ChatScreen(),
-            // const FriendsList(),
-            LikeNotificationList(
-              notifications: notifications,
-              onFollowUser: (user) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
-              },
+            // 使用新创建的带AppBar的HomeTab
+            HomeTab(
+              userInfo: _userInfo,
+              onSearchPressed: _navigateToSearch,
+              onAddPostPressed: _navigateToPost,
             ),
+            // 使用新创建的带AppBar的NotificationsTab
+            ChineseSocialMediaPage(),
           ],
         ),
-        floatingActionButton:
-            _currentTabIndex ==
-                    0 // Only show FAB on home tab
-                ? FloatingActionButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder:
-                            (context, animation, secondaryAnimation) =>
-                                PostPage(type: "发布"),
-                        transitionsBuilder: (
-                          context,
-                          animation,
-                          secondaryAnimation,
-                          child,
-                        ) {
-                          const begin = Offset(0.0, 1.0);
-                          const end = Offset.zero;
-                          const curve = Curves.ease;
-                          var tween = Tween(
-                            begin: begin,
-                            end: end,
-                          ).chain(CurveTween(curve: curve));
-                          return SlideTransition(
-                            position: animation.drive(tween),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  backgroundColor: Color(0xFF6F6BCC), // 设置背景色为6F6BCC
-                  shape: CircleBorder(), // 确保按钮是完美的圆形
-                  child: SvgPicture.asset(
-                    "lib/assets/icons/postbuttonicon.svg",
-                    width: 24, // 设置合适大小
-                    height: 24,
-                    color: Colors.white,
-                  ),
-                )
-                : null,
       ),
     );
   }
