@@ -16,7 +16,6 @@ class HttpClient {
           final token = await SharedPrefsUtils.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers["Authorization"] = token;
-            print('添加token: $token'); // 调试日志
           } else {
             print('无token'); // 调试日志
           }
@@ -29,13 +28,9 @@ class HttpClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onResponse: (response, handler) {
-          print('响应状态码: ${response.statusCode}'); // 调试日志
-          print('响应数据: ${response.data}'); // 调试日志
           return handler.next(response);
         },
         onError: (DioException e, handler) {
-          print('请求错误: ${e.message}'); // 调试日志
-          print('错误响应: ${e.response?.data}'); // 调试日志
           if (e.response?.statusCode == 401) {
             // token失效，清除本地token
             SharedPrefsUtils.clearToken();

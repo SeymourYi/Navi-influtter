@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 class PostLitArticle extends StatefulWidget {
   const PostLitArticle({super.key, required this.articleData});
-  final Map<String, dynamic> articleData;
+  final dynamic articleData;
   @override
   State<PostLitArticle> createState() => _PostLitArticleState();
 }

@@ -1,3 +1,4 @@
+import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/models/like_notification.dart';
@@ -9,12 +10,18 @@ import 'package:Navi/page/search/search.dart';
 import 'package:Navi/utils/mydio.dart';
 import '../../Store/storeutils.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
+import 'package:provider/provider.dart';
 
 void main(List<String> args) async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
   await HttpClient.init();
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => NotificationProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

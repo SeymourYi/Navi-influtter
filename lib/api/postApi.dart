@@ -1,8 +1,10 @@
+import 'package:Navi/api/emailAPI.dart';
 import 'package:dio/dio.dart';
 import '../utils/mydio.dart';
 import 'dart:io';
 
 class PostService {
+  final EmailService emailService = EmailService();
   // 发布普通文章
   Future<Map<String, dynamic>> postArticle({
     required String content,

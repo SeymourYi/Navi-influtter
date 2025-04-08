@@ -27,7 +27,6 @@ class AppConfig {
     if (host != null) serverHost = host;
     if (port != null) serverPort = port;
     if (useSockJS != null) enableSockJS = useSockJS;
-    print('更新服务器配置: $serverUrl, SockJS: $enableSockJS');
   }
 
   // 重置为本地测试配置
@@ -35,6 +34,5 @@ class AppConfig {
     serverHost = 'localhost';
     serverPort = 8080;
     enableSockJS = true;
-    print('已切换到本地测试配置: $serverUrl');
   }
 }

@@ -237,12 +237,9 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
 
-      print('登录响应: $response'); // 调试日志
-
       if (response['code'] == 0 && response['data'] != null) {
         // 2. 保存token
         final token = response['data'].toString();
-        print('保存token: $token'); // 调试日志
         await SharedPrefsUtils.saveToken(token);
 
         // 3. 重新初始化 HttpClient 以使用新token
@@ -251,8 +248,6 @@ class _LoginPageState extends State<LoginPage> {
         // 4. 获取用户信息
         final userService = UserService();
         final userInfoResponse = await userService.getUserinfo();
-
-        print('用户信息响应: $userInfoResponse'); // 调试日志
 
         if (userInfoResponse['code'] == 0 && userInfoResponse['data'] != null) {
           // 5. 保存用户信息

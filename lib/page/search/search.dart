@@ -73,7 +73,6 @@ class _SearchPageState extends State<SearchPage> {
     try {
       SearchSomeService service = SearchSomeService();
       var result = await service.SearchSome(_searchController.text);
-      print(result);
 
       setState(() {
         if (result != null && result['code'] == 0 && result['data'] != null) {

@@ -1,6 +1,7 @@
 ﻿import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
+import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/components/like_notification_list.dart';
@@ -18,6 +19,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import '../../utils/myjpush.dart';
 import 'package:Navi/page/Setting/settings.dart';
+import 'package:provider/provider.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {
@@ -509,7 +511,8 @@ class _MyHomeState extends State<MyHome> {
       context,
       PageRouteBuilder(
         pageBuilder:
-            (context, animation, secondaryAnimation) => PostPage(type: "发布"),
+            (context, animation, secondaryAnimation) =>
+                PostPage(type: "发布", articelData: null),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(0.0, 1.0);
           const end = Offset.zero;
@@ -560,7 +563,40 @@ class _MyHomeState extends State<MyHome> {
               },
               tabs: [
                 Tab(text: "动态", icon: Icon(Icons.home, size: 20)),
-                Tab(text: "通知", icon: Icon(Icons.notifications, size: 20)),
+                Tab(
+                  text: "通知",
+                  icon: Stack(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.only(right: 10, top: 4),
+                        child: Icon(Icons.notifications, size: 20),
+                      ),
+
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            Provider.of<NotificationProvider>(
+                              context,
+                            ).getnotificationcount().toString(),
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.transparent,

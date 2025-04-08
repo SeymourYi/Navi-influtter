@@ -32,7 +32,13 @@ class _EmailitemState extends State<Emailitem> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.favorite, color: Colors.red, size: 28),
+                widget.email['type'] == 'like'
+                    ? const Icon(Icons.favorite, color: Colors.red, size: 28)
+                    : widget.email['type'] == 'comment'
+                    ? const Icon(Icons.comment, color: Colors.blue, size: 28)
+                    : widget.email['type'] == 'reArticle'
+                    ? const Icon(Icons.share, color: Colors.green, size: 28)
+                    : const Icon(Icons.favorite, color: Colors.red, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -55,7 +61,16 @@ class _EmailitemState extends State<Emailitem> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const TextSpan(text: ' 被喜欢了'),
+
+                            widget.email['type'] == 'like'
+                                ? const TextSpan(text: ' 被喜欢了')
+                                : widget.email['type'] == 'comment'
+                                ? const TextSpan(text: ' 被评论了')
+                                : widget.email['type'] == 'reArticle'
+                                ? const TextSpan(text: ' 被转发了')
+                                : const TextSpan(text: ' 被收藏了'),
+
+                            TextSpan(text: ' ${widget.email['uptonow']}'),
                           ],
                         ),
                       ),
@@ -121,6 +136,29 @@ class _EmailitemState extends State<Emailitem> {
                                     ),
 
                                   // info
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (widget.email['senderJob'] != null)
+                                        _buildInfoChip(
+                                          Icons.work_outline,
+                                          widget.email['senderJob'],
+                                        ),
+                                      if (widget.email['senderLocate'] != null)
+                                        _buildInfoChip(
+                                          Icons.location_on_outlined,
+                                          widget.email['senderLocate'],
+                                        ),
+                                      if (widget.email['senderJoinDate'] !=
+                                          null)
+                                        _buildInfoChip(
+                                          Icons.calendar_today_outlined,
+                                          widget.email['senderJoinDate'],
+                                        ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -130,24 +168,31 @@ class _EmailitemState extends State<Emailitem> {
                     ],
                   ),
                 ),
+
+                widget.email['isRead']
+                    ? const SizedBox()
+                    : const Icon(Icons.circle, color: Colors.red, size: 10),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.email['senderJob'] != null)
-                  _buildInfoChip(Icons.work_outline, widget.email['senderJob']),
-                if (widget.email['senderLocate'] != null)
-                  _buildInfoChip(
-                    Icons.location_on_outlined,
-                    widget.email['senderLocate'],
-                  ),
-                if (widget.email['senderJoinDate'] != null)
-                  _buildInfoChip(
-                    Icons.calendar_today_outlined,
-                    widget.email['senderJoinDate'],
-                  ),
+                widget.email['type'] == 'like'
+                    ? const SizedBox()
+                    : widget.email['type'] == 'comment'
+                    ? SizedBox(
+                      width: 350,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: Text(widget.email['newArticleContent']),
+                      ),
+                    )
+                    : widget.email['type'] == 'reArticle'
+                    ? SizedBox(
+                      width: 350,
+                      child: Text('${widget.email['newArticleContent']}'),
+                    )
+                    : const SizedBox(),
               ],
             ),
           ],
@@ -158,7 +203,7 @@ class _EmailitemState extends State<Emailitem> {
 
   Widget _buildInfoChip(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
@@ -166,9 +211,9 @@ class _EmailitemState extends State<Emailitem> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
-          const SizedBox(width: 4),
-          Text(text, style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+          Icon(icon, size: 10, color: Colors.grey[600]),
+          const SizedBox(width: 2),
+          Text(text, style: TextStyle(color: Colors.grey[700], fontSize: 10)),
         ],
       ),
     );

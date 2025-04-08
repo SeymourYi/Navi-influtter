@@ -75,7 +75,7 @@ class _FriendsListState extends State<FriendsList> {
     try {
       var username = await SharedPrefsUtils.getUsername();
       var result = await service.GetFriendList(username.toString());
-      print(result);
+     
 
       // 将API返回的数据转换为Friend对象列表
       List<Friend> apiFriends = [];

@@ -194,9 +194,10 @@ class _PostPageState extends State<PostPage> {
                     _buildActionButtons(),
                     const SizedBox(height: 16),
                     _buildCharCounter(),
-                    // 添加足够的底部空间，防止内容被遮挡
-                    PostLitArticle(articleData: widget.articelData),
 
+                    // 添加足够的底部空间，防止内容被遮挡
+                    if (widget.type != "发布")
+                      PostLitArticle(articleData: widget.articelData),
                     SizedBox(height: MediaQuery.of(context).size.height * 0.4),
                   ],
                 ),
@@ -638,14 +639,13 @@ class _PostPageState extends State<PostPage> {
         categoryId = 1;
       }
 
-      // 确保文章数据中的 ID 是整数类型
-      final int articleId =
-          widget.articelData['id'] is int
-              ? widget.articelData['id']
-              : int.parse(widget.articelData['id'].toString());
-
       // 调用API发布文章
       if (widget.type == '评论') {
+        // 确保文章数据中的 ID 是整数类型
+        final int articleId =
+            widget.articelData['id'] is int
+                ? widget.articelData['id']
+                : int.parse(widget.articelData['id'].toString());
         await _postService.postComment(
           content: content,
           userId: _userInfo!['id'],
@@ -656,6 +656,11 @@ class _PostPageState extends State<PostPage> {
           imageFile: _selectedImage, // 传递选择的图片文件
         );
       } else if (widget.type == '转发') {
+        // 确保文章数据中的 ID 是整数类型
+        final int articleId =
+            widget.articelData['id'] is int
+                ? widget.articelData['id']
+                : int.parse(widget.articelData['id'].toString());
         await _postService.postShareArticle(
           originalArticleId: articleId,
           content: content,
