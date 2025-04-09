@@ -792,15 +792,15 @@ class _ArticleState extends State<Article> {
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(
+                                              SvgPicture.asset(
                                                 widget.articleData['commentcount'] !=
                                                             null &&
                                                         widget.articleData['commentcount'] >
                                                             0
-                                                    ? Icons.chat_bubble_rounded
-                                                    : Icons
-                                                        .chat_bubble_outline_rounded,
-                                                size: 18,
+                                                    ? "lib/assets/icons/chatbubble-ellipses.svg" // different icon when has comments
+                                                    : "lib/assets/icons/chatbubble-ellipses-outline.svg", // different icon when no comments
+                                                width: 18,
+                                                height: 18,
                                                 color:
                                                     widget.articleData['commentcount'] !=
                                                                 null &&
@@ -855,9 +855,10 @@ class _ArticleState extends State<Article> {
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(
-                                                Icons.repeat,
-                                                size: 18,
+                                              SvgPicture.asset(
+                                                "lib/assets/icons/repeat-outline.svg",
+                                                width: 18,
+                                                height: 18,
                                                 color:
                                                     widget.articleData['repeatcount'] !=
                                                                 null &&

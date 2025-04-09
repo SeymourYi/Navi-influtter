@@ -8,6 +8,7 @@ import '../../models/post_article_model.dart';
 import '../../Store/storeutils.dart';
 import '../../api/postApi.dart';
 import '../../utils/imagepick.dart';
+import 'components/targlist.dart';
 
 /// 发布页面的无状态组件
 class PostPage extends StatefulWidget {
@@ -45,6 +46,7 @@ class _PostPageState extends State<PostPage> {
   // 选择的图片
   File? _selectedImage;
   // 标签列表
+  List<String> _tags = [];
 
   // 标签选择器是否显示
   bool _showTagSelector = false;
@@ -67,6 +69,12 @@ class _PostPageState extends State<PostPage> {
     final userInfo = await SharedPrefsUtils.getUserInfo();
     setState(() {
       _userInfo = userInfo;
+      // 初始化标签列表
+      _tags = [
+        if (userInfo?['categoryName1'] != null) userInfo!['categoryName1'],
+        if (userInfo?['categoryName2'] != null) userInfo!['categoryName2'],
+        if (userInfo?['categoryName3'] != null) userInfo!['categoryName3'],
+      ];
     });
   }
 
@@ -117,10 +125,10 @@ class _PostPageState extends State<PostPage> {
           onPressed: () => Navigator.pop(context),
         ),
         // 页面标题
-        title: Text(
-          widget.type.toString(),
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        // title: Text(
+        //   widget.type.toString(),
+        //   style: TextStyle(fontWeight: FontWeight.bold),
+        // ),
         // 右侧操作按钮
         actions: [
           Padding(
@@ -128,7 +136,9 @@ class _PostPageState extends State<PostPage> {
             child: ElevatedButton(
               // 当有内容时才能点击发布
               onPressed:
-                  (_characterCount > 0 || _selectedImage != null) && !_isLoading
+                  (_characterCount > 0 || _selectedImage != null) &&
+                          !_isLoading &&
+                          _selectedTag != null
                       ? _handlePost
                       : null,
               style: ElevatedButton.styleFrom(
@@ -166,307 +176,52 @@ class _PostPageState extends State<PostPage> {
         ],
       ),
       // 主体内容区域
-      body: Stack(
-        children: [
-          GestureDetector(
-            // 点击空白区域隐藏键盘和标签选择器
-            onTap: () {
-              FocusScope.of(context).unfocus();
-              setState(() {
-                _showTagSelector = false;
-              });
-            },
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildUserInfo(),
-                    const SizedBox(height: 20),
-                    _buildTagSelector(),
-                    if (_selectedImage != null) ...[
-                      const SizedBox(height: 16),
-                      _buildImagePreview(),
-                    ],
-                    const SizedBox(height: 16),
-                    _buildActionButtons(),
-                    const SizedBox(height: 16),
-                    _buildCharCounter(),
-
-                    // 添加足够的底部空间，防止内容被遮挡
-                    if (widget.type != "发布")
-                      PostLitArticle(articleData: widget.articelData),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.4),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // 标签选择器弹出层
-          if (_showTagSelector) _buildTagSelectorPanel(),
-        ],
-      ),
-    );
-  }
-
-  /// 构建用户信息和输入区域
-  Widget _buildUserInfo() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 用户头像
-        CircleAvatar(
-          radius: 24,
-          backgroundImage:
-              _userInfo != null && _userInfo!['userPic'].isNotEmpty
-                  ? NetworkImage(_userInfo!['userPic'])
-                  : const NetworkImage(
-                    'https://pbs.twimg.com/profile_images/1489998192095043586/4VrvN5yt_400x400.jpg',
-                  ),
-          backgroundColor: Colors.grey.shade200,
-        ),
-        const SizedBox(width: 12),
-        // 用户信息和输入框
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 用户名称
-              Text(
-                _userInfo != null ? _userInfo!['nickname'] : '加载中...',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 2),
-              // 用户ID
-              Text(
-                _userInfo != null ? '@${_userInfo!['username']}' : '@加载中...',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              // 输入框
-              TextField(
-                controller: _postController,
-                focusNode: _focusNode,
-                autofocus: true,
-                maxLines: null, // 允许多行输入
-                maxLength: _maxCharacters, // 最大字符限制
-                decoration: const InputDecoration(
-                  hintText: '想记下点什么？',
-                  border: InputBorder.none,
-                  counterText: '', // 隐藏默认的字符计数器
-                  contentPadding: EdgeInsets.zero,
-                ),
-                style: const TextStyle(fontSize: 18),
-                // 监听文本变化，更新字符计数
-                onChanged: (text) {
-                  setState(() => _characterCount = text.length);
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 构建标签选择器触发按钮
-  Widget _buildTagSelector() {
-    return Container(
-      margin: const EdgeInsets.only(left: 60),
-      child: InkWell(
+      body: GestureDetector(
+        // 点击空白区域隐藏键盘
         onTap: () {
-          setState(() {
-            _showTagSelector = !_showTagSelector;
-          });
-          // 点击时隐藏键盘
           FocusScope.of(context).unfocus();
         },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color:
-                _selectedTag != null
-                    ? const Color(0xFFE1F5FE)
-                    : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color:
-                  _selectedTag != null
-                      ? const Color(0xFF2196F3)
-                      : Colors.grey.shade300,
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.local_offer_outlined,
-                size: 16,
-                color:
-                    _selectedTag != null
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey.shade600,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _selectedTag ?? '添加标签',
-                style: TextStyle(
-                  color:
-                      _selectedTag != null
-                          ? const Color(0xFF2196F3)
-                          : Colors.grey.shade600,
-                  fontSize: 14,
-                  fontWeight:
-                      _selectedTag != null
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.arrow_drop_down,
-                color:
-                    _selectedTag != null
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey.shade600,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建标签选择器面板
-  Widget _buildTagSelectorPanel() {
-    return Positioned(
-      top: 180, // 位置根据实际UI调整
-      left: 16,
-      right: 16,
-      child: Card(
-        elevation: 8,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    const Text(
-                      '选择标签',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () {
-                        setState(() {
-                          _showTagSelector = false;
-                        });
-                      },
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.3,
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildTagChip(_userInfo?['categoryName1'] ?? ''),
-                      _buildTagChip(_userInfo?['categoryName2'] ?? ''),
-                      _buildTagChip(_userInfo?['categoryName3'] ?? ''),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建标签选择芯片
-  Widget _buildTagChip(String tag) {
-    final isSelected = _selectedTag == tag;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedTag = isSelected ? null : tag;
-              _showTagSelector = false;
-            });
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color:
-                  isSelected ? const Color(0xFFE3F2FD) : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color:
-                    isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
-                width: 1.5,
-              ),
-            ),
-            child: Row(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  tag,
-                  style: TextStyle(
-                    color:
-                        isSelected
-                            ? const Color(0xFF2196F3)
-                            : Colors.grey.shade800,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 16,
+                TextField(
+                  controller: _postController,
+                  focusNode: _focusNode,
+                  autofocus: true,
+                  maxLines: null, // 允许多行输入
+                  maxLength: _maxCharacters, // 最大字符限制
+                  decoration: const InputDecoration(
+                    hintText: '想记下点什么？',
+                    border: InputBorder.none,
+                    counterText: '', // 隐藏默认的字符计数器
+                    contentPadding: EdgeInsets.zero,
                   ),
+                  style: const TextStyle(fontSize: 18),
+                  // 监听文本变化，更新字符计数
+                  onChanged: (text) {
+                    setState(() => _characterCount = text.length);
+                  },
                 ),
-                const Spacer(),
-                if (isSelected)
-                  const Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: Color(0xFF2196F3),
-                  ),
+                if (_selectedImage != null) ...[
+                  const SizedBox(height: 16),
+                  _buildImagePreview(),
+                ],
+                const SizedBox(height: 16),
+                _buildActionButtons(),
+                const SizedBox(height: 20),
+                _buildTagSelector(),
+
+                const SizedBox(height: 16),
+                _buildCharCounter(),
+
+                // 添加足够的底部空间，防止内容被遮挡
+                if (widget.type != "发布")
+                  PostLitArticle(articleData: widget.articelData),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.4),
               ],
             ),
           ),
@@ -475,20 +230,119 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
+  /// 构建标签选择器触发按钮
+  Widget _buildTagSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      child: InkWell(
+        onTap: () {
+          // 点击时隐藏键盘
+          FocusScope.of(context).unfocus();
+          // 显示标签选择页面
+          _showTagSelectionPage();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(color: Colors.grey.shade200),
+              bottom: BorderSide(color: Colors.grey.shade200),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.local_offer_outlined,
+                size: 20,
+                color:
+                    _selectedTag != null ? Colors.blue : Colors.grey.shade700,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _selectedTag ?? '添加标签',
+                  style: TextStyle(
+                    color: _selectedTag != null ? Colors.blue : Colors.black87,
+                    fontSize: 16,
+                    fontWeight:
+                        _selectedTag != null
+                            ? FontWeight.w500
+                            : FontWeight.normal,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade500, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 显示标签选择页面
+  void _showTagSelectionPage() {
+    if (_tags.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('标签加载中，请稍后再试')));
+      return;
+    }
+
+    // 使用PageRouteBuilder创建从右侧滑入的动画效果
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) => TagList(
+              tags: _tags,
+              selectedTag: _selectedTag,
+              onTagSelected: (tag) {
+                setState(() {
+                  _selectedTag = tag;
+                });
+              },
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+  }
+
   /// 构建操作按钮
   Widget _buildActionButtons() {
     return Container(
-      margin: const EdgeInsets.only(left: 60),
+      margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.02),
       child: Row(
         children: [
-          IconButton(
-            icon: Icon(
-              Icons.image_outlined,
-              color: const Color(0xFF2196F3),
-              size: 24,
+          Container(
+            width: MediaQuery.of(context).size.width * 0.16,
+            height: MediaQuery.of(context).size.width * 0.16,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(103, 38, 196, 133),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Color(0xFF26C485), width: 3),
             ),
-            onPressed: _pickImage,
-            tooltip: '添加图片',
+            child: IconButton(
+              icon: const Icon(
+                Icons.camera_alt_outlined,
+                color: Colors.white,
+                size: 28,
+              ),
+              onPressed: _pickImage,
+              tooltip: '添加图片',
+            ),
           ),
         ],
       ),

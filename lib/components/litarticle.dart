@@ -14,8 +14,9 @@ class _LitArticleState extends State<LitArticle> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        vertical: 4,
+      margin: const EdgeInsets.only(
+        top: 2,
+        right: 15,
       ), // Moved margin to Container
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
@@ -66,7 +67,7 @@ class _LitArticleState extends State<LitArticle> {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 4, right: 6),
                   child: CircleAvatar(
-                    radius: 16,
+                    radius: 10,
                     backgroundImage: CachedNetworkImageProvider(
                       widget.articleData['beShareUserPic'],
                     ),
@@ -144,7 +145,8 @@ class _LitArticleState extends State<LitArticle> {
                           "${widget.articleData['beShareContent']}",
                           style: const TextStyle(
                             color: Colors.black,
-                            fontSize: 14,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
                             height: 1.2,
                             fontFamily: "Inter",
                           ),
