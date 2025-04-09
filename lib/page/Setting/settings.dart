@@ -15,6 +15,7 @@ class _settingsState extends State<settings> {
   final UserRegisterService _userRegisterService = UserRegisterService();
   bool _isLoading = false;
   String? _username;
+  final Color _primaryColor = const Color(0xFF7461CA);
 
   @override
   void initState() {
@@ -72,19 +73,32 @@ class _settingsState extends State<settings> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('确认注销账号'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              '确认注销账号',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             content: Text('您确定要注销账号吗？此操作不可逆转，将永久删除您的账号及所有数据。'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('取消'),
+                child: Text('取消', style: TextStyle(color: Colors.grey)),
               ),
-              TextButton(
+              ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                   _deregisterAccount();
                 },
-                child: Text('确认注销', style: TextStyle(color: Colors.red)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text('确认注销'),
               ),
             ],
           ),
@@ -94,171 +108,136 @@ class _settingsState extends State<settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('设置'),
-        centerTitle: true,
+        title: Text('设置', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: false,
         backgroundColor: Colors.white,
-        foregroundColor: Color(0xFF7461CA),
-        elevation: 0,
+        foregroundColor: _primaryColor,
+        elevation: 0.5,
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 0.5, color: Colors.grey[300]),
+        ),
       ),
       body:
           _isLoading
-              ? Center(child: CircularProgressIndicator())
-              : Container(
-                color: Colors.grey[50],
-                child: ListView(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        '系统设置',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7461CA),
+              ? Center(child: CircularProgressIndicator(color: _primaryColor))
+              : ListView(
+                children: [
+                  _buildSectionHeader('账号管理'),
+                  _buildSettingItem(
+                    icon: Icons.logout,
+                    title: '退出登录',
+                    onTap: () async {
+                      await SharedPrefsUtils.clearUserInfo();
+                      await SharedPrefsUtils.clearToken();
+                      Navigator.pop(context);
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                  _buildSettingItem(
+                    icon: Icons.delete_outline,
+                    title: '注销账号',
+                    textColor: Colors.red,
+                    onTap: _confirmDeregister,
+                  ),
+
+                  _buildSectionHeader('关于'),
+                  _buildSettingItem(
+                    icon: Icons.info_outline,
+                    title: '版本信息',
+                    subtitle: 'Navi v1.0.0',
+                  ),
+                  _buildSettingItem(
+                    icon: Icons.code,
+                    title: '开发者信息',
+                    subtitle: 'Navi Team © 2024',
+                  ),
+                  _buildSettingItem(
+                    icon: Icons.article_outlined,
+                    title: '隐私政策',
+                    showChevron: true,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserAgreementPage(),
                         ),
-                      ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 40),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: _primaryColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? textColor,
+    bool showChevron = false,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: textColor ?? _primaryColor, size: 22),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: textColor ?? Colors.black87,
+                      fontWeight: FontWeight.w500,
                     ),
-                    Card(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        side: BorderSide(color: Colors.grey.shade200),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '账号管理',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7461CA),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            OutlinedButton.icon(
-                              onPressed: _confirmDeregister,
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              label: Text(
-                                '注销账号',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: Colors.red.withOpacity(0.5),
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4.0),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Card(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        side: BorderSide(color: Colors.grey.shade200),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '关于',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF7461CA),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            ListTile(
-                              leading: Icon(
-                                Icons.info_outline,
-                                color: Color(0xFF7461CA),
-                              ),
-                              title: Text('版本信息'),
-                              subtitle: Text('Navi v1.0.0'),
-                              dense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
-                            ),
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              indent: 8,
-                              endIndent: 8,
-                            ),
-                            ListTile(
-                              leading: Icon(
-                                Icons.code,
-                                color: Color(0xFF7461CA),
-                              ),
-                              title: Text('开发者信息'),
-                              subtitle: Text('Navi Team © 2024'),
-                              dense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
-                            ),
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              indent: 8,
-                              endIndent: 8,
-                            ),
-                            ListTile(
-                              leading: Icon(
-                                Icons.article_outlined,
-                                color: Color(0xFF7461CA),
-                              ),
-                              title: Text('隐私政策'),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                              dense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => const UserAgreementPage(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
+                  ),
+                  if (subtitle != null) ...[
+                    SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
-                ),
+                ],
               ),
+            ),
+            if (showChevron) Icon(Icons.chevron_right, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 }

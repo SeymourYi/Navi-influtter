@@ -414,32 +414,33 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const Spacer(),
                             // 添加私聊按钮 - 只为非当前用户显示
-                            if (!_isCurrentUser && widget.username != null)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.blue,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: TextButton.icon(
-                                  icon: const Icon(
-                                    Icons.chat_bubble_outline,
-                                    color: Colors.blue,
-                                    size: 16,
-                                  ),
-                                  label: const Text(
-                                    '私聊',
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  onPressed: _NavigateToChat,
-                                ),
-                              ),
+                            //   if (!_isCurrentUser && widget.username != null)
+                            //     Container(
+                            //       decoration: BoxDecoration(
+                            //         color: Colors.blue.withOpacity(0.1),
+                            //         borderRadius: BorderRadius.circular(20),
+                            //         border: Border.all(
+                            //           color: Colors.blue,
+                            //           width: 1,
+                            //         ),
+                            //       ),
+                            //       child: TextButton.icon(
+                            //         icon: const Icon(
+                            //           Icons.chat_bubble_outline,
+                            //           color: Colors.blue,
+                            //           size: 16,
+                            //         ),
+                            //         label: const Text(
+                            //           '私聊',
+                            //           style: TextStyle(
+                            //             color: Colors.blue,
+                            //             fontSize: 14,
+                            //           ),
+                            //         ),
+                            //         onPressed: _NavigateToChat,
+                            //       ),
+                            //     ),
+                            // ],
                           ],
                         ),
                       ],

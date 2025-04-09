@@ -4,6 +4,7 @@ import 'package:Navi/components/CommentWidget%20.dart';
 import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/page/Home/articlelist.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'articleimage.dart';
 import '../components/userinfo.dart';
 
@@ -67,13 +68,13 @@ class _ArticledetailState extends State<Articledetail> {
                       widget.articleData['userPic'] != null &&
                               widget.articleData['userPic'].isNotEmpty
                           ? CircleAvatar(
-                            radius: 24,
+                            radius: 20,
                             backgroundImage: NetworkImage(
                               widget.articleData['userPic'],
                             ),
                           )
                           : CircleAvatar(
-                            radius: 24,
+                            radius: 20,
                             backgroundColor: Colors.grey[300],
                             child: Icon(Icons.person, color: Colors.grey[600]),
                           ),
@@ -207,15 +208,28 @@ class _ArticledetailState extends State<Articledetail> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatItem(
-                  icon: Icons.mode_comment_outlined,
+                  icon: SvgPicture.asset(
+                    'lib/assets/icons/chatbubble-ellipses-outline.svg',
+                    width: 20,
+                    height: 20,
+                  ),
                   count: widget.articleData['commentcount']?.toString() ?? '0',
                 ),
                 _buildStatItem(
-                  icon: Icons.repeat,
+                  icon: SvgPicture.asset(
+                    'lib/assets/icons/repeat.svg',
+                    width: 20,
+                    height: 20,
+                  ),
                   count: widget.articleData['repeatcount']?.toString() ?? '0',
                 ),
                 _buildStatItem(
-                  icon: Icons.favorite_border,
+                  icon: SvgPicture.asset(
+                    'lib/assets/icons/heart.svg',
+                    color: Colors.black,
+                    width: 16,
+                    height: 16,
+                  ),
                   count: widget.articleData['likecont']?.toString() ?? '0',
                 ),
               ],
@@ -229,10 +243,10 @@ class _ArticledetailState extends State<Articledetail> {
     );
   }
 
-  Widget _buildStatItem({required IconData icon, required String count}) {
+  Widget _buildStatItem({required Widget icon, required String count}) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
+        icon,
         const SizedBox(width: 4),
         Text(count, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
       ],

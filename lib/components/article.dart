@@ -480,7 +480,7 @@ class _ArticleState extends State<Article> {
               // 底层可点击区域 - 覆盖整个文章区域
               Positioned.fill(
                 child: Material(
-                  color: Colors.transparent,
+                  color: Colors.blue.withOpacity(0.1),
                   child: InkWell(
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
@@ -631,28 +631,34 @@ class _ArticleState extends State<Article> {
                               // 正文内容
                               Padding(
                                 padding: EdgeInsets.only(right: 12),
+                                //
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: _NavigateToArticleDetail,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // 实际文章内容 - 仅显示一次
-                                      Padding(
-                                        padding: EdgeInsets.zero,
-                                        child: Text(
-                                          "${widget.articleData['content']}",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontFamily: "Inter",
-                                            fontWeight: FontWeight.w500,
-                                            height: 1.4,
-                                            color: Color(0xFF14171A),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // 实际文章内容 - 仅显示一次
+                                        Padding(
+                                          padding: EdgeInsets.zero,
+                                          child: Text(
+                                            "${widget.articleData['content']}",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontFamily: "Inter",
+                                              fontWeight: FontWeight.w500,
+                                              height: 1.4,
+                                              color: Color(0xFF14171A),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

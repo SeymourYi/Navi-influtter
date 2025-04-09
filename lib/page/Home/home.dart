@@ -85,225 +85,322 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
-      child: ListView(
-        padding: EdgeInsets.all(0),
+      child: Column(
         children: [
-          UserAccountsDrawerHeader(
-            currentAccountPicture:
-                widget.userInfo != null &&
-                        widget.userInfo!['userPic'].isNotEmpty
-                    ? CircleAvatar(backgroundImage: _avatarImageProvider)
-                    : CircleAvatar(
-                      backgroundImage: AssetImage(
-                        "lib/assets/images/userpic.jpg",
+          // 顶部用户信息区域
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16,
+              bottom: 16,
+              left: 16,
+              right: 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 头像和关闭按钮
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundImage:
+                          widget.userInfo != null &&
+                                  widget.userInfo!['userPic'].isNotEmpty
+                              ? _avatarImageProvider
+                              : AssetImage("lib/assets/images/userpic.jpg")
+                                  as ImageProvider,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                // 用户名和ID
+                Text(
+                  widget.userInfo != null
+                      ? widget.userInfo!['nickname']
+                      : "加载中...",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Inter-Regular",
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  widget.userInfo != null
+                      ? "@${widget.userInfo!['username']}"
+                      : "@加载中...",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 15,
+                    fontFamily: "Inter-Regular",
+                  ),
+                ),
+                SizedBox(height: 16),
+                // 关注信息
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    FriendsList(),
+                            transitionsBuilder: (
+                              context,
+                              animation,
+                              secondaryAnimation,
+                              child,
+                            ) {
+                              const begin = Offset(1.0, 0.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+                              var tween = Tween(
+                                begin: begin,
+                                end: end,
+                              ).chain(CurveTween(curve: curve));
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "20 ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "关注中",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image:
-                    widget.userInfo != null &&
-                            widget.userInfo!['bgImg'].isNotEmpty
-                        ? _backgroundImageProvider!
-                        : CachedNetworkImageProvider(
-                          'https://img-s.msn.cn/tenant/amp/entityid/AA1yQEG5?w=0&h=0&q=60&m=6&f=jpg&u=t',
-                          maxWidth: 800,
-                        ),
-                fit: BoxFit.cover,
-              ),
-            ),
-            accountName: Text(
-              widget.userInfo != null ? widget.userInfo!['nickname'] : "加载中...",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: "Inter-Regular",
-                color: Colors.black,
-              ),
-            ),
-            accountEmail: Text(
-              widget.userInfo != null
-                  ? "@${widget.userInfo!['username']}"
-                  : "@加载中...",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 15,
-                fontFamily: "Inter-Regular",
-              ),
-            ),
-          ),
-          ListTile(
-            title: Text(
-              "个人信息",
-              style: TextStyle(
-                color: const Color.fromARGB(255, 126, 121, 211),
-                fontSize: 18,
-                fontFamily: "Inter-Regular",
-              ),
-            ),
-            leading: SvgPicture.asset("lib/assets/icons/Profile.svg"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder:
-                      (context, animation, secondaryAnimation) => ProfilePage(),
-                  transitionsBuilder: (
-                    context,
-                    animation,
-                    secondaryAnimation,
-                    child,
-                  ) {
-                    const begin = Offset(1.0, 0.0);
-                    const end = Offset.zero;
-                    const curve = Curves.ease;
-
-                    var tween = Tween(
-                      begin: begin,
-                      end: end,
-                    ).chain(CurveTween(curve: curve));
-
-                    return SlideTransition(
-                      position: animation.drive(tween),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-          ListTile(
-            title: Text(
-              "关注列表",
-              style: TextStyle(
-                color: const Color.fromARGB(255, 126, 121, 211),
-                fontSize: 18,
-                fontFamily: "Inter-Regular",
-              ),
-            ),
-            leading: SvgPicture.asset("lib/assets/icons/Vector1.svg"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder:
-                      (context, animation, secondaryAnimation) => FriendsList(),
-                  transitionsBuilder: (
-                    context,
-                    animation,
-                    secondaryAnimation,
-                    child,
-                  ) {
-                    const begin = Offset(1.0, 0.0);
-                    const end = Offset.zero;
-                    const curve = Curves.ease;
-
-                    var tween = Tween(
-                      begin: begin,
-                      end: end,
-                    ).chain(CurveTween(curve: curve));
-
-                    return SlideTransition(
-                      position: animation.drive(tween),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-          ListTile(
-            title: Text(
-              "编辑个人资料",
-              style: TextStyle(
-                color: const Color.fromARGB(255, 126, 121, 211),
-                fontSize: 18,
-                fontFamily: "Inter-Regular",
-              ),
-            ),
-            leading: SvgPicture.asset("lib/assets/icons/Vector.svg"),
-            onTap: () async {
-              Navigator.pop(context);
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EditProfilePage(),
-                ),
-              );
-
-              if (result == true || result == null) {
-                widget.onRefreshUserInfo();
-              }
-            },
-          ),
-          Divider(),
-          ListTile(
-            title: Text(
-              "关于Navi",
-              style: TextStyle(
-                color: const Color.fromARGB(255, 126, 121, 211),
-                fontSize: 18,
-                fontFamily: "Inter-Regular",
-              ),
-            ),
-            leading: SvgPicture.asset("lib/assets/icons/information.svg"),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          Padding(
-            padding: EdgeInsets.only(top: 310),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                  ),
-                  onPressed: () async {
-                    await SharedPrefsUtils.clearUserInfo();
-                    await SharedPrefsUtils.clearToken();
-
-                    Navigator.pop(context);
-
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                      (route) => false,
-                    );
-                  },
-                  icon: Icon(Icons.exit_to_app, color: Colors.red, size: 20),
-                  label: Text(
-                    "退出",
-                    style: TextStyle(
-                      color: const Color.fromARGB(255, 117, 113, 206),
-                      fontFamily: "Inter-Regular",
+                    SizedBox(width: 16),
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "30 ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.black,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "粉丝",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                Expanded(child: SizedBox.shrink()),
-                TextButton(
-                  onPressed: () {
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: Colors.grey.withOpacity(0.2),
+          ),
+          // 菜单区域
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildTwitterMenuItem(
+                  title: "个人信息",
+                  icon: Icons.person_outline,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                ProfilePage(),
+                        transitionsBuilder: (
+                          context,
+                          animation,
+                          secondaryAnimation,
+                          child,
+                        ) {
+                          const begin = Offset(1.0, 0.0);
+                          const end = Offset.zero;
+                          const curve = Curves.ease;
+                          var tween = Tween(
+                            begin: begin,
+                            end: end,
+                          ).chain(CurveTween(curve: curve));
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                _buildTwitterMenuItem(
+                  title: "关注列表",
+                  icon: Icons.people_outline,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                FriendsList(),
+                        transitionsBuilder: (
+                          context,
+                          animation,
+                          secondaryAnimation,
+                          child,
+                        ) {
+                          const begin = Offset(1.0, 0.0);
+                          const end = Offset.zero;
+                          const curve = Curves.ease;
+                          var tween = Tween(
+                            begin: begin,
+                            end: end,
+                          ).chain(CurveTween(curve: curve));
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                _buildTwitterMenuItem(
+                  title: "编辑个人资料",
+                  icon: Icons.edit_outlined,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfilePage(),
+                      ),
+                    );
+                    if (result == true || result == null) {
+                      widget.onRefreshUserInfo();
+                    }
+                  },
+                ),
+                _buildTwitterMenuItem(
+                  title: "设置",
+                  icon: Icons.settings_outlined,
+                  onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => settings()),
                     );
                   },
-                  child: Text(
-                    "设置",
-                    style: TextStyle(
-                      color: const Color.fromARGB(255, 117, 113, 206),
-                      fontFamily: "Inter-Regular",
-                    ),
-                  ),
+                ),
+
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+                _buildTwitterMenuItem(
+                  title: "关于Navi",
+                  icon: Icons.info_outline,
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
                 ),
               ],
             ),
           ),
+          // 底部退出按钮
+          // Container(
+          //   width: double.infinity,
+          //   margin: EdgeInsets.all(16),
+          //   child: ElevatedButton(
+          //     onPressed: () async {
+          //       await SharedPrefsUtils.clearUserInfo();
+          //       await SharedPrefsUtils.clearToken();
+          //       Navigator.pop(context);
+          //       Navigator.pushAndRemoveUntil(
+          //         context,
+          //         MaterialPageRoute(builder: (context) => LoginPage()),
+          //         (route) => false,
+          //       );
+          //     },
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: const Color.fromARGB(255, 126, 121, 211),
+          //       foregroundColor: Colors.white,
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(30),
+          //       ),
+          //       padding: EdgeInsets.symmetric(vertical: 12),
+          //     ),
+          //     child: Text(
+          //       "退出登录",
+          //       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          //     ),
+          //   ),
+          // ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTwitterMenuItem({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: const Color.fromARGB(255, 126, 121, 211),
+            ),
+            SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -335,6 +432,23 @@ class HomeTab extends StatelessWidget {
             color: const Color.fromARGB(71, 116, 55, 202),
           ),
         ),
+        leading: IconButton(
+          onPressed: () {
+            //打开侧边栏
+            Scaffold.of(context).openDrawer(); // 打开侧边栏R
+          },
+          icon: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: NetworkImage(userInfo!['userPic']),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: onSearchPressed,
@@ -345,6 +459,7 @@ class HomeTab extends StatelessWidget {
             ),
           ),
         ],
+
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(1.0),
           child: Container(color: Color.fromARGB(67, 98, 73, 73), height: 0.3),

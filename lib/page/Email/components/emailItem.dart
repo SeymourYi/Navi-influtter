@@ -8,194 +8,374 @@ class Emailitem extends StatefulWidget {
   State<Emailitem> createState() => _EmailitemState();
 }
 
-class _EmailitemState extends State<Emailitem> {
+class _EmailitemState extends State<Emailitem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  IconData _getTypeIcon() {
+    switch (widget.email['type']) {
+      case 'like':
+        return Icons.favorite_rounded;
+      case 'comment':
+        return Icons.chat_bubble_rounded;
+      case 'reArticle':
+        return Icons.repeat_rounded;
+      default:
+        return Icons.bookmark_rounded;
+    }
+  }
+
+  Color _getTypeColor() {
+    switch (widget.email['type']) {
+      case 'like':
+        return Colors.redAccent;
+      case 'comment':
+        return Colors.blueAccent;
+      case 'reArticle':
+        return Colors.greenAccent.shade700;
+      default:
+        return Colors.amberAccent.shade700;
+    }
+  }
+
+  String _getTypeText() {
+    switch (widget.email['type']) {
+      case 'like':
+        return ' 被喜欢了';
+      case 'comment':
+        return ' 被评论了';
+      case 'reArticle':
+        return ' 被转发了';
+      default:
+        return ' 被收藏了';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTapDown: (_) {
+        setState(() {
+          _isPressed = true;
+        });
+        _controller.forward();
+      },
+      onTapUp: (_) {
+        setState(() {
+          _isPressed = false;
+        });
+        _controller.reverse();
+      },
+      onTapCancel: () {
+        setState(() {
+          _isPressed = false;
+        });
+        _controller.reverse();
+      },
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.12),
+                spreadRadius: 1,
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                widget.email['type'] == 'like'
-                    ? const Icon(Icons.favorite, color: Colors.red, size: 28)
-                    : widget.email['type'] == 'comment'
-                    ? const Icon(Icons.comment, color: Colors.blue, size: 28)
-                    : widget.email['type'] == 'reArticle'
-                    ? const Icon(Icons.share, color: Colors.green, size: 28)
-                    : const Icon(Icons.favorite, color: Colors.red, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'PingFangSC-Regular',
-                            color: Colors.black87,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _getTypeColor().withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          children: [
-                            TextSpan(
-                              text:
-                                  widget.email['oldArticleContent'].length > 10
-                                      ? '${widget.email['oldArticleContent'].substring(0, 10)}...'
-                                      : widget.email['oldArticleContent'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-
-                            widget.email['type'] == 'like'
-                                ? const TextSpan(text: ' 被喜欢了')
-                                : widget.email['type'] == 'comment'
-                                ? const TextSpan(text: ' 被评论了')
-                                : widget.email['type'] == 'reArticle'
-                                ? const TextSpan(text: ' 被转发了')
-                                : const TextSpan(text: ' 被收藏了'),
-
-                            TextSpan(text: ' ${widget.email['uptonow']}'),
-                          ],
+                          child: Icon(
+                            _getTypeIcon(),
+                            color: _getTypeColor(),
+                            size: 24,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      // 个人信息卡片
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 头像
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundImage: NetworkImage(
-                                widget.email['senderUserPic'],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        widget.email['senderNickName'],
+                                  Expanded(
+                                    child: RichText(
+                                      text: TextSpan(
                                         style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
                                           fontSize: 15,
+                                          fontFamily: 'PingFangSC-Regular',
+                                          color: Colors.black87,
+                                          height: 1.3,
                                         ),
+                                        children: [
+                                          TextSpan(
+                                            text:
+                                                widget
+                                                            .email['oldArticleContent']
+                                                            .length >
+                                                        16
+                                                    ? '${widget.email['oldArticleContent'].substring(0, 16)}...'
+                                                    : widget
+                                                        .email['oldArticleContent'],
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: _getTypeText(),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '@${widget.email['senderId']}',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  // BIO
-                                  if (widget.email['senderBio'] != null &&
-                                      widget.email['senderBio'].isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text(
-                                        widget.email['senderBio'],
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 13,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                  if (!widget.email['isRead'])
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.redAccent,
+                                        shape: BoxShape.circle,
                                       ),
                                     ),
-
-                                  // info
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (widget.email['senderJob'] != null)
-                                        _buildInfoChip(
-                                          Icons.work_outline,
-                                          widget.email['senderJob'],
-                                        ),
-                                      if (widget.email['senderLocate'] != null)
-                                        _buildInfoChip(
-                                          Icons.location_on_outlined,
-                                          widget.email['senderLocate'],
-                                        ),
-                                      if (widget.email['senderJoinDate'] !=
-                                          null)
-                                        _buildInfoChip(
-                                          Icons.calendar_today_outlined,
-                                          widget.email['senderJoinDate'],
-                                        ),
-                                    ],
-                                  ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.email['uptonow'],
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // 个人信息卡片
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: _getTypeColor().withOpacity(0.03),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: _getTypeColor().withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Transform.translate(
+                                          offset: const Offset(
+                                            -5,
+                                            -15,
+                                          ), // 向上移动 4 像素
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: _getTypeColor()
+                                                    .withOpacity(0.2),
+                                                width: 2,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: _getTypeColor()
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+
+                                            child: CircleAvatar(
+                                              radius: 18,
+                                              backgroundImage: NetworkImage(
+                                                widget.email['senderUserPic'],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  widget
+                                                      .email['senderNickName'],
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '@${widget.email['senderId']}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            // BIO
+                                            if (widget.email['senderBio'] !=
+                                                    null &&
+                                                widget
+                                                    .email['senderBio']
+                                                    .isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  bottom: 8,
+                                                ),
+                                                child: Text(
+                                                  widget.email['senderBio'],
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontSize: 13,
+                                                    height: 1.4,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (widget.email['senderJob'] != null ||
+                                        widget.email['senderLocate'] != null ||
+                                        widget.email['senderJoinDate'] != null)
+                                      Container(
+                                        width: double.infinity,
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.65,
+                                        ),
+                                        child: Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          children: [
+                                            if (widget.email['senderJob'] !=
+                                                null)
+                                              _buildInfoChip(
+                                                Icons.work_outline_rounded,
+                                                widget.email['senderJob'],
+                                              ),
+                                            if (widget.email['senderLocate'] !=
+                                                null)
+                                              _buildInfoChip(
+                                                Icons.location_on_outlined,
+                                                widget.email['senderLocate'],
+                                              ),
+                                            if (widget
+                                                    .email['senderJoinDate'] !=
+                                                null)
+                                              _buildInfoChip(
+                                                Icons.calendar_today_outlined,
+                                                widget.email['senderJoinDate'],
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.email['type'] == 'comment' ||
+                        widget.email['type'] == 'reArticle')
+                      Container(
+                        margin: const EdgeInsets.only(top: 12, left: 44),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _getTypeColor().withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getTypeColor().withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          widget.email['newArticleContent'],
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[800],
+                            height: 1.4,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-
-                widget.email['isRead']
-                    ? const SizedBox()
-                    : const Icon(Icons.circle, color: Colors.red, size: 10),
-              ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                widget.email['type'] == 'like'
-                    ? const SizedBox()
-                    : widget.email['type'] == 'comment'
-                    ? SizedBox(
-                      width: 350,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(widget.email['newArticleContent']),
-                      ),
-                    )
-                    : widget.email['type'] == 'reArticle'
-                    ? SizedBox(
-                      width: 350,
-                      child: Text('${widget.email['newArticleContent']}'),
-                    )
-                    : const SizedBox(),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -203,17 +383,25 @@ class _EmailitemState extends State<Emailitem> {
 
   Widget _buildInfoChip(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
+      constraints: BoxConstraints(maxWidth: 120),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: Colors.grey[600]),
-          const SizedBox(width: 2),
-          Text(text, style: TextStyle(color: Colors.grey[700], fontSize: 10)),
+          Icon(icon, size: 12, color: Colors.black87),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
