@@ -661,109 +661,108 @@ class _ArticleState extends State<Article> {
 
                               // 时间和操作按钮区域
                               // 点赞和评论行 - 仅在需要时显示
-                              likeCount > 0 ||
-                                      (widget.articleData['commentcount'] !=
-                                              null &&
-                                          widget.articleData['commentcount'] >
-                                              0)
-                                  ? GestureDetector(
-                                    onTap: _NavigateToArticleDetail,
-                                    child: Container(
-                                      width: double.infinity,
-                                      margin: EdgeInsets.only(
-                                        top: 6,
-                                        right: 12,
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color.fromRGBO(
-                                          255,
-                                          250,
-                                          248,
-                                          1.00,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // 点赞行 - 仅当有点赞时显示
-                                            if (likeCount > 0)
-                                              RichText(
-                                                text: TextSpan(
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Color.fromRGBO(
-                                                      104,
-                                                      118,
-                                                      132,
-                                                      1.00,
-                                                    ),
-                                                    fontFamily: "Inter-Regular",
-                                                  ),
-                                                  children: [
-                                                    WidgetSpan(
-                                                      child: Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                              right: 4,
-                                                            ),
-                                                        child: Icon(
-                                                          Icons.favorite_border,
-                                                          size: 20,
-                                                          color:
-                                                              const Color.fromRGBO(
-                                                                237,
-                                                                144,
-                                                                131,
-                                                                1.00,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    TextSpan(
-                                                      text: "$likeCount人点赞",
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
+                              // likeCount > 0 ||
+                              //         (widget.articleData['commentcount'] !=
+                              //                 null &&
+                              //             widget.articleData['commentcount'] >
+                              //                 0)
+                              //     ? GestureDetector(
+                              //       onTap: _NavigateToArticleDetail,
+                              //       child: Container(
+                              //         width: double.infinity,
+                              //         margin: EdgeInsets.only(
+                              //           top: 6,
+                              //           right: 12,
+                              //         ),
+                              //         padding: EdgeInsets.symmetric(
+                              //           horizontal: 12,
+                              //           vertical: 8,
+                              //         ),
+                              //         decoration: BoxDecoration(
+                              //           color: Color.fromRGBO(
+                              //             255,
+                              //             250,
+                              //             248,
+                              //             1.00,
+                              //           ),
+                              //           borderRadius: BorderRadius.circular(4),
+                              //         ),
+                              //         child: Material(
+                              //           color: Colors.transparent,
+                              //           child: Column(
+                              //             crossAxisAlignment:
+                              //                 CrossAxisAlignment.start,
+                              //             children: [
+                              //               // 点赞行 - 仅当有点赞时显示
+                              //               if (likeCount > 0)
+                              //                 RichText(
+                              //                   text: TextSpan(
+                              //                     style: TextStyle(
+                              //                       fontSize: 14,
+                              //                       color: Color.fromRGBO(
+                              //                         104,
+                              //                         118,
+                              //                         132,
+                              //                         1.00,
+                              //                       ),
+                              //                       fontFamily: "Inter-Regular",
+                              //                     ),
+                              //                     children: [
+                              //                       WidgetSpan(
+                              //                         child: Padding(
+                              //                           padding:
+                              //                               EdgeInsets.only(
+                              //                                 right: 4,
+                              //                               ),
+                              //                           child: Icon(
+                              //                             Icons.favorite_border,
+                              //                             size: 20,
+                              //                             color:
+                              //                                 const Color.fromRGBO(
+                              //                                   237,
+                              //                                   144,
+                              //                                   131,
+                              //                                   1.00,
+                              //                                 ),
+                              //                           ),
+                              //                         ),
+                              //                       ),
+                              //                       TextSpan(
+                              //                         text: "$likeCount人点赞",
+                              //                       ),
+                              //                     ],
+                              //                   ),
+                              //                 ),
 
-                                            // 评论行 - 仅当有评论时显示
-                                            if (widget.articleData['commentcount'] !=
-                                                    null &&
-                                                widget.articleData['commentcount'] >
-                                                    0)
-                                              Padding(
-                                                padding: EdgeInsets.only(
-                                                  top: likeCount > 0 ? 6 : 0,
-                                                ),
-                                                child: Text(
-                                                  "${widget.articleData['commentcount']}条评论",
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    color: Color.fromRGBO(
-                                                      104,
-                                                      118,
-                                                      132,
-                                                      1.00,
-                                                    ),
-                                                    fontFamily: "Inter-Regular",
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  : Container(),
-
+                              //               // 评论行 - 仅当有评论时显示
+                              //               if (widget.articleData['commentcount'] !=
+                              //                       null &&
+                              //                   widget.articleData['commentcount'] >
+                              //                       0)
+                              //                 Padding(
+                              //                   padding: EdgeInsets.only(
+                              //                     top: likeCount > 0 ? 6 : 0,
+                              //                   ),
+                              //                   child: Text(
+                              //                     "${widget.articleData['commentcount']}条评论",
+                              //                     style: TextStyle(
+                              //                       fontSize: 14,
+                              //                       color: Color.fromRGBO(
+                              //                         104,
+                              //                         118,
+                              //                         132,
+                              //                         1.00,
+                              //                       ),
+                              //                       fontFamily: "Inter-Regular",
+                              //                     ),
+                              //                   ),
+                              //                 ),
+                              //             ],
+                              //           ),
+                              //         ),
+                              //       ),
+                              //     )
+                              //     : Container(),
                               Padding(
                                 padding: EdgeInsets.only(top: 8, right: 12),
                                 child: Row(

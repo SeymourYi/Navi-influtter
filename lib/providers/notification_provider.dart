@@ -11,7 +11,7 @@ class NotificationProvider with ChangeNotifier {
 
   NotificationProvider._internal();
 
-  int notificationcount = 8;
+  int notificationcount = 0;
   // 添加新通知
   void addNotification() {
     notificationcount += 1;
@@ -20,11 +20,7 @@ class NotificationProvider with ChangeNotifier {
 
   // 标记为已读
   void markAsRead() {
-    print("22222222");
-    print("object之前${notificationcount}");
     notificationcount -= 1;
-    print("object之后${notificationcount}");
-    notifyListeners();
   }
 
   void setnotificationcount(int count) {

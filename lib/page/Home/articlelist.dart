@@ -1,6 +1,11 @@
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/api/emailAPI.dart';
+import 'package:Navi/components/userinfo.dart';
+import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/api/articleAPI.dart';
 import 'package:Navi/components/article.dart';
+import 'package:provider/provider.dart';
 
 class Articlelist extends StatefulWidget {
   const Articlelist({super.key});
@@ -15,6 +20,9 @@ class _ArticlelistState extends State<Articlelist>
   bool isLoading = false; // 加载状态控制
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  ArticleService service = ArticleService();
+  EmailService emailService = EmailService();
+  String number = '';
 
   // 获取文章列表
   Future<void> _fetchArticleList() async {
@@ -23,8 +31,16 @@ class _ArticlelistState extends State<Articlelist>
     setState(() {
       isLoading = true;
     });
+    final userInfo = await SharedPrefsUtils.getUserInfo();
+    var result1 = await emailService.getEmailNumber(
+      int.parse(userInfo!['username']),
+    );
+    number = result1['data'];
 
-    ArticleService service = ArticleService();
+    Provider.of<NotificationProvider>(
+      context,
+      listen: false,
+    ).setnotificationcount(int.parse(number));
     try {
       var result = await service.getallArticleList(1);
       setState(() {

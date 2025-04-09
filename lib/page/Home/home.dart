@@ -1,4 +1,5 @@
-﻿import 'package:Navi/page/Email/components/infopage.dart';
+﻿import 'package:Navi/api/emailAPI.dart';
+import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
 import 'package:Navi/providers/notification_provider.dart';
@@ -39,7 +40,7 @@ class PersistentDrawer extends StatefulWidget {
 class _PersistentDrawerState extends State<PersistentDrawer> {
   late CachedNetworkImageProvider? _backgroundImageProvider;
   late CachedNetworkImageProvider? _avatarImageProvider;
-
+  String number = '';
   @override
   void initState() {
     super.initState();
@@ -54,7 +55,8 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
     }
   }
 
-  void _initImageProviders() {
+  EmailService service = EmailService();
+  void _initImageProviders() async {
     if (widget.userInfo != null) {
       if (widget.userInfo!['bgImg'].isNotEmpty) {
         _backgroundImageProvider = CachedNetworkImageProvider(
@@ -575,23 +577,32 @@ class _MyHomeState extends State<MyHome> {
                       Positioned(
                         right: 0,
                         top: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          constraints: BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            Provider.of<NotificationProvider>(
-                              context,
-                            ).getnotificationcount().toString(),
-                            style: TextStyle(color: Colors.white, fontSize: 10),
-                            textAlign: TextAlign.center,
-                          ),
+                        child: Consumer<NotificationProvider>(
+                          builder: (context, notificationProvider, child) {
+                            final count =
+                                notificationProvider.getnotificationcount();
+                            return count > 0
+                                ? Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  constraints: BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    count.toString(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                                : SizedBox.shrink();
+                          },
                         ),
                       ),
                     ],
@@ -615,8 +626,7 @@ class _MyHomeState extends State<MyHome> {
               onSearchPressed: _navigateToSearch,
               onAddPostPressed: _navigateToPost,
             ),
-            // 使用新创建的带AppBar的NotificationsTab
-            // ChineseSocialMediaPage(),
+
             EmailList(),
           ],
         ),

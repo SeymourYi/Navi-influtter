@@ -40,8 +40,6 @@ class _EmailListState extends State<EmailList>
   }
 
   Future<void> handleRead(int index) async {
-    print("object1111111111");
-    Provider.of<NotificationProvider>(context, listen: false).markAsRead();
     await getUserInfo(index);
 
     if (emailList[index]['isRead'] == false) {
@@ -53,6 +51,7 @@ class _EmailListState extends State<EmailList>
         emailList = List.from(emailList); // 创建新列表
         emailList[index] = {...emailList[index], 'isRead': true}; // 创建新对象
       });
+      Provider.of<NotificationProvider>(context, listen: false).markAsRead();
     }
 
     // showModalBottomSheet(
@@ -141,6 +140,7 @@ class _EmailListState extends State<EmailList>
     final userInfo = await SharedPrefsUtils.getUserInfo();
     try {
       var result = await service.getEmailList(int.parse(userInfo!['username']));
+
       setState(() {
         emailList = result['data'];
       });
@@ -168,6 +168,10 @@ class _EmailListState extends State<EmailList>
                       element['isRead'] = true;
                     });
                   });
+                  Provider.of<NotificationProvider>(
+                    context,
+                    listen: false,
+                  ).clearAll();
                 },
                 child: const Padding(
                   padding: EdgeInsets.only(right: 10),

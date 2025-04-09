@@ -59,6 +59,17 @@ class EmailService {
       throw Exception('Failed to add email: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getEmailNumber(int userId) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/user/getnotificationsNumber?username=${userId}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to get email number: $e');
+    }
+  }
 }
 
 //readallEmail
