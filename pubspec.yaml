@@ -10,9 +10,11 @@ dependencies:
   dio: ^5.8.0+1
   flutter:
     sdk: flutter
+  flutter_native_splash: ^2.4.6
   flutter_screenutil: ^5.9.3
   flutter_svg: ^2.0.9
   giffy_dialog: ^2.3.0
+  google_fonts: ^6.2.1
   http: ^1.3.0
   image_picker: ^1.1.2
   intl: ^0.20.2
@@ -32,12 +34,37 @@ flutter:
   assets:
     - lib/assets/icons/
     - lib/assets/images/
-    - lib/assets/fonts/Inter-Regular.ttf
-    - lib/assets/fonts/Inter-Bold.ttf
   fonts:
+    - family: KumarOne
+      fonts:
+        - asset: lib/assets/fonts/KumarOne-Regular.ttf
+
+    # Inter 字体家族（所有字重统一声明）
     - family: Inter
       fonts:
+        - asset: lib/assets/fonts/Inter-Thin.ttf
+          weight: 100
+        - asset: lib/assets/fonts/Inter-ExtraLight.ttf
+          weight: 200
+        - asset: lib/assets/fonts/Inter-Light.ttf
+          weight: 300
         - asset: lib/assets/fonts/Inter-Regular.ttf
           weight: 400
+        - asset: lib/assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: lib/assets/fonts/Inter-SemiBold.ttf
+          weight: 600
         - asset: lib/assets/fonts/Inter-Bold.ttf
           weight: 700
+        - asset: lib/assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+        - asset: lib/assets/fonts/Inter-Black.ttf
+          weight: 900
+        - asset: lib/assets/fonts/Inter-VariableFont_slnt,wght.ttf
+          style: normal
+
+    # Roboto 字体家族（基础声明）
+    - family: Roboto
+      fonts:
+        - asset: lib/assets/fonts/Roboto-Regular.ttf
+          weight: 400

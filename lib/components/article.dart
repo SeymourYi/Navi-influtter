@@ -557,9 +557,9 @@ class _ArticleState extends State<Article> {
                                   Text(
                                     "${widget.articleData['nickname']}",
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: "Inter-Regular",
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: "Inter",
                                       color: Colors.black,
                                     ),
                                   ),
@@ -586,7 +586,7 @@ class _ArticleState extends State<Article> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      fontFamily: "Inter-Regular",
+                                      fontFamily: "Inter",
                                       color: const Color.fromRGBO(
                                         104,
                                         118,
@@ -600,7 +600,7 @@ class _ArticleState extends State<Article> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      fontFamily: "Inter-Regular",
+                                      fontFamily: "Inter",
                                       color: const Color.fromRGBO(
                                         111,
                                         107,
@@ -630,18 +630,29 @@ class _ArticleState extends State<Article> {
                               ),
                               // 正文内容
                               Padding(
-                                padding: EdgeInsets.only(top: 4, right: 12),
+                                padding: EdgeInsets.only(right: 12),
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: _NavigateToArticleDetail,
-                                  child: Text(
-                                    "${widget.articleData['content']}",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      height: 1.2, // 调整这个值来改变行间距
-                                      fontFamily: "Inter",
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // 实际文章内容 - 仅显示一次
+                                      Padding(
+                                        padding: EdgeInsets.zero,
+                                        child: Text(
+                                          "${widget.articleData['content']}",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: "Inter",
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                            color: Color(0xFF14171A),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -653,122 +664,22 @@ class _ArticleState extends State<Article> {
                                       "${widget.articleData['coverImg']}",
                                     ],
                                   )
-                                  : Container(),
+                                  : SizedBox.shrink(),
 
                               widget.articleData['userShare'] == true
-                                  ? LitArticle(articleData: widget.articleData)
-                                  : Container(),
-
-                              // 时间和操作按钮区域
-                              // 点赞和评论行 - 仅在需要时显示
-                              // likeCount > 0 ||
-                              //         (widget.articleData['commentcount'] !=
-                              //                 null &&
-                              //             widget.articleData['commentcount'] >
-                              //                 0)
-                              //     ? GestureDetector(
-                              //       onTap: _NavigateToArticleDetail,
-                              //       child: Container(
-                              //         width: double.infinity,
-                              //         margin: EdgeInsets.only(
-                              //           top: 6,
-                              //           right: 12,
-                              //         ),
-                              //         padding: EdgeInsets.symmetric(
-                              //           horizontal: 12,
-                              //           vertical: 8,
-                              //         ),
-                              //         decoration: BoxDecoration(
-                              //           color: Color.fromRGBO(
-                              //             255,
-                              //             250,
-                              //             248,
-                              //             1.00,
-                              //           ),
-                              //           borderRadius: BorderRadius.circular(4),
-                              //         ),
-                              //         child: Material(
-                              //           color: Colors.transparent,
-                              //           child: Column(
-                              //             crossAxisAlignment:
-                              //                 CrossAxisAlignment.start,
-                              //             children: [
-                              //               // 点赞行 - 仅当有点赞时显示
-                              //               if (likeCount > 0)
-                              //                 RichText(
-                              //                   text: TextSpan(
-                              //                     style: TextStyle(
-                              //                       fontSize: 14,
-                              //                       color: Color.fromRGBO(
-                              //                         104,
-                              //                         118,
-                              //                         132,
-                              //                         1.00,
-                              //                       ),
-                              //                       fontFamily: "Inter-Regular",
-                              //                     ),
-                              //                     children: [
-                              //                       WidgetSpan(
-                              //                         child: Padding(
-                              //                           padding:
-                              //                               EdgeInsets.only(
-                              //                                 right: 4,
-                              //                               ),
-                              //                           child: Icon(
-                              //                             Icons.favorite_border,
-                              //                             size: 20,
-                              //                             color:
-                              //                                 const Color.fromRGBO(
-                              //                                   237,
-                              //                                   144,
-                              //                                   131,
-                              //                                   1.00,
-                              //                                 ),
-                              //                           ),
-                              //                         ),
-                              //                       ),
-                              //                       TextSpan(
-                              //                         text: "$likeCount人点赞",
-                              //                       ),
-                              //                     ],
-                              //                   ),
-                              //                 ),
-
-                              //               // 评论行 - 仅当有评论时显示
-                              //               if (widget.articleData['commentcount'] !=
-                              //                       null &&
-                              //                   widget.articleData['commentcount'] >
-                              //                       0)
-                              //                 Padding(
-                              //                   padding: EdgeInsets.only(
-                              //                     top: likeCount > 0 ? 6 : 0,
-                              //                   ),
-                              //                   child: Text(
-                              //                     "${widget.articleData['commentcount']}条评论",
-                              //                     style: TextStyle(
-                              //                       fontSize: 14,
-                              //                       color: Color.fromRGBO(
-                              //                         104,
-                              //                         118,
-                              //                         132,
-                              //                         1.00,
-                              //                       ),
-                              //                       fontFamily: "Inter-Regular",
-                              //                     ),
-                              //                   ),
-                              //                 ),
-                              //             ],
-                              //           ),
-                              //         ),
-                              //       ),
-                              //     )
-                              //     : Container(),
+                                  ? Padding(
+                                    padding: EdgeInsets.only(top: 8),
+                                    child: LitArticle(
+                                      articleData: widget.articleData,
+                                    ),
+                                  )
+                                  : SizedBox.shrink(),
                               Padding(
-                                padding: EdgeInsets.only(top: 8, right: 12),
+                                padding: EdgeInsets.only(right: 24),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween, // 改为 spaceBetween
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  // mainAxisAlignment:
+                                  //     MainAxisAlignment.spaceBetween,
                                   children: [
                                     // 左边按钮（评论）
                                     InkWell(

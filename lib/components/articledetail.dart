@@ -127,7 +127,12 @@ class _ArticledetailState extends State<Articledetail> {
               : Container(),
 
           widget.articleData['userShare'] == true
-              ? LitArticle(articleData: widget.articleData)
+              ? Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.05,
+                ),
+                child: LitArticle(articleData: widget.articleData),
+              )
               : Container(),
 
           // Stats and actions

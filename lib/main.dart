@@ -1,4 +1,5 @@
 import 'package:Navi/providers/notification_provider.dart';
+import 'dart:io'; // 添加Platform支持
 import 'package:flutter/material.dart';
 import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/models/like_notification.dart';
@@ -11,11 +12,24 @@ import 'package:Navi/utils/mydio.dart';
 import '../../Store/storeutils.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 void main(List<String> args) async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
   await HttpClient.init();
+
+  // 确保字体被正确加载
+  if (Platform.isAndroid || Platform.isIOS) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => NotificationProvider(),
@@ -65,6 +79,11 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // 尝试强制刷新字体缓存 (简化处理)
+    if (Platform.isWindows) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
+
     return MaterialApp(
       navigatorKey: MyApp.NavigatorKey, // 添加 NavigatorKey
       title: "Navi",

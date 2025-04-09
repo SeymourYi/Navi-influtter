@@ -121,7 +121,7 @@ class _PostPageState extends State<PostPage> {
       appBar: AppBar(
         // 左侧关闭按钮
         leading: IconButton(
-          icon: const Icon(Icons.close, size: 24),
+          icon: const Icon(Icons.close, size: 24, color: Colors.grey),
           onPressed: () => Navigator.pop(context),
         ),
         // 页面标题
@@ -182,29 +182,38 @@ class _PostPageState extends State<PostPage> {
           FocusScope.of(context).unfocus();
         },
         child: SizedBox(
-          height: MediaQuery.of(context).size.height,
+          height: MediaQuery.of(context).size.height * 1.8,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _postController,
-                  focusNode: _focusNode,
-                  autofocus: true,
-                  maxLines: null, // 允许多行输入
-                  maxLength: _maxCharacters, // 最大字符限制
-                  decoration: const InputDecoration(
-                    hintText: '想记下点什么？',
-                    border: InputBorder.none,
-                    counterText: '', // 隐藏默认的字符计数器
-                    contentPadding: EdgeInsets.zero,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  style: const TextStyle(fontSize: 18),
-                  // 监听文本变化，更新字符计数
-                  onChanged: (text) {
-                    setState(() => _characterCount = text.length);
-                  },
+                  child: TextField(
+                    // 输入框初始高度
+                    minLines: 4,
+                    controller: _postController,
+                    focusNode: _focusNode,
+                    autofocus: true,
+                    maxLines: null, // 允许多行输入
+                    maxLength: _maxCharacters, // 最大字符限制
+                    decoration: const InputDecoration(
+                      hintText: '想记下点什么？',
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                      border: InputBorder.none,
+                      counterText: '', // 隐藏默认的字符计数器
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    style: const TextStyle(fontSize: 18),
+                    // 监听文本变化，更新字符计数
+                    onChanged: (text) {
+                      setState(() => _characterCount = text.length);
+                    },
+                  ),
                 ),
                 if (_selectedImage != null) ...[
                   const SizedBox(height: 16),
@@ -215,13 +224,11 @@ class _PostPageState extends State<PostPage> {
                 const SizedBox(height: 20),
                 _buildTagSelector(),
 
-                const SizedBox(height: 16),
-                _buildCharCounter(),
-
                 // 添加足够的底部空间，防止内容被遮挡
                 if (widget.type != "发布")
                   PostLitArticle(articleData: widget.articelData),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                // SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                _buildCharCounter(),
               ],
             ),
           ),
@@ -252,22 +259,30 @@ class _PostPageState extends State<PostPage> {
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.local_offer_outlined,
-                size: 20,
-                color:
-                    _selectedTag != null ? Colors.blue : Colors.grey.shade700,
-              ),
+              _selectedTag != null
+                  ? Icon(
+                    Icons.local_offer,
+                    size: 20,
+                    color: const Color.fromRGBO(111, 107, 204, 1),
+                  )
+                  : const Icon(
+                    Icons.local_offer_outlined,
+                    size: 20,
+                    color: Colors.grey,
+                  ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   _selectedTag ?? '添加标签',
                   style: TextStyle(
-                    color: _selectedTag != null ? Colors.blue : Colors.black87,
-                    fontSize: 16,
+                    color:
+                        _selectedTag != null
+                            ? const Color.fromRGBO(111, 107, 204, 1)
+                            : Colors.black87,
+                    fontSize: 18,
                     fontWeight:
                         _selectedTag != null
-                            ? FontWeight.w500
+                            ? FontWeight.w600
                             : FontWeight.normal,
                   ),
                 ),
@@ -322,6 +337,8 @@ class _PostPageState extends State<PostPage> {
 
   /// 构建操作按钮
   Widget _buildActionButtons() {
+    // 如果已经选择图片了就不显示此按钮
+    if (_selectedImage != null) return const SizedBox.shrink();
     return Container(
       margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.02),
       child: Row(
@@ -352,7 +369,7 @@ class _PostPageState extends State<PostPage> {
   /// 构建图片预览
   Widget _buildImagePreview() {
     return Container(
-      margin: const EdgeInsets.only(left: 60),
+      margin: const EdgeInsets.symmetric(horizontal: 30),
       height: 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),

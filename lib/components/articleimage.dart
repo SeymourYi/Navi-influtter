@@ -107,25 +107,37 @@ class ArticleImage extends StatelessWidget {
   Widget _buildSingleImage(BuildContext context, int index) {
     return GestureDetector(
       onTap: () => _showFullScreenImage(context, index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 500),
-          child: Hero(
-            tag: 'article_image_$index',
-            child: Image.network(
-              imageUrls[index],
-              // width: double.infinity,
-              // height: double.infinity, // 让高度尽可能填充可用空间
-              fit: BoxFit.cover,
-              alignment: Alignment.center, // 确保裁剪时居中
-              errorBuilder:
-                  (context, error, stackTrace) => Container(
-                    width: double.infinity,
-                    height: double.infinity, // 错误时也填充相同高度
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.broken_image, color: Colors.grey),
-                  ),
+      child: Padding(
+        // padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.only(
+          left: MediaQuery.of(context).size.width * 0.02,
+          right: MediaQuery.of(context).size.width * 0.06,
+          top: MediaQuery.of(context).size.width * 0.02,
+          bottom: MediaQuery.of(context).size.width * 0.02,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            //设置一个最大高度
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.3,
+            ),
+            child: Hero(
+              tag: 'article_image_$index',
+              child: Image.network(
+                imageUrls[index],
+                // width: double.infinity,
+                // height: double.infinity, // 让高度尽可能填充可用空间
+                fit: BoxFit.cover,
+                alignment: Alignment.center, // 确保裁剪时居中
+                errorBuilder:
+                    (context, error, stackTrace) => Container(
+                      width: double.infinity,
+                      height: double.infinity, // 错误时也填充相同高度
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+              ),
             ),
           ),
         ),

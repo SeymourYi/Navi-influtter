@@ -151,6 +151,7 @@ class _PostLitArticleState extends State<PostLitArticle> {
                     ),
 
                     // Article image
+                    //最大高度设置
                     widget.articleData['coverImg'] != ""
                         ? ArticleImage(
                           imageUrls: ["${widget.articleData['coverImg']}"],
