@@ -3,6 +3,7 @@ import 'package:Navi/api/getarticleinfoAPI.dart';
 import 'package:Navi/components/CommentWidget%20.dart';
 import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/page/Home/articlelist.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'articleimage.dart';
@@ -34,6 +35,26 @@ class _ArticledetailState extends State<Articledetail> {
     });
   }
 
+  void _navigatetoarticledetail() {
+    // 检查文章ID是否存在
+    // if (widget.articleData == null || widget.articleData['id'] == null) {
+    //   return;
+    // }
+    print("111111111111111111111111111");
+    print(widget.articleData['beShareArticleId']);
+    print("11111122222222222211111111111");
+    // String beShareArticleId = "${widget.articleData['beShareArticleId']}";
+    //得到文章详情
+    // final result = await ArticleService().getArticleDetail(beShareArticleId);
+
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => Articledetail(articleData: result['data']),
+    //   ),
+    // );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,7 +82,12 @@ class _ArticledetailState extends State<Articledetail> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Userinfo()),
+                      MaterialPageRoute(
+                        builder:
+                            (context) => ProfilePage(
+                              username: widget.articleData['username'],
+                            ),
+                      ),
                     );
                   },
                   child:

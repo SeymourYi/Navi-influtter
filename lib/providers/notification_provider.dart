@@ -20,7 +20,10 @@ class NotificationProvider with ChangeNotifier {
 
   // 标记为已读
   void markAsRead() {
-    notificationcount -= 1;
+    if (notificationcount > 0) {
+      notificationcount -= 1;
+      notifyListeners();
+    }
   }
 
   void setnotificationcount(int count) {

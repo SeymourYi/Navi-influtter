@@ -1,4 +1,9 @@
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/api/emailAPI.dart';
+import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Emailitem extends StatefulWidget {
   const Emailitem({super.key, required this.email});
@@ -12,7 +17,8 @@ class _EmailitemState extends State<Emailitem>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
+  EmailService emailService = EmailService();
+  bool isRead = false;
 
   @override
   void initState() {
@@ -23,14 +29,26 @@ class _EmailitemState extends State<Emailitem>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.98,
+      end: 0.95,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    // 初始化已读状态
+    isRead = widget.email['isRead'] ?? false;
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  // 播放点击动画
+  void _playAnimation() async {
+    await _controller.forward();
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (mounted) {
+      _controller.reverse();
+    }
   }
 
   IconData _getTypeIcon() {
@@ -72,27 +90,53 @@ class _EmailitemState extends State<Emailitem>
     }
   }
 
+  //阅读某一个邮件
+  Future<void> _readsomeEmail() async {
+    if (isRead) return; // 如果已经阅读过，不再执行
+
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo == null) return;
+
+      // 调用API标记邮件为已读
+      await emailService.readsomeonenotification(
+        widget.email['id'].toString(),
+        userInfo['username'].toString(),
+      );
+
+      // 更新本地状态
+      setState(() {
+        isRead = true;
+        widget.email['isRead'] = true; // 更新邮件对象状态
+      });
+
+      // 更新全局通知计数
+      Provider.of<NotificationProvider>(context, listen: false).markAsRead();
+    } catch (e) {
+      print('阅读邮件失败: $e');
+    }
+  }
+
+  //阅读所有邮件
+  Future<void> _readallEmail() async {
+    final userInfo = await SharedPrefsUtils.getUserInfo();
+    await emailService.readAllEmail(int.parse(userInfo!['username']));
+    //邮件数清零
+    Provider.of<NotificationProvider>(
+      context,
+      listen: false,
+    ).setnotificationcount(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) {
-        setState(() {
-          _isPressed = true;
-        });
-        _controller.forward();
+      //点击邮件
+      onTap: () {
+        _playAnimation();
+        _readsomeEmail();
       },
-      onTapUp: (_) {
-        setState(() {
-          _isPressed = false;
-        });
-        _controller.reverse();
-      },
-      onTapCancel: () {
-        setState(() {
-          _isPressed = false;
-        });
-        _controller.reverse();
-      },
+      //点击邮件动画
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {

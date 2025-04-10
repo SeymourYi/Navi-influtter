@@ -675,8 +675,12 @@ class _ArticleState extends State<Article> {
                               widget.articleData['userShare'] == true
                                   ? Padding(
                                     padding: EdgeInsets.only(top: 8),
-                                    child: LitArticle(
-                                      articleData: widget.articleData,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: _NavigateToArticleDetail,
+                                      child: LitArticle(
+                                        articleData: widget.articleData,
+                                      ),
                                     ),
                                   )
                                   : SizedBox.shrink(),

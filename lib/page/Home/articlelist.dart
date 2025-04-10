@@ -23,6 +23,7 @@ class _ArticlelistState extends State<Articlelist>
   ArticleService service = ArticleService();
   EmailService emailService = EmailService();
   String number = '';
+  bool initialLoad = true; // 添加标记以跟踪初始加载
 
   // 获取文章列表
   Future<void> _fetchArticleList() async {
@@ -31,16 +32,23 @@ class _ArticlelistState extends State<Articlelist>
     setState(() {
       isLoading = true;
     });
-    final userInfo = await SharedPrefsUtils.getUserInfo();
-    var result1 = await emailService.getEmailNumber(
-      int.parse(userInfo!['username']),
-    );
-    number = result1['data'];
 
-    Provider.of<NotificationProvider>(
-      context,
-      listen: false,
-    ).setnotificationcount(int.parse(number));
+    // 只在初始加载时获取未读邮件数量并设置通知计数
+    if (initialLoad) {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      var result1 = await emailService.getEmailNumber(
+        int.parse(userInfo!['username']),
+      );
+      number = result1['data'];
+
+      Provider.of<NotificationProvider>(
+        context,
+        listen: false,
+      ).setnotificationcount(int.parse(number));
+
+      initialLoad = false; // 标记初始加载已完成
+    }
+
     try {
       var result = await service.getallArticleList(1);
       setState(() {

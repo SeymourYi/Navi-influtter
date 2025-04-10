@@ -172,6 +172,9 @@ class _EmailListState extends State<EmailList>
                     context,
                     listen: false,
                   ).clearAll();
+
+                  // 获取文章列表
+                  getEmailList();
                 },
                 child: const Padding(
                   padding: EdgeInsets.only(right: 10),

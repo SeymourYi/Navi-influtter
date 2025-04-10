@@ -44,4 +44,15 @@ class ArticleService {
       throw Exception('Failed to load articles: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getArticleDetail(String articleId) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/article/getArticle?articleId=${articleId}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to load articles: $e');
+    }
+  }
 }

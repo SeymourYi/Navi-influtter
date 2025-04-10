@@ -1,3 +1,5 @@
+import 'package:Navi/api/articleAPI.dart';
+import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/components/articleimage.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -11,6 +13,8 @@ class LitArticle extends StatefulWidget {
 }
 
 class _LitArticleState extends State<LitArticle> {
+  final ArticleService articleService = ArticleService();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -31,17 +35,23 @@ class _LitArticleState extends State<LitArticle> {
             children: [
               // Left avatar - clickable area
               GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  // var result = await articleService.getArticleDetail(
+                  //   widget.articleData[''],
+                  // );
+
+                  // var articleData = result['data'];
+
                   Navigator.push(
                     context,
                     PageRouteBuilder(
                       pageBuilder:
                           (context, animation, secondaryAnimation) =>
-                              ProfilePage(
-                                username:
-                                    widget
-                                        .articleData['beShareCreaterUserName'],
-                              ),
+                          // Articledetail(articleData: articleData),
+                          ProfilePage(
+                            username:
+                                widget.articleData['beShareCreaterUserName'],
+                          ),
                       transitionsBuilder: (
                         context,
                         animation,
@@ -74,73 +84,103 @@ class _LitArticleState extends State<LitArticle> {
                   ),
                 ),
               ),
-
-              // Right content
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Username row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          "${widget.articleData['beShareNickName']}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Inter-Regular",
-                            color: Colors.black,
+                child: GestureDetector(
+                  onTap: () async {
+                    var result = await articleService.getArticleDetail(
+                      widget.articleData['beShareArticleId'],
+                    );
+                    var articleData = result['data'];
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder:
+                            (context, animation, secondaryAnimation) =>
+                                Articledetail(articleData: articleData),
+                        transitionsBuilder: (
+                          context,
+                          animation,
+                          secondaryAnimation,
+                          child,
+                        ) {
+                          const begin = Offset(1.0, 0.0);
+                          const end = Offset.zero;
+                          const curve = Curves.ease;
+                          var tween = Tween(
+                            begin: begin,
+                            end: end,
+                          ).chain(CurveTween(curve: curve));
+
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Username row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            "${widget.articleData['beShareNickName']}",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Inter-Regular",
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          "@${widget.articleData['beShareCreaterUserName']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Inter",
-                            color: Color.fromRGBO(104, 118, 132, 1.00),
+                          const SizedBox(width: 2),
+                          Text(
+                            "@${widget.articleData['beShareCreaterUserName']}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: "Inter",
+                              color: Color.fromRGBO(104, 118, 132, 1.00),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Text(
-                          "·",
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: "Inter-Regular",
-                            color: Color.fromRGBO(104, 118, 132, 1.00),
+                          const SizedBox(width: 2),
+                          const Text(
+                            "·",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: "Inter-Regular",
+                              color: Color.fromRGBO(104, 118, 132, 1.00),
+                            ),
                           ),
-                        ),
-                        Text(
-                          "${widget.articleData['beShareUptonowTime']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Inter-Regular",
-                            color: Color.fromRGBO(111, 107, 204, 1.00),
+                          Text(
+                            "${widget.articleData['beShareUptonowTime']}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: "Inter-Regular",
+                              color: Color.fromRGBO(111, 107, 204, 1.00),
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "${widget.articleData['beShareCategoryName']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: "Inter",
-                            fontWeight: FontWeight.w500,
-                            color: Color.fromRGBO(111, 107, 204, 1.00),
+                          const Spacer(),
+                          Text(
+                            "${widget.articleData['beShareCategoryName']}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontFamily: "Inter",
+                              fontWeight: FontWeight.w500,
+                              color: Color.fromRGBO(111, 107, 204, 1.00),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
-                    // Content text
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2, right: 6),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
+                          const SizedBox(width: 8),
+                        ],
+                      ),
+                      // Content text
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, right: 6),
                         child: Text(
                           "${widget.articleData['beShareContent']}",
                           style: const TextStyle(
@@ -152,17 +192,17 @@ class _LitArticleState extends State<LitArticle> {
                           ),
                         ),
                       ),
-                    ),
 
-                    // Article image
-                    widget.articleData['beShareCoverImg'] != ""
-                        ? ArticleImage(
-                          imageUrls: [
-                            "${widget.articleData['beShareCoverImg']}",
-                          ],
-                        )
-                        : Container(),
-                  ],
+                      // Article image
+                      widget.articleData['beShareCoverImg'] != ""
+                          ? ArticleImage(
+                            imageUrls: [
+                              "${widget.articleData['beShareCoverImg']}",
+                            ],
+                          )
+                          : Container(),
+                    ],
+                  ),
                 ),
               ),
             ],
