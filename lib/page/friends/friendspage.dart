@@ -1,3 +1,4 @@
+import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/api/getfriendlist.dart';
 import '../../api/articleAPI.dart';
@@ -92,44 +93,7 @@ class _FriendsListState extends State<FriendsList> {
     } catch (e) {
       // 创建一些模拟数据，以防API调用失败
       setState(() {
-        _friends = [
-          Friend(
-            name: '霸气小肥鹅',
-            username: '1111',
-            avatarUrl:
-                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/7a2fc306-3a6a-4d5f-ab06-e470ecb1d3a7.jpg',
-            bio: '韶华易逝，劝君惜取少年时',
-            isFollowing: true,
-            isVerified: true,
-            followers: 12800,
-            following: 542,
-            showStats: true,
-          ),
-          Friend(
-            name: '金杯车',
-            username: '2222',
-            avatarUrl:
-                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/973eae25-8da6-4011-9281-f686f03c1bfd.jpg',
-            bio: '青天碧海，蓝天无线。\n微风徐来，阳光沙滩。',
-            isFollowing: true,
-            isVerified: false,
-            followers: 5400,
-            following: 210,
-            showStats: true,
-          ),
-          Friend(
-            name: '用户已注销',
-            username: '3333',
-            avatarUrl:
-                'https://bigevent24563.oss-cn-beijing.aliyuncs.com/R-C.png',
-            bio: '财务自由 | 游乐人间。\n仰观宇宙之大，俯察品类之盛。',
-            isFollowing: false,
-            isVerified: true,
-            followers: 8600,
-            following: 320,
-            showStats: true,
-          ),
-        ];
+        _friends = [];
         _isLoading = false;
       });
       print('Error fetching friend list: $e');
@@ -191,82 +155,92 @@ class FriendListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Avatar
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: NetworkImage(friend.avatarUrl),
-              ),
-              const SizedBox(width: 12),
-              // User info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Name and username
-                    Row(
-                      children: [
-                        Text(
-                          friend.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(username: friend.username),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: NetworkImage(friend.avatarUrl),
+                ),
+                const SizedBox(width: 12),
+                // User info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name and username
+                      Row(
+                        children: [
+                          Text(
+                            friend.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                        if (friend.isVerified) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                          if (friend.isVerified) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.verified,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    Text(
-                      '@${friend.username}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                    // Bio
-                    if (friend.bio != null && friend.bio!.isNotEmpty)
-                      Text(
-                        friend.bio!,
-                        style: const TextStyle(fontSize: 14),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
                       ),
+                      Text(
+                        '@${friend.username}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      // Bio
+                      if (friend.bio != null && friend.bio!.isNotEmpty)
+                        Text(
+                          friend.bio!,
+                          style: const TextStyle(fontSize: 14),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Follow button
+                _buildFollowButton(),
+              ],
+            ),
+            // Stats (optional)
+            if (friend.showStats)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    _buildStatItem(Icons.people, '${friend.following} 关注'),
+                    const SizedBox(width: 16),
+                    _buildStatItem(
+                      Icons.people_outline,
+                      '${friend.followers} 粉丝',
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              // Follow button
-              _buildFollowButton(),
-            ],
-          ),
-          // Stats (optional)
-          if (friend.showStats)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                children: [
-                  _buildStatItem(Icons.people, '${friend.following} 关注'),
-                  const SizedBox(width: 16),
-                  _buildStatItem(
-                    Icons.people_outline,
-                    '${friend.followers} 粉丝',
-                  ),
-                ],
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

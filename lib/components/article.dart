@@ -480,7 +480,7 @@ class _ArticleState extends State<Article> {
               // 底层可点击区域 - 覆盖整个文章区域
               Positioned.fill(
                 child: Material(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.white,
                   child: InkWell(
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
@@ -637,7 +637,7 @@ class _ArticleState extends State<Article> {
                                   onTap: _NavigateToArticleDetail,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.blue,
+                                      // color: Colors.blue,
                                     ),
                                     child: Column(
                                       crossAxisAlignment:

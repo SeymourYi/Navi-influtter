@@ -30,7 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _loadCurrentUser();
     _loadUserInfo();
-    _fetchArticleList();
+    // _fetchArticleList();
   }
 
   @override
@@ -95,6 +95,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (widget.username == null) {
         final userInfo = await SharedPrefsUtils.getUserInfo();
+
         setState(() {
           _userInfo = userInfo;
           _isLoading = false;
@@ -127,10 +128,15 @@ class _ProfilePageState extends State<ProfilePage> {
       });
       print('加载用户信息出错: $e');
     }
+
+    _fetchArticleList();
   }
 
   Future<void> _fetchArticleList() async {
     ArticleService service = ArticleService();
+    print("11111111111");
+    print(_userInfo);
+    print("122222222111");
     try {
       // 获取用户ID
       int userId = 1; // 默认ID
@@ -144,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage> {
           userId = _userInfo!['id'];
         }
       }
-      var result = await service.getsomebodyArticleList(widget.username!);
+      var result = await service.getsomebodyArticleList(_userInfo!['username']);
       if (result['code'] == 0 && result['data'] != null) {
         setState(() {
           _articleList = result['data'];

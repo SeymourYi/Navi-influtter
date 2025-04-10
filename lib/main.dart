@@ -94,7 +94,7 @@ class _MyAppState extends State<MyApp> {
         cScreen: Text("JIAAAAAAAAAAAA"),
       ),
       theme: ThemeData(
-        primaryColor: const Color.fromARGB(255, 255, 255, 255),
+        primaryColor: Colors.white,
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: AppBarTheme(backgroundColor: Colors.white),
       ),
