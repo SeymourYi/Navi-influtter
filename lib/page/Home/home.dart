@@ -468,7 +468,7 @@ class HomeTab extends StatelessWidget {
       body: things(),
       floatingActionButton: FloatingActionButton(
         onPressed: onAddPostPressed,
-        backgroundColor: Color(0xFF6F6BCC),
+        backgroundColor: Color.fromRGBO(98, 1, 231, 1.00),
         shape: CircleBorder(),
         child: SvgPicture.asset(
           "lib/assets/icons/postbuttonicon.svg",
@@ -525,11 +525,12 @@ class MyHome extends StatefulWidget {
   State<MyHome> createState() => _MyHomeState();
 }
 
-class _MyHomeState extends State<MyHome> {
+class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
   PersistentDrawer? _persistentDrawer;
   int _currentTabIndex = 0;
+  late TabController _tabController;
 
   final List<LikeNotification> notifications = [
     LikeNotification(
@@ -551,6 +552,20 @@ class _MyHomeState extends State<MyHome> {
   void initState() {
     super.initState();
     _loadUserInfo();
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          _currentTabIndex = _tabController.index;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -656,95 +671,239 @@ class _MyHomeState extends State<MyHome> {
       );
     }
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        // 移除主Scaffold的AppBar，AppBar将在各个Tab中定义
-        drawer:
-            _isLoading
-                ? Drawer(child: Center(child: CircularProgressIndicator()))
-                : _persistentDrawer,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Colors.grey[300]!, width: 1.0),
-            ),
-          ),
-          child: SizedBox(
-            height: 50,
-            child: TabBar(
-              onTap: (index) {
-                setState(() {
-                  _currentTabIndex = index;
-                });
-              },
-              tabs: [
-                Tab(text: "动态", icon: Icon(Icons.home, size: 20)),
-                Tab(
-                  text: "通知",
-                  icon: Stack(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(right: 10, top: 4),
-                        child: Icon(Icons.notifications, size: 20),
+    return Scaffold(
+      drawer:
+          _isLoading
+              ? Drawer(child: Center(child: CircularProgressIndicator()))
+              : _persistentDrawer,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.grey[300]!, width: 1.0)),
+        ),
+        child: SizedBox(
+          height: 50,
+          child: TabBar(
+            controller: _tabController,
+            onTap: (index) {
+              setState(() {
+                _currentTabIndex = index;
+              });
+            },
+            tabs: [
+              _currentTabIndex == 0
+                  ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/home.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
                       ),
-
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Consumer<NotificationProvider>(
-                          builder: (context, notificationProvider, child) {
-                            final count =
-                                notificationProvider.getnotificationcount();
-                            return count > 0
-                                ? Container(
-                                  padding: EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  constraints: BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    count.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                                : SizedBox.shrink();
-                          },
-                        ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/home-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.transparent,
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
-              unselectedLabelStyle: TextStyle(fontSize: 12),
-              labelStyle: TextStyle(fontSize: 12),
-              labelColor: const Color.fromARGB(255, 106, 75, 202),
-            ),
+              _currentTabIndex == 1
+                  ? Tab(
+                    icon: Stack(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.only(right: 10, top: 4),
+                          child: SvgPicture.asset(
+                            "lib/assets/icons/notifications.svg",
+                            height: 25,
+                            width: 25,
+                            colorFilter: ColorFilter.mode(
+                              Color.fromRGBO(98, 1, 231, 1.00),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Consumer<NotificationProvider>(
+                            builder: (context, notificationProvider, child) {
+                              final count =
+                                  notificationProvider.getnotificationcount();
+                              return count > 0
+                                  ? Container(
+                                    padding: EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    constraints: BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      count.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                  : SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : Tab(
+                    icon: Stack(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.only(right: 10, top: 4),
+                          child: SvgPicture.asset(
+                            "lib/assets/icons/notifications-outline.svg",
+                            height: 25,
+                            width: 25,
+                            colorFilter: ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Consumer<NotificationProvider>(
+                            builder: (context, notificationProvider, child) {
+                              final count =
+                                  notificationProvider.getnotificationcount();
+                              return count > 0
+                                  ? Container(
+                                    padding: EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    constraints: BoxConstraints(
+                                      minWidth: 16,
+                                      minHeight: 16,
+                                    ),
+                                    child: Text(
+                                      count.toString(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                  : SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              _currentTabIndex == 2
+                  ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/people.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/people-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+              _currentTabIndex == 3
+                  ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/person.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/person-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+              _currentTabIndex == 4
+                  ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/chatbubble-ellipses.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+            ],
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.transparent,
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
+            unselectedLabelStyle: TextStyle(fontSize: 12),
+            labelStyle: TextStyle(fontSize: 12),
+            labelColor: Color.fromRGBO(111, 107, 204, 1.00),
           ),
         ),
-        body: TabBarView(
-          children: [
-            // 使用新创建的带AppBar的HomeTab
-            HomeTab(
-              userInfo: _userInfo,
-              onSearchPressed: _navigateToSearch,
-              onAddPostPressed: _navigateToPost,
-            ),
-
-            EmailList(),
-          ],
-        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          HomeTab(
+            userInfo: _userInfo,
+            onSearchPressed: _navigateToSearch,
+            onAddPostPressed: _navigateToPost,
+          ),
+          EmailList(),
+          ChatScreen(),
+          Text("我的"),
+          Text("聊天"),
+        ],
       ),
     );
   }

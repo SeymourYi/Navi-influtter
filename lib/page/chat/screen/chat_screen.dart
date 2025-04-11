@@ -1,3 +1,4 @@
+import 'package:Navi/page/friends/friendspage.dart';
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
@@ -485,40 +486,9 @@ class _ChatScreenState extends State<ChatScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            _chatWithCharacter == null
-                ? Text('${_selectedCharacter!.name}的聊天')
-                : Text('与 ${_chatWithCharacter!.name} 聊天'),
-        backgroundColor: _selectedCharacter!.color,
-        actions:
-            _isConnected
-                ? [
-                  IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: _showServerSettings,
-                    tooltip: '服务器设置',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.exit_to_app),
-                    onPressed: () {
-                      _ensureDisconnect();
-                      setState(() {
-                        _isConnected = false;
-                        _errorMessage = "";
-                        _chatWithCharacter = null;
-                        _selectedCharacter = null;
-                      });
-                    },
-                    tooltip: '退出聊天',
-                  ),
-                ]
-                : [
-                  IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: _showServerSettings,
-                    tooltip: '服务器设置',
-                  ),
-                ],
+        title: Text("朋友列表"),
+        centerTitle: true,
+        backgroundColor: Colors.white,
       ),
       body:
           _isConnected
@@ -526,109 +496,6 @@ class _ChatScreenState extends State<ChatScreen>
                   ? _buildUserSelectionScreen()
                   : _buildChatScreen())
               : _buildLoadingScreen(),
-    );
-  }
-
-  void _showServerSettings() {
-    // 当前服务器配置
-    final hostController = TextEditingController(text: AppConfig.serverHost);
-    final portController = TextEditingController(
-      text: AppConfig.serverPort.toString(),
-    );
-    bool useSockJS = AppConfig.enableSockJS;
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('服务器设置'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: '服务器地址',
-                    hintText: '例如：122.51.93.212 或 localhost',
-                  ),
-                  controller: hostController,
-                ),
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: '端口号',
-                    hintText: '例如：5487 或 8080',
-                  ),
-                  controller: portController,
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                StatefulBuilder(
-                  builder:
-                      (context, setState) => Row(
-                        children: [
-                          Checkbox(
-                            value: useSockJS,
-                            onChanged: (value) {
-                              setState(() {
-                                if (value != null) {
-                                  useSockJS = value;
-                                }
-                              });
-                            },
-                          ),
-                          const Text('使用SockJS (推荐)'),
-                        ],
-                      ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '如果连接失败，请尝试切换SockJS选项',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    AppConfig.setServerConfig(
-                      host: hostController.text,
-                      port: int.tryParse(portController.text) ?? 8080,
-                      useSockJS: useSockJS,
-                    );
-                    Navigator.of(context).pop();
-
-                    // 如果已经连接，询问是否重新连接
-                    if (_isConnected) {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              title: const Text('重新连接'),
-                              content: const Text('是否使用新设置重新连接服务器？'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('取消'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    _ensureDisconnect();
-                                    setState(() {
-                                      _isConnected = false;
-                                      _errorMessage = "";
-                                    });
-                                    _connectToChat();
-                                  },
-                                  child: const Text('重新连接'),
-                                ),
-                              ],
-                            ),
-                      );
-                    }
-                  },
-                  child: const Text('保存设置'),
-                ),
-              ],
-            ),
-          ),
     );
   }
 
@@ -713,17 +580,6 @@ class _ChatScreenState extends State<ChatScreen>
   Widget _buildUserSelectionScreen() {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            '选择一个好友开始聊天',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: _selectedCharacter!.color,
-            ),
-          ),
-        ),
         if (_isLoadingFriends)
           const Center(child: CircularProgressIndicator())
         else if (_friends.isEmpty)
@@ -741,136 +597,86 @@ class _ChatScreenState extends State<ChatScreen>
             ),
           )
         else
-          Expanded(
-            child: ListView.builder(
-              itemCount: _friends.length,
-              itemBuilder: (context, index) {
-                final friend = _friends[index];
-                final isOnline = _onlineCharacters.any(
-                  (char) => char.id == friend.username,
-                );
+          Expanded(child: FriendsList()),
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(friend.avatarUrl),
-                        ),
-                        if (isOnline)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    title: Row(
-                      children: [
-                        Text(
-                          friend.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (isOnline)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              '在线',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              '离线',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          friend.bio ?? '点击开始聊天',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      // 创建一个CharacterRole对象用于聊天
-                      final chatRole = CharacterRole(
-                        id: friend.username,
-                        name: friend.name,
-                        description: friend.bio ?? '',
-                        imageAsset: friend.avatarUrl,
-                        color: isOnline ? Colors.green : Colors.grey,
-                      );
-                      _selectCharacterToChat(chatRole);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            '提示：离线好友将在上线后收到消息',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        // Expanded(
+        //   child: ListView.builder(
+        //     itemCount: _friends.length,
+        //     itemBuilder: (context, index) {
+        //       final friend = _friends[index];
+        //       final isOnline = _onlineCharacters.any(
+        //         (char) => char.id == friend.username,
+        //       );
+        //       return InkWell(
+        //         onTap: () {
+        //           // 创建一个CharacterRole对象用于聊天
+        //           final chatRole = CharacterRole(
+        //             id: friend.username,
+        //             name: friend.name,
+        //             description: friend.bio ?? '',
+        //             imageAsset: friend.avatarUrl,
+        //             color: isOnline ? Colors.green : Colors.grey,
+        //           );
+        //           _selectCharacterToChat(chatRole);
+        //         },
+        //         child: Padding(
+        //           padding: const EdgeInsets.symmetric(
+        //             vertical: 8.0,
+        //             horizontal: 16.0,
+        //           ), // Adjust vertical padding as needed
+        //           child: Column(
+        //             children: [
+        //               Row(
+        //                 crossAxisAlignment: CrossAxisAlignment.start,
+        //                 children: [
+        //                   // Avatar
+        //                   Padding(
+        //                     padding: const EdgeInsets.only(right: 12.0),
+        //                     child: CircleAvatar(
+        //                       radius: 20,
+        //                       backgroundImage: NetworkImage(friend.avatarUrl),
+        //                     ),
+        //                   ),
+        //                   // Text content
+        //                   Expanded(
+        //                     child: Column(
+        //                       crossAxisAlignment: CrossAxisAlignment.start,
+        //                       mainAxisSize: MainAxisSize.min,
+        //                       children: [
+        //                         // Name
+        //                         Text(
+        //                           friend.name,
+        //                           style: const TextStyle(
+        //                             fontSize: 13,
+        //                             fontFamily: "Inter",
+        //                             fontWeight: FontWeight.w600,
+        //                           ),
+        //                         ),
+        //                         // Bio
+        //                         Text(
+        //                           friend.bio.toString(),
+        //                           style: TextStyle(
+        //                             fontSize: 12,
+        //                             color: Colors.grey.shade600,
+        //                           ),
+        //                         ),
+        //                       ],
+        //                     ),
+        //                   ),
+        //                 ],
+        //               ),
+
+        //               Divider(
+        //                 height: 1,
+        //                 color: Colors.grey, // You can adjust the color
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //       );
+        //     },
+        //   ),
+        // ),
       ],
     );
   }

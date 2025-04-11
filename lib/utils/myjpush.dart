@@ -42,7 +42,7 @@ class Myjpush {
   Future<void> initPlatformState(String username) async {
     try {
       jpush.setup(
-        appKey: "37bb58f488aa4f8dd7e43516",
+        appKey: "8b8a7faafb8dbceffabf0bdb",
         channel: "Navi",
         production: false,
         debug: true, //是否打印debug日志

@@ -1,4 +1,5 @@
 import 'package:Navi/components/litarticle.dart';
+import 'package:Navi/page/UserInfo/userhome.dart';
 import 'package:Navi/page/post/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -169,6 +170,7 @@ class _ArticleState extends State<Article> {
         pageBuilder:
             (context, animation, secondaryAnimation) =>
                 Articledetail(articleData: widget.articleData),
+        // UserHome(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
@@ -506,11 +508,7 @@ class _ArticleState extends State<Article> {
                               PageRouteBuilder(
                                 pageBuilder:
                                     (context, animation, secondaryAnimation) =>
-                                        ProfilePage(
-                                          // 传递文章作者的用户名
-                                          username:
-                                              widget.articleData['username'],
-                                        ),
+                                        UserHome(),
                                 transitionsBuilder: (
                                   context,
                                   animation,
@@ -524,12 +522,17 @@ class _ArticleState extends State<Article> {
                                     begin: begin,
                                     end: end,
                                   ).chain(CurveTween(curve: curve));
-
                                   return SlideTransition(
                                     position: animation.drive(tween),
                                     child: child,
                                   );
                                 },
+                                transitionDuration: Duration(milliseconds: 300),
+                                reverseTransitionDuration: Duration(
+                                  milliseconds: 300,
+                                ),
+                                opaque: false,
+                                barrierDismissible: true,
                               ),
                             );
                           },

@@ -38,10 +38,10 @@ android {
         versionCode = 3
         versionName = "1.0.3"
         manifestPlaceholders["JPUSH_PKGNAME"] = "com.Navi"
-        manifestPlaceholders["JPUSH_APPKEY"] = "37bb58f488aa4f8dd7e43516" // NOTE: JPush 上注册的包名对应的 Appkey.
+        manifestPlaceholders["JPUSH_APPKEY"] = "8b8a7faafb8dbceffabf0bdb" // NOTE: JPush 上注册的包名对应的 Appkey.
         manifestPlaceholders["JPUSH_CHANNEL"] = "Navi" //暂时填写默认值即可.
         manifestPlaceholders["XIAOMI_APPID"] = "2882303761520401700" //暂时填写默认值即可.
-        manifestPlaceholders["XIAOMI_APPKEY"] = "5912040133700" //暂时填写默认值即可.
+        manifestPlaceholders["XIAOMI_APPKEY"] = "5482037264137" //暂时填写默认值即可.
     }
 
     buildTypes {

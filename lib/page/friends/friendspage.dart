@@ -117,7 +117,11 @@ class _FriendsListState extends State<FriendsList> {
               )
               : ListView.separated(
                 itemCount: _friends.length,
-                separatorBuilder: (context, index) => const Divider(height: 0),
+                separatorBuilder:
+                    (context, index) => const Divider(
+                      height: 0.5,
+                      color: Color.fromARGB(75, 158, 158, 158),
+                    ),
                 itemBuilder: (context, index) {
                   final friend = _friends[index];
                   return FriendListItem(
@@ -193,6 +197,13 @@ class FriendListItem extends StatelessWidget {
                               fontSize: 16,
                             ),
                           ),
+                          Text(
+                            ' @${friend.username}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
                           if (friend.isVerified) ...[
                             const SizedBox(width: 4),
                             Icon(
@@ -203,16 +214,14 @@ class FriendListItem extends StatelessWidget {
                           ],
                         ],
                       ),
-                      Text(
-                        '@${friend.username}',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
                       // Bio
                       if (friend.bio != null && friend.bio!.isNotEmpty)
                         Text(
                           friend.bio!,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -220,25 +229,8 @@ class FriendListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Follow button
-                _buildFollowButton(),
               ],
             ),
-            // Stats (optional)
-            if (friend.showStats)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    _buildStatItem(Icons.people, '${friend.following} 关注'),
-                    const SizedBox(width: 16),
-                    _buildStatItem(
-                      Icons.people_outline,
-                      '${friend.followers} 粉丝',
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),

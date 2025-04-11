@@ -1,3 +1,4 @@
+import 'package:Navi/page/UserInfo/userhome.dart';
 import 'package:Navi/providers/notification_provider.dart';
 import 'dart:io'; // 添加Platform支持
 import 'package:flutter/material.dart';
@@ -90,6 +91,7 @@ class _MyAppState extends State<MyApp> {
       home: SplashScreen(
         x: loginstate, // 这里可以动态传入1或2
         aScreen: MyHome(), // 主页
+        // aScreen: UserHome(),
         bScreen: LoginPage(), // 登录页面
         cScreen: Text("JIAAAAAAAAAAAA"),
       ),
