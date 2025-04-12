@@ -31,6 +31,7 @@ class ChatService {
   final Function(ChatMessage) onMessageReceived;
   final Function(List<CharacterRole>) onUsersReceived;
   final Function(String)? onError;
+  Function()? onConnectedCallback; // 重命名为onConnectedCallback
   bool isConnected = false;
 
   // 保存在线用户列表
@@ -153,7 +154,7 @@ class ChatService {
     stompClient = StompClient(
       config: StompConfig(
         url: 'ws://$serverUrl/ws',
-        onConnect: onConnect,
+        onConnect: (frame) => onConnect(frame),
         onWebSocketError: (dynamic error) {
           print('WebSocket 错误: $error');
           if (onError != null) {
@@ -193,7 +194,7 @@ class ChatService {
     stompClient = StompClient(
       config: StompConfig(
         url: 'http://$serverUrl/ws',
-        onConnect: onConnect,
+        onConnect: (frame) => onConnect(frame),
         useSockJS: true, // 启用SockJS
         onWebSocketError: (dynamic error) {
           print('SockJS连接失败: $error');
@@ -259,6 +260,11 @@ class ChatService {
   void onConnect(StompFrame frame) {
     isConnected = true;
     print('已连接到 WebSocket 服务器');
+
+    // 调用onConnectedCallback回调
+    if (onConnectedCallback != null) {
+      onConnectedCallback!();
+    }
 
     // 启动心跳检测
     _startHeartbeat();
