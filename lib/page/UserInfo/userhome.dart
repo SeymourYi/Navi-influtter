@@ -1,5 +1,8 @@
 import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/userAPI.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/chat/screen/chatitem.dart';
 import 'package:flutter/material.dart';
 
 class UserHome extends StatefulWidget {
@@ -192,29 +195,44 @@ class _UserHomeState extends State<UserHome> {
                           ),
                         ),
                       ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width * 0.05,
-                          vertical: MediaQuery.of(context).size.height * 0.02,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              "贴文",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: "Inter-Medium",
+
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ProfilePage(
+                                    username: _userinfo["username"],
+                                  ),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal:
+                                MediaQuery.of(context).size.width * 0.05,
+                            vertical: MediaQuery.of(context).size.height * 0.02,
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                "贴文",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: "Inter-Medium",
+                                ),
                               ),
-                            ),
-                            Spacer(),
-                            Icon(
-                              Icons.arrow_forward_ios_outlined,
-                              size: 20,
-                              color: Colors.grey,
-                            ),
-                          ],
+                              Spacer(),
+                              Icon(
+                                Icons.arrow_forward_ios_outlined,
+                                size: 20,
+                                color: Colors.grey,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -256,44 +274,99 @@ class _UserHomeState extends State<UserHome> {
                       ),
                     ),
 
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            width: 10,
-                            color: Color.fromARGB(41, 158, 158, 158),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                // ChatScreen(),
+                                ChatItem(
+                                  chatWithusername: _userinfo["username"],
+                                ),
                           ),
-                          bottom: BorderSide(
-                            color: Color.fromARGB(41, 158, 158, 158),
-                          ),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width * 0.05,
-                          vertical: MediaQuery.of(context).size.height * 0.02,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat,
-                              size: 20,
-                              color: const Color.fromRGBO(111, 107, 204, 1),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              width: 10,
+                              color: Color.fromARGB(41, 158, 158, 158),
                             ),
-                            Text(
-                              "发消息",
-                              style: TextStyle(
-                                fontSize: 18,
+                            bottom: BorderSide(
+                              color: Color.fromARGB(41, 158, 158, 158),
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal:
+                                MediaQuery.of(context).size.width * 0.05,
+                            vertical: MediaQuery.of(context).size.height * 0.02,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.chat,
+                                size: 20,
                                 color: const Color.fromRGBO(111, 107, 204, 1),
-                                fontWeight: FontWeight.w500,
-                                fontFamily: "Inter-Medium",
                               ),
-                            ),
-                          ],
+                              Text(
+                                "发消息",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: const Color.fromRGBO(111, 107, 204, 1),
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: "Inter-Medium",
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
+
+                    // Container(
+                    //   decoration: BoxDecoration(
+                    //     border: Border(
+                    //       top: BorderSide(
+                    //         width: 10,
+                    //         color: Color.fromARGB(41, 158, 158, 158),
+                    //       ),
+                    //       bottom: BorderSide(
+                    //         color: Color.fromARGB(41, 158, 158, 158),
+                    //       ),
+                    //     ),
+                    //   ),
+                    //   child: Padding(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: MediaQuery.of(context).size.width * 0.05,
+                    //       vertical: MediaQuery.of(context).size.height * 0.02,
+                    //     ),
+                    //     child: Row(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         Icon(
+                    //           Icons.chat,
+                    //           size: 20,
+                    //           color: const Color.fromRGBO(111, 107, 204, 1),
+                    //         ),
+                    //         Text(
+                    //           "发消息",
+                    //           style: TextStyle(
+                    //             fontSize: 18,
+                    //             color: const Color.fromRGBO(111, 107, 204, 1),
+                    //             fontWeight: FontWeight.w500,
+                    //             fontFamily: "Inter-Medium",
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                     Expanded(
                       child: Container(
                         color: Color.fromARGB(41, 158, 158, 158),
