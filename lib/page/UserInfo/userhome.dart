@@ -1,7 +1,10 @@
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/api/userAPI.dart';
 import 'package:flutter/material.dart';
 
 class UserHome extends StatefulWidget {
-  const UserHome({super.key});
+  const UserHome({super.key, required this.userId});
+  final String userId;
 
   @override
   State<UserHome> createState() => _UserHomeState();
@@ -10,6 +13,34 @@ class UserHome extends StatefulWidget {
 class _UserHomeState extends State<UserHome> {
   double _dragDistance = 0.0;
   double _screenWidth = 0.0;
+
+  dynamic _userinfo = {};
+  UserService server = UserService();
+  Future<void> _fetchUserInfo() async {
+    // final userInfo = await SharedPrefsUtils.getUserInfo();
+    // server.getUserInfo(widget.userId).then((value) {
+    //   print(value);
+    // });
+    var res = await server.getsomeUserinfo(widget.userId);
+    setState(() {
+      _userinfo = res["data"];
+    });
+
+    // .then((value) {
+    //   setState(() {
+    //     _userinfo = value;
+    //   });
+
+    // print(_userinfo['username']);
+    // print("2222222222222233333333333");
+    // });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserInfo();
+  }
 
   @override
   void didChangeDependencies() {
@@ -93,7 +124,8 @@ class _UserHomeState extends State<UserHome> {
                             CircleAvatar(
                               radius: 35,
                               backgroundImage: NetworkImage(
-                                "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
+                                _userinfo["userPic"] ??
+                                    "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -106,7 +138,7 @@ class _UserHomeState extends State<UserHome> {
                                   Row(
                                     children: [
                                       Text(
-                                        "乔治",
+                                        _userinfo["nickname"] ?? "",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 25,
@@ -125,14 +157,14 @@ class _UserHomeState extends State<UserHome> {
                                     ],
                                   ),
                                   Text(
-                                    '用户名： @乔治',
+                                    '用户名：${_userinfo["username"]}',
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       fontSize: 13,
                                     ),
                                   ),
                                   Text(
-                                    "极光旗下智能体构建平台GPTBo全面达标的大模型产品之一。",
+                                    _userinfo["bio"] ?? "",
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey,

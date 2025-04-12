@@ -103,11 +103,7 @@ class _FriendsListState extends State<FriendsList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('关注列表'),
-        centerTitle: true,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text('关注列表'), elevation: 0),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())

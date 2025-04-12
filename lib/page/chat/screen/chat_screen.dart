@@ -1,3 +1,4 @@
+import 'package:Navi/page/UserInfo/userhome.dart';
 import 'package:Navi/page/friends/friendspage.dart';
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
@@ -9,30 +10,6 @@ import '../../../Store/storeutils.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import '../../../utils/myjpush.dart'; // 导入极光推送工具类
-
-// Friend类定义
-class Friend {
-  final String name;
-  final String username;
-  final String avatarUrl;
-  final String? bio;
-
-  Friend({
-    required this.name,
-    required this.username,
-    required this.avatarUrl,
-    this.bio,
-  });
-
-  factory Friend.fromJson(Map<String, dynamic> json) {
-    return Friend(
-      name: json['nickname'] ?? '',
-      username: json['username'] ?? '',
-      avatarUrl: json['userPic'] ?? 'https://via.placeholder.com/150',
-      bio: json['bio'] ?? '',
-    );
-  }
-}
 
 class ChatScreen extends StatefulWidget {
   // 添加初始聊天用户参数
@@ -597,86 +574,88 @@ class _ChatScreenState extends State<ChatScreen>
             ),
           )
         else
-          Expanded(child: FriendsList()),
-
-        // Expanded(
-        //   child: ListView.builder(
-        //     itemCount: _friends.length,
-        //     itemBuilder: (context, index) {
-        //       final friend = _friends[index];
-        //       final isOnline = _onlineCharacters.any(
-        //         (char) => char.id == friend.username,
-        //       );
-        //       return InkWell(
-        //         onTap: () {
-        //           // 创建一个CharacterRole对象用于聊天
-        //           final chatRole = CharacterRole(
-        //             id: friend.username,
-        //             name: friend.name,
-        //             description: friend.bio ?? '',
-        //             imageAsset: friend.avatarUrl,
-        //             color: isOnline ? Colors.green : Colors.grey,
-        //           );
-        //           _selectCharacterToChat(chatRole);
-        //         },
-        //         child: Padding(
-        //           padding: const EdgeInsets.symmetric(
-        //             vertical: 8.0,
-        //             horizontal: 16.0,
-        //           ), // Adjust vertical padding as needed
-        //           child: Column(
-        //             children: [
-        //               Row(
-        //                 crossAxisAlignment: CrossAxisAlignment.start,
-        //                 children: [
-        //                   // Avatar
-        //                   Padding(
-        //                     padding: const EdgeInsets.only(right: 12.0),
-        //                     child: CircleAvatar(
-        //                       radius: 20,
-        //                       backgroundImage: NetworkImage(friend.avatarUrl),
-        //                     ),
-        //                   ),
-        //                   // Text content
-        //                   Expanded(
-        //                     child: Column(
-        //                       crossAxisAlignment: CrossAxisAlignment.start,
-        //                       mainAxisSize: MainAxisSize.min,
-        //                       children: [
-        //                         // Name
-        //                         Text(
-        //                           friend.name,
-        //                           style: const TextStyle(
-        //                             fontSize: 13,
-        //                             fontFamily: "Inter",
-        //                             fontWeight: FontWeight.w600,
-        //                           ),
-        //                         ),
-        //                         // Bio
-        //                         Text(
-        //                           friend.bio.toString(),
-        //                           style: TextStyle(
-        //                             fontSize: 12,
-        //                             color: Colors.grey.shade600,
-        //                           ),
-        //                         ),
-        //                       ],
-        //                     ),
-        //                   ),
-        //                 ],
-        //               ),
-
-        //               Divider(
-        //                 height: 1,
-        //                 color: Colors.grey, // You can adjust the color
-        //               ),
-        //             ],
-        //           ),
-        //         ),
-        //       );
-        //     },
-        //   ),
-        // ),
+          Expanded(
+            child: ListView.separated(
+              itemCount: _friends.length,
+              separatorBuilder:
+                  (context, index) => const Divider(
+                    height: 0.5,
+                    color: Color.fromARGB(75, 158, 158, 158),
+                  ),
+              itemBuilder: (context, index) {
+                final friend = _friends[index];
+                return InkWell(
+                  onTap: () {
+                    // 创建一个CharacterRole对象用于聊天
+                    final chatRole = CharacterRole(
+                      id: friend.username,
+                      name: friend.name,
+                      description: friend.bio ?? '',
+                      imageAsset: friend.avatarUrl,
+                      color: Colors.blue, // 默认颜色
+                    );
+                    // _selectCharacterToChat(chatRole);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserHome(userId: friend.username),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8.0,
+                      horizontal: 16.0,
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Avatar
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12.0),
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundImage: NetworkImage(friend.avatarUrl),
+                              ),
+                            ),
+                            // Text content
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Name
+                                  Text(
+                                    friend.name,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: "Inter",
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  // Bio
+                                  Text(
+                                    friend.bio ?? '',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Divider(height: 1, color: Colors.grey.shade300),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
       ],
     );
   }

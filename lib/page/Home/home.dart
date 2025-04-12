@@ -2,6 +2,7 @@
 import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
+import 'package:Navi/page/UserInfo/userhomemain.dart';
 import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -715,6 +716,52 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                   ),
               _currentTabIndex == 1
                   ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/chatbubble-ellipses.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+              _currentTabIndex == 2
+                  ? Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/people.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Color.fromRGBO(98, 1, 231, 1.00),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  )
+                  : Tab(
+                    icon: SvgPicture.asset(
+                      "lib/assets/icons/people-outline.svg",
+                      height: 25,
+                      width: 25,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+              _currentTabIndex == 3
+                  ? Tab(
                     icon: Stack(
                       children: [
                         Container(
@@ -812,30 +859,7 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   ),
-              _currentTabIndex == 2
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/people.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/people-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-              _currentTabIndex == 3
+              _currentTabIndex == 4
                   ? Tab(
                     icon: SvgPicture.asset(
                       "lib/assets/icons/person.svg",
@@ -850,29 +874,6 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                   : Tab(
                     icon: SvgPicture.asset(
                       "lib/assets/icons/person-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-              _currentTabIndex == 4
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/chatbubble-ellipses.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/chatbubble-ellipses-outline.svg",
                       height: 25,
                       width: 25,
                       colorFilter: ColorFilter.mode(
@@ -899,10 +900,10 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
             onSearchPressed: _navigateToSearch,
             onAddPostPressed: _navigateToPost,
           ),
-          EmailList(),
-          ChatScreen(),
-          Text("我的"),
           Text("聊天"),
+          ChatScreen(),
+          EmailList(),
+          UserHomeMain(),
         ],
       ),
     );

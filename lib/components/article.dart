@@ -508,7 +508,10 @@ class _ArticleState extends State<Article> {
                               PageRouteBuilder(
                                 pageBuilder:
                                     (context, animation, secondaryAnimation) =>
-                                        UserHome(),
+                                        UserHome(
+                                          userId:
+                                              widget.articleData['username'],
+                                        ),
                                 transitionsBuilder: (
                                   context,
                                   animation,
