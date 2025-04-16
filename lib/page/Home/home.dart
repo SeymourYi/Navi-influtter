@@ -532,6 +532,12 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   PersistentDrawer? _persistentDrawer;
   int _currentTabIndex = 0;
   late TabController _tabController;
+  // 添加动画值监听的变量
+  double _homePosition = 0.0;
+  double _chatPosition = 0.0;
+  double _peoplePosition = 0.0;
+  double _notificationPosition = 0.0;
+  double _personPosition = 0.0;
 
   final List<LikeNotification> notifications = [
     LikeNotification(
@@ -554,17 +560,57 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
     super.initState();
     _loadUserInfo();
     _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {
-          _currentTabIndex = _tabController.index;
-        });
-      }
+
+    // 修改监听方式，添加动画监听
+    _homePosition = 1.0;
+    _tabController.addListener(_handleTabAnimation);
+    _tabController.animation!.addListener(_handleTabControllerAnimationTick);
+  }
+
+  // 新增动画监听函数
+  void _handleTabAnimation() {
+    if (_tabController.indexIsChanging) {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    }
+  }
+
+  // 新增动画变化监听函数
+  void _handleTabControllerAnimationTick() {
+    setState(() {
+      // 计算每个标签页的动画位置值（0.0-1.0之间）
+      final double animationValue = _tabController.animation!.value;
+
+      // 计算每个标签的激活程度
+      _homePosition = _getPositionForIndex(0, animationValue);
+      _chatPosition = _getPositionForIndex(1, animationValue);
+      _peoplePosition = _getPositionForIndex(2, animationValue);
+      _notificationPosition = _getPositionForIndex(3, animationValue);
+      _personPosition = _getPositionForIndex(4, animationValue);
     });
+  }
+
+  // 计算特定标签页的激活值
+  double _getPositionForIndex(int index, double animationValue) {
+    // 计算当前索引与动画值之间的距离
+    final double distanceFromCurrentIndex = (index - animationValue).abs();
+    // 使用更平滑的曲线函数，采用贝塞尔曲线效果
+    if (distanceFromCurrentIndex >= 1.0) {
+      return 0.0;
+    } else {
+      // 使用缓动函数让效果更丝滑
+      final double t = 1.0 - distanceFromCurrentIndex;
+      // 使用缓入缓出函数: t*t*t*(t*(t*6-15)+10)，这是一个更平滑的Hermite曲线
+      return t * t * t * (t * (t * 6 - 15) + 10);
+    }
   }
 
   @override
   void dispose() {
+    // 移除所有监听器
+    _tabController.animation!.removeListener(_handleTabControllerAnimationTick);
+    _tabController.removeListener(_handleTabAnimation);
     _tabController.dispose();
     super.dispose();
   }
@@ -672,6 +718,10 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
       );
     }
 
+    // 定义激活和未激活颜色
+    final Color activeColor = Color.fromRGBO(98, 1, 231, 1.00);
+    final Color inactiveColor = Colors.grey;
+
     return Scaffold(
       drawer:
           _isLoading
@@ -703,197 +753,208 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
               ),
             ),
             tabs: [
-              _currentTabIndex == 0
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/home.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
+              Tab(
+                icon: Stack(
+                  children: [
+                    // 未激活图标
+                    Opacity(
+                      opacity: 1.0 - _homePosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/home-outline.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          inactiveColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/home-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
+                    // 激活图标
+                    Opacity(
+                      opacity: _homePosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/home.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          activeColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
-              _currentTabIndex == 1
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/chatbubble-ellipses.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
+                  ],
+                ),
+              ),
+              Tab(
+                icon: Stack(
+                  children: [
+                    // 未激活图标
+                    Opacity(
+                      opacity: 1.0 - _chatPosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          inactiveColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/chatbubble-ellipses-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
+                    // 激活图标
+                    Opacity(
+                      opacity: _chatPosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/chatbubble-ellipses.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          activeColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
-              _currentTabIndex == 2
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/people.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
+                  ],
+                ),
+              ),
+              Tab(
+                icon: Stack(
+                  children: [
+                    // 未激活图标
+                    Opacity(
+                      opacity: 1.0 - _peoplePosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/people-outline.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          inactiveColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/people-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
+                    // 激活图标
+                    Opacity(
+                      opacity: _peoplePosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/people.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          activeColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
-              _currentTabIndex == 3
-                  ? Tab(
-                    icon: Stack(
+                  ],
+                ),
+              ),
+              Tab(
+                icon: Stack(
+                  children: [
+                    // 渐变透明度混合两个图标，而不是直接切换
+                    Stack(
                       children: [
-                        Container(
-                          padding: EdgeInsets.only(right: 10, top: 4),
-                          child: SvgPicture.asset(
-                            "lib/assets/icons/notifications.svg",
-                            height: 25,
-                            width: 25,
-                            colorFilter: ColorFilter.mode(
-                              Color.fromRGBO(98, 1, 231, 1.00),
-                              BlendMode.srcIn,
+                        // 未激活图标
+                        Opacity(
+                          opacity: 1.0 - _notificationPosition,
+                          child: Container(
+                            padding: EdgeInsets.only(right: 10, top: 4),
+                            child: SvgPicture.asset(
+                              "lib/assets/icons/notifications-outline.svg",
+                              height: 25,
+                              width: 25,
+                              colorFilter: ColorFilter.mode(
+                                inactiveColor,
+                                BlendMode.srcIn,
+                              ),
                             ),
                           ),
                         ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Consumer<NotificationProvider>(
-                            builder: (context, notificationProvider, child) {
-                              final count =
-                                  notificationProvider.getnotificationcount();
-                              return count > 0
-                                  ? Container(
-                                    padding: EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    constraints: BoxConstraints(
-                                      minWidth: 16,
-                                      minHeight: 16,
-                                    ),
-                                    child: Text(
-                                      count.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )
-                                  : SizedBox.shrink();
-                            },
+                        // 激活图标
+                        Opacity(
+                          opacity: _notificationPosition,
+                          child: Container(
+                            padding: EdgeInsets.only(right: 10, top: 4),
+                            child: SvgPicture.asset(
+                              "lib/assets/icons/notifications.svg",
+                              height: 25,
+                              width: 25,
+                              colorFilter: ColorFilter.mode(
+                                activeColor,
+                                BlendMode.srcIn,
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  )
-                  : Tab(
-                    icon: Stack(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.only(right: 10, top: 4),
-                          child: SvgPicture.asset(
-                            "lib/assets/icons/notifications-outline.svg",
-                            height: 25,
-                            width: 25,
-                            colorFilter: ColorFilter.mode(
-                              Colors.grey,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Consumer<NotificationProvider>(
-                            builder: (context, notificationProvider, child) {
-                              final count =
-                                  notificationProvider.getnotificationcount();
-                              return count > 0
-                                  ? Container(
-                                    padding: EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    constraints: BoxConstraints(
-                                      minWidth: 16,
-                                      minHeight: 16,
-                                    ),
-                                    child: Text(
-                                      count.toString(),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )
-                                  : SizedBox.shrink();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              _currentTabIndex == 4
-                  ? Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/person.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Color.fromRGBO(98, 1, 231, 1.00),
-                        BlendMode.srcIn,
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Consumer<NotificationProvider>(
+                        builder: (context, notificationProvider, child) {
+                          final count =
+                              notificationProvider.getnotificationcount();
+                          return count > 0
+                              ? Container(
+                                padding: EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                constraints: BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  count.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                              : SizedBox.shrink();
+                        },
                       ),
                     ),
-                  )
-                  : Tab(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/person-outline.svg",
-                      height: 25,
-                      width: 25,
-                      colorFilter: ColorFilter.mode(
-                        Colors.grey,
-                        BlendMode.srcIn,
+                  ],
+                ),
+              ),
+              Tab(
+                icon: Stack(
+                  children: [
+                    // 未激活图标
+                    Opacity(
+                      opacity: 1.0 - _personPosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/person-outline.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          inactiveColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
+                    // 激活图标
+                    Opacity(
+                      opacity: _personPosition,
+                      child: SvgPicture.asset(
+                        "lib/assets/icons/person.svg",
+                        height: 25,
+                        width: 25,
+                        colorFilter: ColorFilter.mode(
+                          activeColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
             unselectedLabelColor: Colors.grey,
             overlayColor: MaterialStateProperty.all(Colors.transparent),
