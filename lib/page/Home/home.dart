@@ -462,8 +462,8 @@ class HomeTab extends StatelessWidget {
         ],
 
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.0),
-          child: Container(color: Color.fromARGB(67, 98, 73, 73), height: 0.3),
+          preferredSize: Size.fromHeight(0),
+          child: Container(color: Colors.transparent, height: 0),
         ),
       ),
       body: things(),
@@ -503,8 +503,8 @@ class NotificationsTab extends StatelessWidget {
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.0),
-          child: Container(color: Color.fromARGB(67, 98, 73, 73), height: 0.3),
+          preferredSize: Size.fromHeight(0),
+          child: Container(color: Colors.transparent, height: 0),
         ),
       ),
       body: LikeNotificationList(
@@ -677,9 +677,14 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
           _isLoading
               ? Drawer(child: Center(child: CircularProgressIndicator()))
               : _persistentDrawer,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey[300]!, width: 1.0)),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          dividerTheme: DividerThemeData(
+            color: Colors.transparent,
+            space: 0,
+            thickness: 0,
+          ),
         ),
         child: SizedBox(
           height: 50,
@@ -690,6 +695,13 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                 _currentTabIndex = index;
               });
             },
+            indicatorColor: Colors.transparent,
+            dividerColor: Colors.transparent,
+            indicator: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.transparent, width: 0),
+              ),
+            ),
             tabs: [
               _currentTabIndex == 0
                   ? Tab(
@@ -884,7 +896,6 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                   ),
             ],
             unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.transparent,
             overlayColor: MaterialStateProperty.all(Colors.transparent),
             unselectedLabelStyle: TextStyle(fontSize: 12),
             labelStyle: TextStyle(fontSize: 12),
