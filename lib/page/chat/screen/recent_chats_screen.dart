@@ -204,23 +204,17 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
           "id": chat.userId, // 添加id字段，ChatService中的方法需要使用它
           "userPic": chat.userPic, // 添加 userPic 字段
         };
-        print(chatData);
-        print(chat.userName);
-        print(chat.userId);
-        print(chat.userRole);
-        print(chat.lastMessage);
-        print(chat.unreadCount);
 
         // 直接导航到聊天界面
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => ChatScreen(initialChatCharacter: chatData),
-        //   ),
-        // );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(initialChatCharacter: chatData),
+          ),
+        );
 
-        // // 同时通知父组件选择了这个角色
-        // widget.onChatSelected(chatData);
+        // 同时通知父组件选择了这个角色
+        widget.onChatSelected(chatData);
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),

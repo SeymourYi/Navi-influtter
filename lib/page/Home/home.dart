@@ -1004,38 +1004,38 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
                   ],
                 ),
               ),
-              Tab(
-                icon: Stack(
-                  children: [
-                    // 未激活图标
-                    Opacity(
-                      opacity: 1.0 - _personPosition,
-                      child: SvgPicture.asset(
-                        "lib/assets/icons/person-outline.svg",
-                        height: 25,
-                        width: 25,
-                        colorFilter: ColorFilter.mode(
-                          inactiveColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    // 激活图标
-                    Opacity(
-                      opacity: _personPosition,
-                      child: SvgPicture.asset(
-                        "lib/assets/icons/person.svg",
-                        height: 25,
-                        width: 25,
-                        colorFilter: ColorFilter.mode(
-                          activeColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Tab(
+              //   icon: Stack(
+              //     children: [
+              //       // 未激活图标
+              //       Opacity(
+              //         opacity: 1.0 - _personPosition,
+              //         child: SvgPicture.asset(
+              //           "lib/assets/icons/person-outline.svg",
+              //           height: 25,
+              //           width: 25,
+              //           colorFilter: ColorFilter.mode(
+              //             inactiveColor,
+              //             BlendMode.srcIn,
+              //           ),
+              //         ),
+              //       ),
+              //       // 激活图标
+              //       Opacity(
+              //         opacity: _personPosition,
+              //         child: SvgPicture.asset(
+              //           "lib/assets/icons/person.svg",
+              //           height: 25,
+              //           width: 25,
+              //           colorFilter: ColorFilter.mode(
+              //             activeColor,
+              //             BlendMode.srcIn,
+              //           ),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
             unselectedLabelColor: Colors.grey,
             overlayColor: MaterialStateProperty.all(Colors.transparent),
@@ -1062,7 +1062,7 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
               : Center(child: CircularProgressIndicator()),
           ChatScreen(),
           EmailList(),
-          UserHomeMain(),
+          // UserHomeMain(),
         ],
       ),
     );

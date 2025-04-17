@@ -287,11 +287,6 @@ class _ChatScreenState extends State<ChatScreen> {
             _isConnected
                 ? [
                   IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: _showServerSettings,
-                    tooltip: '服务器设置',
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.exit_to_app),
                     onPressed: () {
                       _chatService.disconnect();
@@ -327,480 +322,626 @@ class _ChatScreenState extends State<ChatScreen> {
     final Color greenColor = Color(0xFF00C74E);
     final Color blueColor = Color(0xFF4288FC);
 
-    return _friends.isEmpty
-        ? Container(
-          color: Colors.white,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    border: Border.all(
-                      color: blueColor.withOpacity(0.3),
-                      width: 1,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.people_outline,
-                      size: 54,
-                      color: blueColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 26),
-                Text(
-                  '暂无联系人',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  width: 160,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: blueColor, width: 1),
-                    borderRadius: BorderRadius.circular(21),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(21),
-                      onTap: () => _chatService.requestOnlineUsers(),
-                      child: Center(
-                        child: Text(
-                          '刷新',
-                          style: TextStyle(
-                            color: blueColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )
-        : Column(
-          children: [
-            // 简约搜索框
-            Container(
-              height: 65,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Container(
+    return
+    //  _friends.isEmpty
+    // ? Container(
+    //   color: Colors.white,
+    //   child: Center(
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         Container(
+    //           width: 110,
+    //           height: 110,
+    //           decoration: BoxDecoration(
+    //             color: Colors.grey.shade50,
+    //             border: Border.all(
+    //               color: blueColor.withOpacity(0.3),
+    //               width: 1,
+    //             ),
+    //             shape: BoxShape.circle,
+    //           ),
+    //           child: Center(
+    //             child: Icon(
+    //               Icons.people_outline,
+    //               size: 54,
+    //               color: blueColor,
+    //             ),
+    //           ),
+    //         ),
+    //         const SizedBox(height: 26),
+    //         Text(
+    //           '暂无联系人',
+    //           style: TextStyle(
+    //             color: Colors.black87,
+    //             fontSize: 18,
+    //             fontWeight: FontWeight.w500,
+    //           ),
+    //         ),
+    //         const SizedBox(height: 32),
+    //         Container(
+    //           width: 160,
+    //           height: 42,
+    //           decoration: BoxDecoration(
+    //             border: Border.all(color: blueColor, width: 1),
+    //             borderRadius: BorderRadius.circular(21),
+    //           ),
+    //           child: Material(
+    //             color: Colors.transparent,
+    //             child: InkWell(
+    //               borderRadius: BorderRadius.circular(21),
+    //               onTap: () => _chatService.requestOnlineUsers(),
+    //               child: Center(
+    //                 child: Text(
+    //                   '刷新',
+    //                   style: TextStyle(
+    //                     color: blueColor,
+    //                     fontWeight: FontWeight.w500,
+    //                   ),
+    //                 ),
+    //               ),
+    //             ),
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // )
+    // :
+    Column(
+      children: [
+        // 简约搜索框
+        // Container(
+        //   height: 65,
+        //   decoration: BoxDecoration(
+        //     color: Colors.white,
+        //     border: Border(
+        //       bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+        //     ),
+        //   ),
+        //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        //   child: Container(
+        //     decoration: BoxDecoration(
+        //       color: Colors.grey.shade50,
+        //       borderRadius: BorderRadius.circular(8),
+        //       border: Border.all(color: Colors.grey.shade200, width: 1),
+        //     ),
+        //     child: TextField(
+        //       decoration: InputDecoration(
+        //         hintText: '搜索',
+        //         hintStyle: TextStyle(
+        //           fontSize: 14,
+        //           color: Colors.grey.shade400,
+        //         ),
+        //         prefixIcon: Icon(
+        //           Icons.search,
+        //           color: Colors.grey.shade400,
+        //           size: 18,
+        //         ),
+        //         border: InputBorder.none,
+        //         contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        //       ),
+        //       style: const TextStyle(fontSize: 14),
+        //     ),
+        //   ),
+        // ),
+
+        // 简约列表
+        Expanded(
+          child: ListView.builder(
+            itemCount: _friends.length,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            itemBuilder: (context, index) {
+              final character = _friends[index];
+
+              // 每个联系人使用不同颜色
+              final List<Color> colorOptions = [
+                redColor,
+                greenColor,
+                blueColor,
+              ];
+              final mainColor = colorOptions[index % colorOptions.length];
+
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 1),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: '搜索',
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade400,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey.shade400,
-                      size: 18,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade100, width: 1),
                   ),
-                  style: const TextStyle(fontSize: 14),
                 ),
-              ),
-            ),
-
-            // 简约列表
-            Expanded(
-              child: ListView.builder(
-                itemCount: _friends.length,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                itemBuilder: (context, index) {
-                  final character = _friends[index];
-
-                  // 每个联系人使用不同颜色
-                  final List<Color> colorOptions = [
-                    redColor,
-                    greenColor,
-                    blueColor,
-                  ];
-                  final mainColor = colorOptions[index % colorOptions.length];
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.shade100,
-                          width: 1,
-                        ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _selectCharacterToChat(character),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 15,
                       ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _selectCharacterToChat(character),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 15,
-                          ),
-                          child: Row(
-                            children: [
-                              // 简约头像
-                              Container(
-                                width: 46,
-                                height: 46,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: mainColor.withOpacity(0.6),
-                                    width: 1.5,
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: ClipOval(
-                                  child: Image.network(
-                                    character['userPic'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (ctx, e, s) => CircleAvatar(
-                                          backgroundColor: mainColor
-                                              .withOpacity(0.15),
-                                          child: Text(
-                                            character['nickname']
-                                                .substring(0, 1)
-                                                .toUpperCase(),
-                                            style: TextStyle(
-                                              color: mainColor,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                  ),
-                                ),
+                      child: Row(
+                        children: [
+                          // 简约头像
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: mainColor.withOpacity(0.6),
+                                width: 1.5,
                               ),
-
-                              const SizedBox(width: 18),
-
-                              // 简约信息
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      character['nickname'],
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black87,
+                              shape: BoxShape.circle,
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                character['userPic'],
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (ctx, e, s) => CircleAvatar(
+                                      backgroundColor: mainColor.withOpacity(
+                                        0.15,
+                                      ),
+                                      child: Text(
+                                        character['nickname']
+                                            .substring(0, 1)
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                          color: mainColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                    if (character['bio'].isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          character['bio'],
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                  ],
-                                ),
                               ),
-
-                              // 简约箭头
-                              Icon(
-                                Icons.chevron_right,
-                                color: Colors.grey.shade300,
-                                size: 22,
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(width: 18),
+
+                          // 简约信息
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  character['nickname'],
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                if (character['bio'].isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      character['bio'],
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          // 简约箭头
+                          Icon(
+                            Icons.chevron_right,
+                            color: Colors.grey.shade300,
+                            size: 22,
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildChatScreen() {
-    print(
-      'chatWithCharacter: $_chatWithCharacter,aaaaaaaaaaaaaaaaaaaaaasssssssssssssssssss',
-    );
-    print('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC');
-
     // 确保username是字符串类型
     String username = _chatWithCharacter['username'].toString();
 
     // 获取与当前选中角色的私聊消息
     final messages = _chatService.getPrivateChatMessages(username);
 
-    // 打印消息列表用于调试
-    print('准备显示消息列表，共 ${messages.length} 条消息');
-    for (int i = 0; i < messages.length; i++) {
-      final msg = messages[i];
-      print(
-        '消息[$i]: ID=${msg.id}, 时间=${msg.time}, 内容=${msg.content.length > 20 ? msg.content.substring(0, 20) : msg.content}...',
-      );
-    }
-
-    return Column(
-      children: [
-        // 头部状态栏 - 显示当前聊天状态
-        Container(
-          padding: const EdgeInsets.all(8.0),
-          color: Colors.grey.shade200,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 15,
-                child: Text(
-                  "REA",
-                  // _chatWithCharacter['nickname'].substring(0, 1),
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                // '与 ${_chatWithCharacter['nickname']} 的私聊',
-                "REA",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              // 显示当前用户角色
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 4),
-                    Text(
-                      // _selectedCharacter['nickname'],
-                      "REA",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child:
-              _isLoadingHistory
-                  ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Text(
-                          // '正在加载与 ${_chatWithCharacter['nickname']} 的历史聊天记录...',
-                          "REA",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
-                  : (messages.isEmpty
-                      ? Center(
-                        child: Text(
-                          // '与 ${_chatWithCharacter['nickname']} 的聊天记录为空',
-                          "REA",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      )
-                      : ListView.builder(
-                        controller: _scrollController,
-                        itemCount: messages.length,
-                        padding: const EdgeInsets.all(8.0),
-                        itemBuilder: (context, index) {
-                          final message = messages[index];
-
-                          // 忽略系统消息
-                          if (message.sender == 'system') {
-                            return const SizedBox.shrink();
-                          }
-
-                          return _buildMessageItem(message);
-                        },
-                      )),
-        ),
-        // 输入区域
-        _buildMessageInput(),
-      ],
-    );
-  }
-
-  Widget _buildMessageItem(ChatMessage message) {
-    // print("message: ${_selectedCharacter}");
-    // print("message: ${_chatWithCharacter}");
-    // print("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
-    final isMe = message.sender == _chatWithCharacter['username'];
-    final bgColor = Colors.grey;
-    final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-
-    if (message.type == ChatMessage.TYPE_JOIN ||
-        message.type == ChatMessage.TYPE_LEAVE) {
-      return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Center(
-          child: Text(
-            message.content,
-            style: TextStyle(
-              color:
-                  message.type == ChatMessage.TYPE_JOIN
-                      ? Colors.green
-                      : Colors.red,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-      );
-    }
-    // return Text("REA");
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      color: Color(0xFFF8F9FA), // 更柔和的背景色
       child: Column(
-        crossAxisAlignment: align,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isMe)
-                Container(
-                  margin: const EdgeInsets.only(right: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    // color: _chatWithCharacter!.color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _chatWithCharacter['nickname'],
-                    style: TextStyle(
-                      fontSize: 10,
-                      // color: _chatWithCharacter!.color,
-                    ),
-                  ),
-                ),
-              if (isMe)
-                Container(
-                  margin: const EdgeInsets.only(right: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    // color: _selectedCharacter!.color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _chatWithCharacter['nickname'],
-                    style: TextStyle(
-                      fontSize: 10,
-                      // color: _selectedCharacter!.color,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          // 简洁的头部状态
           Container(
-            margin: const EdgeInsets.only(top: 4.0),
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                // isMe
-                //     ? _selectedCharacter!.color.withOpacity(0.3)
-                //     : _chatWithCharacter!.color.withOpacity(0.3),
-                width: 1,
-              ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  offset: Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(message.content),
-                const SizedBox(height: 4),
-                Text(
-                  message.time,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                // 用户头像
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Color(0xFF4288FC).withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child:
+                        _chatWithCharacter['userPic'] != null
+                            ? Image.network(
+                              _chatWithCharacter['userPic'],
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (ctx, e, s) => CircleAvatar(
+                                    backgroundColor: Color(
+                                      0xFF4288FC,
+                                    ).withOpacity(0.1),
+                                    child: Text(
+                                      _chatWithCharacter['nickname']
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      style: TextStyle(
+                                        color: Color(0xFF4288FC),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                            )
+                            : CircleAvatar(
+                              backgroundColor: Color(
+                                0xFF4288FC,
+                              ).withOpacity(0.1),
+                              child: Text(
+                                _chatWithCharacter['nickname']
+                                    .substring(0, 1)
+                                    .toUpperCase(),
+                                style: TextStyle(
+                                  color: Color(0xFF4288FC),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                // 用户信息
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _chatWithCharacter['nickname'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      if (_chatWithCharacter['bio'] != null &&
+                          _chatWithCharacter['bio'].isNotEmpty)
+                        Text(
+                          _chatWithCharacter['bio'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+
+          // 聊天内容区域
+          Expanded(
+            child:
+                _isLoadingHistory
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFF4288FC),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            '正在加载聊天记录...',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : messages.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chat_outlined,
+                            size: 56,
+                            color: Colors.grey.shade400,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            '开始和${_chatWithCharacter['nickname']}聊天吧',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      controller: _scrollController,
+                      itemCount: messages.length,
+                      padding: const EdgeInsets.all(16.0),
+                      physics: BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+
+                        // 忽略系统消息
+                        if (message.sender == 'system') {
+                          return const SizedBox.shrink();
+                        }
+
+                        // 确定是否需要显示时间分隔线
+                        bool showDateHeader = false;
+                        if (index == 0) {
+                          // 第一条消息总是显示时间
+                          showDateHeader = true;
+                        } else if (index > 0) {
+                          // 根据消息间隔时间决定是否显示分隔线
+                          final prevMsg = messages[index - 1];
+                          if (prevMsg.sender == 'system') {
+                            showDateHeader = true;
+                          } else {
+                            // 检查日期是否不同或时间间隔大
+                            showDateHeader = _shouldShowTimeSeparator(
+                              prevMsg,
+                              message,
+                            );
+                          }
+                        }
+
+                        return _buildMessageItem(message, showDateHeader);
+                      },
+                    ),
+          ),
+
+          // 输入区域
+          _buildMessageInput(),
         ],
       ),
     );
   }
 
+  Widget _buildMessageItem(ChatMessage message, [bool showDateHeader = true]) {
+    final isMe = message.sender != _chatWithCharacter['username'];
+    final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+
+    // 为不同用户设置不同气泡颜色
+    final myBubbleColor = Color(0xFF4288FC); // 蓝色
+    final otherBubbleColor = Colors.white; // 白色
+
+    // 系统消息处理
+    if (message.type == ChatMessage.TYPE_JOIN ||
+        message.type == ChatMessage.TYPE_LEAVE) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              message.content,
+              style: TextStyle(
+                color:
+                    message.type == ChatMessage.TYPE_JOIN
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: isMe ? 60 : 0,
+        right: isMe ? 0 : 60,
+        top: 8,
+        bottom: 8,
+      ),
+      child: Column(
+        crossAxisAlignment: align,
+        children: [
+          // 时间显示 - 只在需要的时候显示
+          if (showDateHeader)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _formatMessageTime(message.time),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+
+          // 消息气泡
+          Container(
+            decoration: BoxDecoration(
+              color: isMe ? myBubbleColor : otherBubbleColor,
+              borderRadius: BorderRadius.circular(18.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ],
+              border:
+                  isMe
+                      ? null
+                      : Border.all(color: Colors.grey.shade200, width: 1),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Text(
+              message.content,
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.black87,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 格式化消息时间为更友好的显示
+  String _formatMessageTime(String timeStr) {
+    try {
+      // 假设时间格式为 "yyyy-MM-dd HH:mm:ss"
+      DateTime msgTime = DateTime.parse(timeStr.replaceAll(' ', 'T'));
+      DateTime now = DateTime.now();
+
+      // 今天的消息只显示时间
+      if (msgTime.year == now.year &&
+          msgTime.month == now.month &&
+          msgTime.day == now.day) {
+        return "今天 ${msgTime.hour.toString().padLeft(2, '0')}:${msgTime.minute.toString().padLeft(2, '0')}";
+      }
+
+      // 昨天的消息
+      DateTime yesterday = now.subtract(Duration(days: 1));
+      if (msgTime.year == yesterday.year &&
+          msgTime.month == yesterday.month &&
+          msgTime.day == yesterday.day) {
+        return "昨天 ${msgTime.hour.toString().padLeft(2, '0')}:${msgTime.minute.toString().padLeft(2, '0')}";
+      }
+
+      // 本周内的消息
+      if (now.difference(msgTime).inDays < 7) {
+        List<String> weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        int weekday = msgTime.weekday - 1; // 0-6, 周一到周日
+        return "${weekdays[weekday]} ${msgTime.hour.toString().padLeft(2, '0')}:${msgTime.minute.toString().padLeft(2, '0')}";
+      }
+
+      // 更早的消息
+      return "${msgTime.year}-${msgTime.month.toString().padLeft(2, '0')}-${msgTime.day.toString().padLeft(2, '0')} ${msgTime.hour.toString().padLeft(2, '0')}:${msgTime.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      // 如果解析失败，返回原始字符串
+      return timeStr;
+    }
+  }
+
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 2),
-        ],
+        border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
       ),
       child: Row(
         children: [
+          // 设计更现代的输入框
           Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: '发送消息给 ${_chatWithCharacter['nickname']}...',
-                border: const OutlineInputBorder(),
-                // fillColor: _chatWithCharacter!.color.withOpacity(0.05),
-                filled: true,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.grey.shade200, width: 1),
               ),
-              onSubmitted: (_) => _sendMessage(),
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: '发送消息...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 14,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+                textAlignVertical: TextAlignVertical.center,
+                maxLines: null,
+                style: TextStyle(fontSize: 14),
+              ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: _sendMessage,
-            // color: _chatWithCharacter!.color,
+
+          // 发送按钮
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Container(
+              height: 46,
+              width: 46,
+              decoration: BoxDecoration(
+                color: Color(0xFF4288FC),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_upward_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: _sendMessage,
+              ),
+            ),
           ),
         ],
       ),
@@ -970,5 +1111,40 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
     );
+  }
+
+  bool _shouldShowTimeSeparator(ChatMessage previous, ChatMessage current) {
+    // 这里改为基于时间的比较或者索引的比较，而不是使用id
+
+    // 1. 尝试比较日期部分是否不同（不同天显示分隔线）
+    String prevDate =
+        previous.time.split(' ')[0]; // 假设时间格式为 "yyyy-MM-dd HH:mm:ss"
+    String currDate = current.time.split(' ')[0];
+
+    if (prevDate != currDate) {
+      return true; // 不同日期显示分隔线
+    }
+
+    // 2. 或者基于固定间隔显示时间
+    // 如果消息id包含时间戳（格式如 "timestamp_xxx"）
+    if (previous.id.contains('_') && current.id.contains('_')) {
+      try {
+        String prevTimePart = previous.id.split('_')[0];
+        String currTimePart = current.id.split('_')[0];
+
+        // 如果能解析为整数，则每隔一定时间显示分隔线
+        int prevTime = int.parse(prevTimePart);
+        int currTime = int.parse(currTimePart);
+
+        // 如果两条消息相差超过5分钟，显示分隔线
+        return (currTime - prevTime).abs() > 5 * 60 * 1000;
+      } catch (e) {
+        // 解析失败，回退到简单的消息索引方案
+      }
+    }
+
+    // 3. 最简单的回退方案：每5条消息显示一次时间
+    // 使用内存中的索引，而不是依赖id
+    return false; // 如果前面的条件都不满足，则不显示分隔线
   }
 }
