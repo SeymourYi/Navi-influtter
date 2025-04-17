@@ -8,6 +8,7 @@ class RecentChat {
   final ChatMessage lastMessage;
   final int unreadCount;
   final DateTime lastActivityTime;
+  final String userPic;
 
   RecentChat({
     required this.userId,
@@ -16,6 +17,7 @@ class RecentChat {
     required this.lastMessage,
     this.unreadCount = 0,
     DateTime? lastActivityTime,
+    required this.userPic,
   }) : lastActivityTime = lastActivityTime ?? DateTime.now();
 
   // 从最后一条消息的时间戳创建活动时间

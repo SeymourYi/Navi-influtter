@@ -322,64 +322,233 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildUserSelectionScreen() {
+    // 定义指定的主题色
+    final Color redColor = Color(0xFFFB514F);
+    final Color greenColor = Color(0xFF00C74E);
+    final Color blueColor = Color(0xFF4288FC);
+
     return _friends.isEmpty
-        ? Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.people_outline, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                '没有其他在线角色',
-                style: TextStyle(color: Colors.grey, fontSize: 18),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => _chatService.requestOnlineUsers(),
-                child: const Text('刷新在线列表'),
-              ),
-            ],
+        ? Container(
+          color: Colors.white,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(
+                      color: blueColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.people_outline,
+                      size: 54,
+                      color: blueColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 26),
+                Text(
+                  '暂无联系人',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  width: 160,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: blueColor, width: 1),
+                    borderRadius: BorderRadius.circular(21),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(21),
+                      onTap: () => _chatService.requestOnlineUsers(),
+                      child: Center(
+                        child: Text(
+                          '刷新',
+                          style: TextStyle(
+                            color: blueColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         )
-        : ListView.builder(
-          itemCount: _friends.length,
-          itemBuilder: (context, index) {
-            final character = _friends[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        : Column(
+          children: [
+            // 简约搜索框
+            Container(
+              height: 65,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+                ),
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  radius: 30,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: '搜索',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade400,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey.shade400,
+                      size: 18,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
 
-                  child: Text(
-                    character['nickname'].substring(0, 1),
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                title: Text(
-                  character['nickname'],
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    character['bio'].isEmpty ? '点击开始私聊' : character['bio'],
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
-                ),
-                onTap: () => _selectCharacterToChat(character),
-                trailing: Icon(Icons.arrow_forward_ios),
+            // 简约列表
+            Expanded(
+              child: ListView.builder(
+                itemCount: _friends.length,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                itemBuilder: (context, index) {
+                  final character = _friends[index];
+
+                  // 每个联系人使用不同颜色
+                  final List<Color> colorOptions = [
+                    redColor,
+                    greenColor,
+                    blueColor,
+                  ];
+                  final mainColor = colorOptions[index % colorOptions.length];
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey.shade100,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _selectCharacterToChat(character),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 15,
+                          ),
+                          child: Row(
+                            children: [
+                              // 简约头像
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: mainColor.withOpacity(0.6),
+                                    width: 1.5,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    character['userPic'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (ctx, e, s) => CircleAvatar(
+                                          backgroundColor: mainColor
+                                              .withOpacity(0.15),
+                                          child: Text(
+                                            character['nickname']
+                                                .substring(0, 1)
+                                                .toUpperCase(),
+                                            style: TextStyle(
+                                              color: mainColor,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 18),
+
+                              // 简约信息
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      character['nickname'],
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    if (character['bio'].isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          character['bio'],
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                              // 简约箭头
+                              Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey.shade300,
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         );
   }
 
