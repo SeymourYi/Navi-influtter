@@ -3,6 +3,7 @@ import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
 import 'package:Navi/page/UserInfo/userhomemain.dart';
+import 'package:Navi/page/chat/screen/recent_chats_screen.dart';
 import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -22,6 +23,10 @@ import 'package:jpush_flutter/jpush_flutter.dart';
 import '../../utils/myjpush.dart';
 import 'package:Navi/page/Setting/settings.dart';
 import 'package:provider/provider.dart';
+import 'package:Navi/page/chat/services/chat_service.dart';
+import 'package:Navi/page/chat/screen/role_selection_screen.dart';
+import 'package:Navi/page/chat/config/app_config.dart';
+import 'package:Navi/page/chat/models/chat_message.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {
@@ -539,6 +544,11 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   double _notificationPosition = 0.0;
   double _personPosition = 0.0;
 
+  // 添加聊天相关变量
+  ChatService? _chatService;
+  CharacterRole? _selectedCharacter;
+  bool _isChatInitialized = false;
+
   final List<LikeNotification> notifications = [
     LikeNotification(
       postTitle: "我的Flutter学习心得",
@@ -573,7 +583,67 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
       setState(() {
         _currentTabIndex = _tabController.index;
       });
+
+      // 当切换到聊天标签页时，确保聊天服务已初始化
+      if (_currentTabIndex == 1 && !_isChatInitialized) {
+        _initializeChatService();
+      }
     }
+  }
+
+  // 初始化聊天服务
+  void _initializeChatService() {
+    if (_userInfo != null && !_isChatInitialized) {
+      try {
+        // 创建用户角色
+        _selectedCharacter = CharacterRole(
+          id: _userInfo!['username'],
+          name: _userInfo!['nickname'] ?? _userInfo!['username'] ?? '我自己',
+          description: '以自己的身份进行聊天',
+          imageAsset: _userInfo!['userPic'] ?? '',
+          color: Colors.purple.shade700,
+        );
+
+        // 创建聊天服务
+        _chatService = ChatService(
+          serverUrl: AppConfig.serverUrl,
+          character: _selectedCharacter!,
+          onMessageReceived: (message) {
+            // 可以添加消息通知逻辑
+            setState(() {}); // 刷新UI
+          },
+          onUsersReceived: (users) {
+            setState(() {}); // 刷新UI显示最新的在线用户
+          },
+          onError: (error) {
+            print('聊天连接错误: $error');
+          },
+        );
+
+        // 连接到聊天服务器
+        _chatService!.connect();
+        _isChatInitialized = true;
+
+        print('聊天服务初始化成功');
+      } catch (e) {
+        print('初始化聊天服务出错: $e');
+        _isChatInitialized = false;
+      }
+    }
+  }
+
+  // 选择用户聊天
+  void _selectCharacterToChat(CharacterRole character) {
+    // 跳转到聊天屏幕
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ChatScreen(
+              initialChatCharacter: character, // 传递选中的角色作为初始聊天角色
+            ),
+      ),
+    );
   }
 
   // 新增动画变化监听函数
@@ -612,6 +682,12 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
     _tabController.animation!.removeListener(_handleTabControllerAnimationTick);
     _tabController.removeListener(_handleTabAnimation);
     _tabController.dispose();
+
+    // 断开聊天连接
+    if (_isChatInitialized) {
+      _chatService!.disconnect();
+    }
+
     super.dispose();
   }
 
@@ -744,6 +820,11 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
               setState(() {
                 _currentTabIndex = index;
               });
+
+              // 当切换到聊天标签页时，确保聊天服务已初始化
+              if (_currentTabIndex == 1 && !_isChatInitialized) {
+                _initializeChatService();
+              }
             },
             indicatorColor: Colors.transparent,
             dividerColor: Colors.transparent,
@@ -972,7 +1053,13 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
             onSearchPressed: _navigateToSearch,
             onAddPostPressed: _navigateToPost,
           ),
-          Text("聊天"),
+          _isChatInitialized && _selectedCharacter != null
+              ? RecentChatsScreen(
+                chatService: _chatService!,
+                currentCharacter: _selectedCharacter!,
+                onChatSelected: _selectCharacterToChat,
+              )
+              : Center(child: CircularProgressIndicator()),
           ChatScreen(),
           EmailList(),
           UserHomeMain(),

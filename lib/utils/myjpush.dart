@@ -117,10 +117,10 @@ class Myjpush {
                         settings: RouteSettings(name: '/chat'),
                         builder:
                             (context) => ChatScreen(
-                              initialChatUsername: senderUsername,
-                              initialChatName: senderNickname,
-                              initialChatAvatar: senderAvatar ?? '',
-                              initialChatBio: senderBio ?? '',
+                              // initialChatUsername: senderUsername,
+                              // initialChatName: senderNickname,
+                              // initialChatAvatar: senderAvatar ?? '',
+                              // initialChatBio: senderBio ?? '',
                             ),
                       ),
                     );

@@ -58,10 +58,10 @@ class _ProfilePageState extends State<ProfilePage> {
       MaterialPageRoute(
         builder:
             (context) => ChatScreen(
-              initialChatUsername: widget.username,
-              initialChatName: _userInfo!['nickname'] ?? widget.username,
-              initialChatAvatar: _userInfo!['userPic'] ?? '',
-              initialChatBio: _userInfo!['bio'] ?? '',
+              // initialChatUsername: widget.username,
+              // initialChatName: _userInfo!['nickname'] ?? widget.username,
+              // initialChatAvatar: _userInfo!['userPic'] ?? '',
+              // initialChatBio: _userInfo!['bio'] ?? '',
             ),
       ),
     );

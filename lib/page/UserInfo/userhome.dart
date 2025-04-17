@@ -279,12 +279,10 @@ class _UserHomeState extends State<UserHome> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                // ChatScreen(),
-                                ChatItem(
-                                  chatWithusername: _userinfo["username"],
-                                ),
+                            builder: (context) => ChatScreen(),
+                            // ChatItem(
+                            //   chatWithusername: _userinfo["username"],
+                            // ),
                           ),
                         );
                       },
