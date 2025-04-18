@@ -255,41 +255,23 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
                     ),
                   ),
                   child: ClipOval(
-                    child:
-                        widget.character['userPic'] != null
-                            ? Image.network(
-                              widget.character['userPic'],
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (ctx, e, s) => CircleAvatar(
-                                    backgroundColor: Color(
-                                      0xFF4288FC,
-                                    ).withOpacity(0.1),
-                                    child: Text(
-                                      widget.character['nickname']
-                                          .substring(0, 1)
-                                          .toUpperCase(),
-                                      style: TextStyle(
-                                        color: Color(0xFF4288FC),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                            )
-                            : CircleAvatar(
-                              backgroundColor: Color(
-                                0xFF4288FC,
-                              ).withOpacity(0.1),
-                              child: Text(
-                                widget.character['nickname']
-                                    .substring(0, 1)
-                                    .toUpperCase(),
-                                style: TextStyle(
-                                  color: Color(0xFF4288FC),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                    child: Image.network(
+                      widget.character['userPic'],
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (ctx, e, s) => CircleAvatar(
+                            backgroundColor: Color(0xFF4288FC).withOpacity(0.1),
+                            child: Text(
+                              widget.character['nickname']
+                                  .substring(0, 1)
+                                  .toUpperCase(),
+                              style: TextStyle(
+                                color: Color(0xFF4288FC),
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                          ),
+                    ),
                   ),
                 ),
                 SizedBox(width: 12),

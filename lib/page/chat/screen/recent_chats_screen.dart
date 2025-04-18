@@ -1,3 +1,6 @@
+import 'dart:ffi';
+
+import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/page/chat/screen/privtschatcreen.dart';
 import 'package:flutter/material.dart';
 import '../models/recent_chat.dart';
@@ -24,13 +27,47 @@ class RecentChatsScreen extends StatefulWidget {
   State<RecentChatsScreen> createState() => _RecentChatsScreenState();
 }
 
-class _RecentChatsScreenState extends State<RecentChatsScreen> {
+class _RecentChatsScreenState extends State<RecentChatsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   List<RecentChat> _recentChats = [];
+
   bool _isLoading = true;
+  UserService service = UserService();
+  final Map<String, dynamic> chatData = {
+    "nickname": "金杯车",
+    "username": 2222,
+    "userPic":
+        'https://bigevent24563.oss-cn-beijing.aliyuncs.com/973eae25-8da6-4011-9281-f686f03c1bfd.jpg', // 添加 userPic 字段
+    "bio": "我浑身难受",
+  };
   @override
   void initState() {
     super.initState();
     _loadRecentChats();
+  }
+
+  Future<void> _getuserinf(username) async {
+    var userinfo = await service.getsomeUserinfo(username);
+    // print(userinfo);
+    // print("-------------yyyyyyyyyyyyyyyyyyyyyy-------------------");
+    // print(chatData);
+    // print("-------------yyyyyyyyyyyyyyyyyyyyyy-------------------");
+    // print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    chatData['nickname'] = userinfo['data']['nickname'];
+    chatData['username'] = userinfo['data']['username'];
+    chatData['userPic'] = userinfo['data']['userPic'];
+    chatData['bio'] = userinfo['data']['bio'];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PrivtsChatScreen(character: chatData),
+      ),
+    );
+
+    // // 同时通知父组件选择了这个角色
+    widget.onChatSelected(chatData);
   }
 
   Future<void> _loadRecentChats() async {
@@ -71,6 +108,7 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
           userPic: userRole.imageAsset, // 添加用户头像参数
         );
 
+        // 将创建的recentChat添加到recentChats列表中
         recentChats.add(recentChat);
       });
 
@@ -166,25 +204,8 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
     return InkWell(
       onTap: () {
         // 创建Map，确保所有字段都是正确的类型
-        final Map<String, dynamic> chatData = {
-          "nickname": chat.userName,
-          "userId": chat.userId,
-          "username": chat.userId,
-          "id": chat.userId, // 添加id字段，ChatService中的方法需要使用它
-          "userPic": chat.userPic, // 添加 userPic 字段
-        };
-        print(chatData);
+        _getuserinf(chat.userId);
         // 直接导航到聊天界面
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PrivtsChatScreen(character: chatData),
-            // ChatScreen(initialChatCharacter: chatData),
-          ),
-        );
-
-        // 同时通知父组件选择了这个角色
-        widget.onChatSelected(chatData);
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),

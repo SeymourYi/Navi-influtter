@@ -10,16 +10,16 @@ class UseSelectScreen extends StatefulWidget {
   State<UseSelectScreen> createState() => _UseSelectScreenState();
 }
 
-class _UseSelectScreenState extends State<UseSelectScreen> {
+class _UseSelectScreenState extends State<UseSelectScreen>
+    with AutomaticKeepAliveClientMixin {
   List<dynamic> _friends = [];
-
+  @override
+  bool get wantKeepAlive => true;
   Future<void> _loadFriendList() async {
     GetFriendListService service = GetFriendListService();
     final username = await SharedPrefsUtils.getUsername();
     final friendList = await service.GetFriendList(username.toString());
     _friends = friendList['data'];
-    print('好友列表: $_friends');
-    print('好友列表长度:AAAAAAAAAAAAAAAAAAAAAAAAAA');
   }
 
   final Color redColor = Color(0xFFFB514F);
@@ -42,8 +42,8 @@ class _UseSelectScreenState extends State<UseSelectScreen> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             itemBuilder: (context, index) {
               final character = _friends[index];
-
-              // 每个联系人使用不同颜色
+              print(character);
+              print("CVVASFASFASFASDASAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
               final List<Color> colorOptions = [
                 redColor,
                 greenColor,

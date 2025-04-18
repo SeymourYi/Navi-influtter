@@ -27,6 +27,8 @@ import 'package:Navi/page/chat/services/chat_service.dart';
 import 'package:Navi/page/chat/screen/role_selection_screen.dart';
 import 'package:Navi/page/chat/config/app_config.dart';
 import 'package:Navi/page/chat/models/chat_message.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:app_settings/app_settings.dart';
 
 // PersistentDrawer remains the same as your original code
 class PersistentDrawer extends StatefulWidget {
@@ -346,35 +348,6 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
               ],
             ),
           ),
-          // 底部退出按钮
-          // Container(
-          //   width: double.infinity,
-          //   margin: EdgeInsets.all(16),
-          //   child: ElevatedButton(
-          //     onPressed: () async {
-          //       await SharedPrefsUtils.clearUserInfo();
-          //       await SharedPrefsUtils.clearToken();
-          //       Navigator.pop(context);
-          //       Navigator.pushAndRemoveUntil(
-          //         context,
-          //         MaterialPageRoute(builder: (context) => LoginPage()),
-          //         (route) => false,
-          //       );
-          //     },
-          //     style: ElevatedButton.styleFrom(
-          //       backgroundColor: const Color.fromARGB(255, 126, 121, 211),
-          //       foregroundColor: Colors.white,
-          //       shape: RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.circular(30),
-          //       ),
-          //       padding: EdgeInsets.symmetric(vertical: 12),
-          //     ),
-          //     child: Text(
-          //       "退出登录",
-          //       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -487,43 +460,6 @@ class HomeTab extends StatelessWidget {
   }
 }
 
-// 创建通知页面TabView，包含自己的AppBar
-class NotificationsTab extends StatelessWidget {
-  final List<LikeNotification> notifications;
-
-  const NotificationsTab({Key? key, required this.notifications})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          "通知",
-          style: TextStyle(
-            fontSize: 23,
-            fontFamily: "Inter-Regular",
-            color: const Color.fromARGB(71, 116, 55, 202),
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: Container(color: Colors.transparent, height: 0),
-        ),
-      ),
-      body: LikeNotificationList(
-        notifications: notifications,
-        onFollowUser: (user) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("已关注 ${user.name}")));
-        },
-      ),
-    );
-  }
-}
-
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
 
@@ -549,32 +485,70 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   CharacterRole? _selectedCharacter;
   bool _isChatInitialized = false;
 
-  final List<LikeNotification> notifications = [
-    LikeNotification(
-      postTitle: "我的Flutter学习心得",
-      postPreview: "分享我最近学习Flutter的体会和经验...",
-      user: UserInfo(
-        avatar: "assets/avatars/user1.jpg",
-        name: "张开发者",
-        location: "北京 · 海淀区",
-        occupation: "移动端开发工程师",
-        joinDate: DateTime(2021, 3, 15),
-        bio: "热爱技术分享，专注移动开发领域",
-      ),
-      likedAt: DateTime(2023, 7, 20, 14, 30),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     // 修改监听方式，添加动画监听
     _homePosition = 1.0;
     _tabController.addListener(_handleTabAnimation);
     _tabController.animation!.addListener(_handleTabControllerAnimationTick);
+    _getnotifitionlison();
+  }
+
+  void _getnotifitionlison() {
+    _checkAndRequestNotificationPermission();
+  }
+
+  Future<void> _checkAndRequestNotificationPermission() async {
+    try {
+      // 检查通知权限状态
+      final status = await Permission.notification.status;
+
+      if (status.isDenied || status.isPermanentlyDenied) {
+        // 如果权限被拒绝，显示对话框提示用户
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('开启通知权限'),
+                content: Text('为了及时接收私信消息，请允许Navi发送通知'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('稍后再说'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 126, 121, 211),
+                    ),
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      // 打开应用设置页面，让用户手动开启权限
+                      await openAppSettings();
+                    },
+                    child: Text('去设置'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      } else if (status.isLimited) {
+        // 权限有限，可能需要进一步处理
+        print('通知权限受限');
+      } else if (status.isGranted) {
+        // 已授予权限，可以进行后续操作
+        print('已获得通知权限');
+      }
+    } catch (e) {
+      print('检查通知权限出错: $e');
+    }
   }
 
   // 新增动画监听函数

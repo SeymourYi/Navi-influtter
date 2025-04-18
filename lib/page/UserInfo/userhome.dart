@@ -2,6 +2,7 @@ import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:Navi/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/chat/screen/privtschatcreen.dart';
 // import 'package:Navi/page/chat/screen/chatitem.dart';
 import 'package:flutter/material.dart';
 
@@ -279,7 +280,9 @@ class _UserHomeState extends State<UserHome> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ChatScreen(),
+                            builder:
+                                (context) =>
+                                    PrivtsChatScreen(character: _userinfo),
                             // ChatItem(
                             //   chatWithusername: _userinfo["username"],
                             // ),
