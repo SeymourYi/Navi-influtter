@@ -1,3 +1,4 @@
+import 'package:Navi/page/chat/screen/privtschatcreen.dart';
 import 'package:flutter/material.dart';
 import '../models/recent_chat.dart';
 import '../models/chat_message.dart';
@@ -89,10 +90,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
         _isLoading = false;
       });
     }
-
-    print(_recentChats);
-    print(_recentChats.length);
-    print("---------------------------------");
   }
 
   @override
@@ -114,13 +111,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
         ),
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: themeColor),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: themeColor),
-            onPressed: _loadRecentChats,
-            tooltip: '刷新',
-          ),
-        ],
       ),
       body:
           _isLoading
@@ -150,27 +140,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              // 导航到联系人列表
-              widget.chatService.requestOnlineUsers();
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: themeColor,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text(
-              '查看在线用户',
-              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -204,12 +173,13 @@ class _RecentChatsScreenState extends State<RecentChatsScreen> {
           "id": chat.userId, // 添加id字段，ChatService中的方法需要使用它
           "userPic": chat.userPic, // 添加 userPic 字段
         };
-
+        print(chatData);
         // 直接导航到聊天界面
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatScreen(initialChatCharacter: chatData),
+            builder: (context) => PrivtsChatScreen(character: chatData),
+            // ChatScreen(initialChatCharacter: chatData),
           ),
         );
 
