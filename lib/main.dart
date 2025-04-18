@@ -1,7 +1,9 @@
 import 'package:Navi/page/UserInfo/userhome.dart';
 import 'package:Navi/providers/notification_provider.dart';
-import 'dart:io'; // 添加Platform支持
+import 'dart:io'
+    if (dart.library.html) 'package:Navi/utils/platform_stub.dart'; // 修改导入方式
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 添加foundation导入
 import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/models/like_notification.dart';
 import 'package:Navi/page/Home/home.dart';
@@ -21,8 +23,8 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await HttpClient.init();
 
-  // 确保字体被正确加载
-  if (Platform.isAndroid || Platform.isIOS) {
+  // 确保字体被正确加载 - 使用kIsWeb检查是否在Web平台
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -81,7 +83,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     // 尝试强制刷新字体缓存 (简化处理)
-    if (Platform.isWindows) {
+    if (!kIsWeb && Platform.isWindows) {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
 

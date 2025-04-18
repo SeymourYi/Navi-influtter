@@ -472,430 +472,291 @@ class _ArticleState extends State<Article> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          // 使用Stack和Positioned来确保能够点击所有区域
-          Stack(
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(0),
+        side: BorderSide(color: Colors.grey.shade200, width: 0.5),
+      ),
+      child: InkWell(
+        onTap: _NavigateToArticleDetail,
+        splashColor: Colors.grey.withOpacity(0.1),
+        highlightColor: Colors.grey.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 底层可点击区域 - 覆盖整个文章区域
-              Positioned.fill(
-                child: Material(
-                  color: Colors.white,
-                  child: InkWell(
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: _NavigateToArticleDetail,
+              // 左侧头像
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder:
+                          (context, animation, secondaryAnimation) =>
+                              UserHome(userId: widget.articleData['username']),
+                      transitionsBuilder: (
+                        context,
+                        animation,
+                        secondaryAnimation,
+                        child,
+                      ) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.ease;
+                        var tween = Tween(
+                          begin: begin,
+                          end: end,
+                        ).chain(CurveTween(curve: curve));
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
+                      transitionDuration: Duration(milliseconds: 300),
+                      reverseTransitionDuration: Duration(milliseconds: 300),
+                      opaque: false,
+                      barrierDismissible: true,
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundImage: CachedNetworkImageProvider(
+                    widget.articleData['userPic'],
                   ),
                 ),
               ),
 
-              // 文章内容
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 左侧头像 - 独立点击区域
+              // 右侧内容部分
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 用户信息行
+                      Row(
+                        children: [
+                          Text(
+                            "${widget.articleData['nickname']}",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "@${widget.articleData['username']}",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            " · ${widget.articleData['uptonowTime']}",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // 文章内容区域
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, bottom: 6),
+                        child: Text(
+                          "${widget.articleData['content']}",
+                          style: TextStyle(
+                            fontSize: 15,
+                            height: 1.3,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+
+                      // 文章图片
+                      if (widget.articleData['coverImg'] != "")
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        UserHome(
-                                          userId:
-                                              widget.articleData['username'],
-                                        ),
-                                transitionsBuilder: (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  const begin = Offset(1.0, 0.0);
-                                  const end = Offset.zero;
-                                  const curve = Curves.ease;
-                                  var tween = Tween(
-                                    begin: begin,
-                                    end: end,
-                                  ).chain(CurveTween(curve: curve));
-                                  return SlideTransition(
-                                    position: animation.drive(tween),
-                                    child: child,
-                                  );
-                                },
-                                transitionDuration: Duration(milliseconds: 300),
-                                reverseTransitionDuration: Duration(
-                                  milliseconds: 300,
-                                ),
-                                opaque: false,
-                                barrierDismissible: true,
-                              ),
-                            );
+                            // 这里可以添加查看大图的逻辑
+                            return;
                           },
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 12, right: 8),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundImage: CachedNetworkImageProvider(
-                                widget.articleData['userPic'],
-                              ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: ArticleImage(
+                              imageUrls: ["${widget.articleData['coverImg']}"],
                             ),
                           ),
                         ),
 
-                        // 右侧内容
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 用户名
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    "${widget.articleData['nickname']}",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: "Inter",
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 3,
-                                  ), // Add some spacing between the texts
-                                  Text(
-                                    "@${widget.articleData['username']}",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      fontFamily: "Inter",
-                                      color: const Color.fromRGBO(
-                                        104,
-                                        118,
-                                        132,
-                                        1.00,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 3), //
-                                  Text(
-                                    "·",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Inter",
-                                      color: const Color.fromRGBO(
-                                        104,
-                                        118,
-                                        132,
-                                        1.00,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    "${widget.articleData['uptonowTime']}",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      fontFamily: "Inter",
-                                      color: const Color.fromRGBO(
-                                        111,
-                                        107,
-                                        204,
-                                        1.00,
-                                      ),
-                                    ),
-                                  ),
-                                  Spacer(),
-
-                                  Text(
-                                    "${widget.articleData['categoryName']}",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontFamily: "Inter",
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color.fromRGBO(
-                                        111,
-                                        107,
-                                        204,
-                                        1.00,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 20),
-                                ],
-                              ),
-                              // 正文内容
-                              Padding(
-                                padding: EdgeInsets.only(right: 12),
-                                //
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: _NavigateToArticleDetail,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      // color: Colors.blue,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // 实际文章内容 - 仅显示一次
-                                        Padding(
-                                          padding: EdgeInsets.zero,
-                                          child: Text(
-                                            "${widget.articleData['content']}",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontFamily: "Inter",
-                                              fontWeight: FontWeight.w500,
-                                              height: 1.4,
-                                              color: Color(0xFF14171A),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // 文章图片
-                              widget.articleData['coverImg'] != ""
-                                  ? ArticleImage(
-                                    imageUrls: [
-                                      "${widget.articleData['coverImg']}",
-                                    ],
-                                  )
-                                  : SizedBox.shrink(),
-
-                              widget.articleData['userShare'] == true
-                                  ? Padding(
-                                    padding: EdgeInsets.only(top: 8),
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: _NavigateToArticleDetail,
-                                      child: LitArticle(
-                                        articleData: widget.articleData,
-                                      ),
-                                    ),
-                                  )
-                                  : SizedBox.shrink(),
-                              Padding(
-                                padding: EdgeInsets.only(right: 24),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  // mainAxisAlignment:
-                                  //     MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    // 左边按钮（评论）
-                                    InkWell(
-                                      onTap:
-                                          () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => PostPage(
-                                                    type: '评论',
-                                                    articelData:
-                                                        widget.articleData,
-                                                  ),
-                                            ),
-                                          ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Tooltip(
-                                        message: '点击发表评论',
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SvgPicture.asset(
-                                                widget.articleData['commentcount'] !=
-                                                            null &&
-                                                        widget.articleData['commentcount'] >
-                                                            0
-                                                    ? "lib/assets/icons/chatbubble-ellipses.svg" // different icon when has comments
-                                                    : "lib/assets/icons/chatbubble-ellipses-outline.svg", // different icon when no comments
-                                                width: 18,
-                                                height: 18,
-                                                color:
-                                                    widget.articleData['commentcount'] !=
-                                                                null &&
-                                                            widget.articleData['commentcount'] >
-                                                                0
-                                                        ? Colors.blue
-                                                        : Colors.grey,
-                                              ),
-                                              if (widget.articleData['commentcount'] !=
-                                                      null &&
-                                                  widget.articleData['commentcount'] >
-                                                      0)
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    left: 4,
-                                                  ),
-                                                  child: Text(
-                                                    "${widget.articleData['commentcount']}",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.blue,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 中间按钮（转发）
-                                    InkWell(
-                                      onTap:
-                                          () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => PostPage(
-                                                    type: '转发',
-                                                    articelData:
-                                                        widget.articleData,
-                                                  ),
-                                            ),
-                                          ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Tooltip(
-                                        message: '转发',
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SvgPicture.asset(
-                                                "lib/assets/icons/repeat-outline.svg",
-                                                width: 18,
-                                                height: 18,
-                                                color:
-                                                    widget.articleData['repeatcount'] !=
-                                                                null &&
-                                                            widget.articleData['repeatcount'] >
-                                                                0
-                                                        ? Colors.green
-                                                        : Colors.grey,
-                                              ),
-                                              if (widget.articleData['repeatcount'] !=
-                                                      null &&
-                                                  widget.articleData['repeatcount'] >
-                                                      0)
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    left: 4,
-                                                  ),
-                                                  child: Text(
-                                                    "${widget.articleData['repeatcount']}",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.green,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 右边按钮（点赞）
-                                    InkWell(
-                                      onTap: _handleLike,
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Tooltip(
-                                        message: isLiked ? '取消点赞' : '点赞',
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              isLikeLoading
-                                                  ? SizedBox(
-                                                    width: 8,
-                                                    height: 18,
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      valueColor:
-                                                          AlwaysStoppedAnimation<
-                                                            Color
-                                                          >(Colors.red),
-                                                    ),
-                                                  )
-                                                  : Icon(
-                                                    isLiked
-                                                        ? Icons.favorite_border
-                                                        : Icons.favorite_border,
-                                                    size: 18,
-                                                    color:
-                                                        isLiked
-                                                            ? const Color.fromRGBO(
-                                                              237,
-                                                              144,
-                                                              131,
-                                                              1,
-                                                            )
-                                                            : Colors.grey,
-                                                  ),
-                                              if (likeCount > 0)
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    left: 4,
-                                                  ),
-                                                  child: Text(
-                                                    "$likeCount",
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          isLiked
-                                                              ? Colors.red
-                                                              : Colors
-                                                                  .grey[700],
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      // 转发内容
+                      if (widget.articleData['userShare'] == true)
+                        Container(
+                          margin: EdgeInsets.only(top: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
                           ),
+                          child: LitArticle(articleData: widget.articleData),
                         ),
-                      ],
-                    ),
+
+                      // 互动栏
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // 评论按钮
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => PostPage(
+                                          type: '评论',
+                                          articelData: widget.articleData,
+                                        ),
+                                  ),
+                                );
+                              },
+                              child: _buildActionButton(
+                                icon:
+                                    widget.articleData['commentcount'] !=
+                                                null &&
+                                            widget.articleData['commentcount'] >
+                                                0
+                                        ? "lib/assets/icons/chatbubble-ellipses.svg"
+                                        : "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                                count: widget.articleData['commentcount'],
+                                color: Color.fromRGBO(29, 161, 242, 1.0),
+                              ),
+                            ),
+
+                            // 转发按钮
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => PostPage(
+                                          type: '转发',
+                                          articelData: widget.articleData,
+                                        ),
+                                  ),
+                                );
+                              },
+                              child: _buildActionButton(
+                                icon: "lib/assets/icons/repeat-outline.svg",
+                                count: widget.articleData['repeatcount'],
+                                color: Color.fromRGBO(23, 191, 99, 1.0),
+                              ),
+                            ),
+
+                            // 点赞按钮
+                            InkWell(
+                              onTap: _handleLike,
+                              child: _buildLikeButton(),
+                            ),
+
+                            // 空白占位，保持按钮分布均匀
+                            SizedBox(width: 16),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ],
           ),
-          Divider(height: 20, thickness: 0.5),
-        ],
+        ),
       ),
+    );
+  }
+
+  // 构建交互按钮
+  Widget _buildActionButton({
+    required String icon,
+    int? count,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          icon,
+          width: 16,
+          height: 16,
+          color: count != null && count > 0 ? color : Colors.grey[600],
+        ),
+        if (count != null && count > 0)
+          Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Text(
+              "$count",
+              style: TextStyle(
+                fontSize: 13,
+                color: color,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 点赞按钮
+  Widget _buildLikeButton() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        isLikeLoading
+            ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  const Color.fromRGBO(224, 36, 94, 1.0),
+                ),
+              ),
+            )
+            : Icon(
+              isLiked ? Icons.favorite : Icons.favorite_border,
+              size: 16,
+              color:
+                  isLiked
+                      ? const Color.fromRGBO(224, 36, 94, 1.0)
+                      : Colors.grey[600],
+            ),
+        if (likeCount > 0)
+          Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: Text(
+              "$likeCount",
+              style: TextStyle(
+                fontSize: 13,
+                color:
+                    isLiked
+                        ? const Color.fromRGBO(224, 36, 94, 1.0)
+                        : Colors.grey[600],
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/page/chat/screen/privtschatcreen.dart';
 import 'package:flutter/material.dart';

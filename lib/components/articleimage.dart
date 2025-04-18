@@ -37,15 +37,6 @@ class ArticleImage extends StatelessWidget {
   }
 
   void _showFullScreenImage(BuildContext context, int initialIndex) {
-    // Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder:
-    //         (context) => FullScreenImageView(
-    //           imageUrls: imageUrls,
-    //           initialIndex: initialIndex,
-    //         ),
-    //   ),
-    // );
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -54,18 +45,9 @@ class ArticleImage extends StatelessWidget {
               imageUrls: imageUrls,
               initialIndex: initialIndex,
             ),
+        transitionDuration: const Duration(milliseconds: 300),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
       ),
     );
@@ -124,19 +106,25 @@ class ArticleImage extends StatelessWidget {
             ),
             child: Hero(
               tag: 'article_image_$index',
-              child: Image.network(
-                imageUrls[index],
-                // width: double.infinity,
-                // height: double.infinity, // 让高度尽可能填充可用空间
-                fit: BoxFit.cover,
-                alignment: Alignment.center, // 确保裁剪时居中
-                errorBuilder:
-                    (context, error, stackTrace) => Container(
-                      width: double.infinity,
-                      height: double.infinity, // 错误时也填充相同高度
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
-                    ),
+              child: Material(
+                color: Colors.transparent,
+                child: Image.network(
+                  imageUrls[index],
+                  // width: double.infinity,
+                  // height: double.infinity, // 让高度尽可能填充可用空间
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center, // 确保裁剪时居中
+                  errorBuilder:
+                      (context, error, stackTrace) => Container(
+                        width: double.infinity,
+                        height: double.infinity, // 错误时也填充相同高度
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.grey,
+                        ),
+                      ),
+                ),
               ),
             ),
           ),
