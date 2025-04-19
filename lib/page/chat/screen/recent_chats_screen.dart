@@ -68,6 +68,16 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
     widget.onChatSelected(chatData);
   }
 
+  Future<String> _getuserpic(username) async {
+    var userinfo = await service.getsomeUserinfo(username);
+    return userinfo['data']['userPic'];
+  }
+
+  Future<String> _getnickname(username) async {
+    var userinfo = await service.getsomeUserinfo(username);
+    return userinfo['data']['nickname'];
+  }
+
   Future<void> _loadRecentChats() async {
     setState(() {
       _isLoading = true;
@@ -199,11 +209,11 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
   Widget _buildChatItem(RecentChat chat) {
     final themeColor = widget.currentCharacter.color;
 
+    print(chat.userName);
+    print("--------------------------------");
     return InkWell(
       onTap: () {
-        // 创建Map，确保所有字段都是正确的类型
         _getuserinf(chat.userId);
-        // 直接导航到聊天界面
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -211,28 +221,36 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 头像
-            chat.userPic.isNotEmpty
-                ? CircleAvatar(
-                  radius: 28,
-                  backgroundImage: NetworkImage(chat.userPic),
-                  backgroundColor: Colors.transparent,
-                  onBackgroundImageError: (exception, stackTrace) {
-                    // 图片加载错误时显示的内容
-                    return; // 只是标记错误发生，不做特殊处理
-                  },
-                )
-                : CircleAvatar(
-                  backgroundColor: themeColor.withOpacity(0.2),
-                  radius: 28,
-                  child: Text(
-                    chat.userName.substring(0, 1).toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: themeColor,
-                      fontWeight: FontWeight.bold,
+            FutureBuilder<String>(
+              future: _getuserpic(chat.userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
+                  return CircleAvatar(
+                    radius: 28,
+                    backgroundImage: NetworkImage(snapshot.data!),
+                    backgroundColor: Colors.transparent,
+                    onBackgroundImageError: (exception, stackTrace) {
+                      return;
+                    },
+                  );
+                } else {
+                  // 加载中或出错时显示默认头像
+                  return CircleAvatar(
+                    backgroundColor: themeColor.withOpacity(0.2),
+                    radius: 28,
+                    child: Text(
+                      chat.userName.substring(0, 1).toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: themeColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }
+              },
+            ),
             SizedBox(width: 12),
             // 消息内容
             Expanded(
@@ -245,12 +263,21 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
-                            chat.userName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          FutureBuilder<String>(
+                            future: _getnickname(chat.userId),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.connectionState ==
+                                            ConnectionState.done &&
+                                        snapshot.hasData
+                                    ? snapshot.data!
+                                    : chat.userName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              );
+                            },
                           ),
                           SizedBox(width: 4),
                           Text(

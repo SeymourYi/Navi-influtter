@@ -8,7 +8,6 @@ import '../services/chat_service.dart';
 class PrivtsChatScreen extends StatefulWidget {
   const PrivtsChatScreen({super.key, required this.character});
   final dynamic character;
-
   @override
   State<PrivtsChatScreen> createState() => _PrivtsChatScreenState();
 }
@@ -72,6 +71,11 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
   void _connectToChat() {
     if (_selectedCharacter == null) return;
 
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = ""; // 清除之前的错误信息
+    });
+
     // 在后台连接，不显示加载界面
     _chatService = ChatService(
       serverUrl: AppConfig.serverUrl,
@@ -79,28 +83,65 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
       onMessageReceived: _handleMessageReceived,
       onUsersReceived: _handleUsersReceived,
       onError: (error) {
-        setState(() {
-          _errorMessage = error;
-          _isConnected = false; // 连接失败时才更新连接状态
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = error;
+            _isConnected = false; // 连接失败时更新连接状态
+            _isConnecting = false; // 连接尝试结束
+            _isLoadingHistory = false; // 确保加载状态被重置
+          });
+        }
       },
     );
 
-    _chatService.connect();
-
-    // 5秒后检查连接状态
-    Future.delayed(const Duration(seconds: 5), () {
+    try {
+      _chatService.connect();
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _isConnected = _chatService.isConnected;
-          if (!_isConnected && _errorMessage.isEmpty) {
-            _errorMessage = "连接超时，请检查服务器地址和网络";
-          } else if (_isConnected) {
-            // 连接成功后，主动请求在线用户列表
-            print('连接成功，请求在线用户列表');
-            _chatService.requestOnlineUsers();
-          }
+          _errorMessage = "连接错误: $e";
+          _isConnected = false;
+          _isConnecting = false;
+          _isLoadingHistory = false;
         });
+      }
+      return;
+    }
+
+    // 添加连接超时保护
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        if (_chatService != null) {
+          final isConnected = _chatService.isConnected;
+          setState(() {
+            _isConnected = isConnected;
+            _isConnecting = false; // 连接尝试结束
+
+            if (!isConnected && _errorMessage.isEmpty) {
+              _errorMessage = "连接超时，请检查服务器地址和网络";
+              _isLoadingHistory = false; // 确保加载状态被重置
+            } else if (isConnected) {
+              // 连接成功后，清除错误信息
+              _errorMessage = "";
+
+              // 主动请求在线用户列表
+              print('连接成功，请求在线用户列表');
+              _chatService.requestOnlineUsers();
+
+              // 如果需要加载聊天记录，但尚未启动加载
+              if (widget.character != null && !_isLoadingHistory) {
+                _selectCharacterToChat(widget.character!);
+              }
+            }
+          });
+        } else {
+          setState(() {
+            _isConnected = false;
+            _isConnecting = false;
+            _errorMessage = "聊天服务初始化失败";
+            _isLoadingHistory = false;
+          });
+        }
       }
     });
   }
@@ -123,21 +164,60 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
         if (mounted) {
           setState(() {
             _selectedCharacter = currentUserRole;
-            _isConnected = true;
-            _isConnecting = false;
+            _isConnecting = true;
           });
 
           // 连接到聊天服务
           _connectToChat();
 
-          if (_isConnected && mounted && widget.character != null) {
-            _selectCharacterToChat(widget.character!);
-          }
+          // 等待连接成功后再选择聊天对象
+          // 添加延迟确保连接已经建立
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted && widget.character != null) {
+              if (_chatService.isConnected) {
+                _selectCharacterToChat(widget.character!);
+              } else {
+                // 如果连接失败，重试连接
+                _retryConnection();
+              }
+            }
+          });
         }
       }
     } catch (e) {
       print('初始化当前用户出错: $e');
+      setState(() {
+        _errorMessage = "初始化用户失败: $e";
+        _isLoadingHistory = false;
+      });
     }
+  }
+
+  // 添加新方法：重试连接
+  void _retryConnection() {
+    if (!mounted) return;
+
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = "";
+    });
+
+    _connectToChat();
+
+    // 延迟后再次尝试选择聊天对象
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && widget.character != null) {
+        if (_chatService.isConnected) {
+          _selectCharacterToChat(widget.character!);
+        } else {
+          setState(() {
+            _isConnecting = false;
+            _errorMessage = "无法连接到服务器，请检查网络后重试";
+            _isLoadingHistory = false;
+          });
+        }
+      }
+    });
   }
 
   void _scrollToBottom() {
@@ -154,6 +234,16 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
     setState(() {
       _isLoadingHistory = true;
     });
+
+    // 确保聊天服务已经初始化并连接
+    if (_chatService == null || !_chatService.isConnected) {
+      setState(() {
+        _errorMessage = "聊天服务尚未连接，无法加载历史消息";
+        _isLoadingHistory = false;
+      });
+      return;
+    }
+
     // 确保username是字符串类型
     String username = character['username'].toString();
 
@@ -169,12 +259,23 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
       }
     }
 
+    // 设置超时保护，确保即使网络请求失败也能恢复UI状态
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted && _isLoadingHistory) {
+        setState(() {
+          _isLoadingHistory = false;
+          _errorMessage = "加载历史消息超时，请重试";
+        });
+      }
+    });
+
     _chatService
         .loadHistoricalMessages(username)
         .then((_) {
           if (mounted) {
             setState(() {
               _isLoadingHistory = false;
+              _errorMessage = ""; // 清除可能的错误信息
             });
 
             // 加载完成后再次确保标记为已读
@@ -183,20 +284,22 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
               // 保存已读状态到本地
               _chatService.saveChatsToStorage();
             }
+
+            // 消息加载成功后滚动到底部
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom();
+            });
           }
         })
         .catchError((error) {
           if (mounted) {
-            // 如果加载失败，设置加载状态为false
+            // 如果加载失败，设置加载状态为false，并显示错误信息
             setState(() {
               _isLoadingHistory = false;
+              _errorMessage = "加载历史消息失败: $error";
             });
           }
         });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
   }
 
   @override
@@ -222,7 +325,10 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
     String username = widget.character['username'].toString();
 
     // 获取与当前选中角色的私聊消息
-    final messages = _chatService.getPrivateChatMessages(username);
+    final messages =
+        _chatService != null
+            ? _chatService.getPrivateChatMessages(username)
+            : [];
 
     return Container(
       color: Color(0xFFF8F9FA), // 更柔和的背景色
@@ -306,6 +412,57 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
             ),
           ),
 
+          // 显示错误信息（如果有）
+          if (_errorMessage.isNotEmpty)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.red.shade50,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red.shade700,
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _errorMessage = "";
+                      });
+                      if (widget.character != null) {
+                        _retryConnection();
+                      }
+                    },
+                    child: Text(
+                      "重试",
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size(60, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // 聊天内容区域
           Expanded(
             child:
@@ -347,12 +504,30 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            '开始和${widget.character['nickname']}聊天吧',
+                            _isConnected
+                                ? '开始和${widget.character['nickname']}聊天吧'
+                                : '连接失败，请点击重试按钮',
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 14,
                             ),
                           ),
+                          if (!_isConnected)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: ElevatedButton(
+                                onPressed: _retryConnection,
+                                child: Text('重新连接'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF4288FC),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 10,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     )
@@ -482,7 +657,10 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
               height: 46,
               width: 46,
               decoration: BoxDecoration(
-                color: Color(0xFF4288FC),
+                color:
+                    _chatService != null && _chatService.isConnected
+                        ? Color(0xFF4288FC)
+                        : Colors.grey.shade400,
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -491,8 +669,10 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
                   color: Colors.white,
                   size: 20,
                 ),
-                onPressed: _sendMessage,
-                // onPressed: () {},
+                onPressed:
+                    _chatService != null && _chatService.isConnected
+                        ? _sendMessage
+                        : null,
               ),
             ),
           ),
