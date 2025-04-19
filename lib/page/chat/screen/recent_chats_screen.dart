@@ -33,6 +33,9 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
 
   bool _isLoading = true;
   UserService service = UserService();
+  // 添加用户信息缓存Map
+  final Map<String, Map<String, dynamic>> _userInfoCache = {};
+
   final Map<String, dynamic> chatData = {
     "nickname": "金杯车",
     "username": 2222,
@@ -47,35 +50,82 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
   }
 
   Future<void> _getuserinf(username) async {
-    var userinfo = await service.getsomeUserinfo(username);
-    // print(userinfo);
-    // print("-------------yyyyyyyyyyyyyyyyyyyyyy-------------------");
-    // print(chatData);
-    // print("-------------yyyyyyyyyyyyyyyyyyyyyy-------------------");
-    // print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
-    chatData['nickname'] = userinfo['data']['nickname'];
-    chatData['username'] = userinfo['data']['username'];
-    chatData['userPic'] = userinfo['data']['userPic'];
-    chatData['bio'] = userinfo['data']['bio'];
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PrivtsChatScreen(character: chatData),
-      ),
-    );
+    try {
+      // 优先使用缓存数据
+      if (_userInfoCache.containsKey(username)) {
+        final cachedData = _userInfoCache[username]!;
+        chatData['nickname'] = cachedData['nickname'];
+        chatData['username'] = cachedData['username'];
+        chatData['userPic'] = cachedData['userPic'];
+        chatData['bio'] = cachedData['bio'];
+      } else {
+        // 如果没有缓存，才发起网络请求
+        var userinfo = await service.getsomeUserinfo(username);
+        chatData['nickname'] = userinfo['data']['nickname'];
+        chatData['username'] = userinfo['data']['username'];
+        chatData['userPic'] = userinfo['data']['userPic'];
+        chatData['bio'] = userinfo['data']['bio'];
 
-    // // 同时通知父组件选择了这个角色
-    widget.onChatSelected(chatData);
+        // 将获取的数据加入缓存
+        _userInfoCache[username] = {
+          'nickname': userinfo['data']['nickname'],
+          'username': userinfo['data']['username'],
+          'userPic': userinfo['data']['userPic'],
+          'bio': userinfo['data']['bio'],
+        };
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PrivtsChatScreen(character: chatData),
+        ),
+      );
+
+      // 通知父组件选择了这个角色
+      widget.onChatSelected(chatData);
+    } catch (e) {
+      print('获取用户信息失败: $e');
+    }
   }
 
-  Future<String> _getuserpic(username) async {
-    var userinfo = await service.getsomeUserinfo(username);
-    return userinfo['data']['userPic'];
+  // 预加载所有用户信息
+  Future<void> _preloadUserInfo(List<String> userIds) async {
+    for (var userId in userIds) {
+      if (!_userInfoCache.containsKey(userId)) {
+        try {
+          var userinfo = await service.getsomeUserinfo(userId);
+          _userInfoCache[userId] = {
+            'nickname': userinfo['data']['nickname'],
+            'username': userinfo['data']['username'],
+            'userPic': userinfo['data']['userPic'],
+            'bio': userinfo['data']['bio'],
+          };
+        } catch (e) {
+          print('预加载用户信息失败: $e');
+        }
+      }
+    }
   }
 
-  Future<String> _getnickname(username) async {
-    var userinfo = await service.getsomeUserinfo(username);
-    return userinfo['data']['nickname'];
+  Future<Map<String, dynamic>> _getUserInfo(String userId) async {
+    if (_userInfoCache.containsKey(userId)) {
+      return _userInfoCache[userId]!;
+    }
+
+    try {
+      var userinfo = await service.getsomeUserinfo(userId);
+      _userInfoCache[userId] = {
+        'nickname': userinfo['data']['nickname'],
+        'username': userinfo['data']['username'],
+        'userPic': userinfo['data']['userPic'],
+        'bio': userinfo['data']['bio'],
+      };
+      return _userInfoCache[userId]!;
+    } catch (e) {
+      print('获取用户信息失败: $e');
+      return {'nickname': '未知', 'username': userId, 'userPic': '', 'bio': ''};
+    }
   }
 
   Future<void> _loadRecentChats() async {
@@ -86,10 +136,14 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
     try {
       // 从私聊会话中构建最近聊天列表
       List<RecentChat> recentChats = [];
+      List<String> userIds = [];
 
       widget.chatService.privateChats.forEach((userId, privateChat) {
         // 忽略空聊天
         if (privateChat.messages.isEmpty) return;
+
+        // 收集需要加载的用户ID
+        userIds.add(userId);
 
         // 获取最后一条消息
         ChatMessage lastMessage = privateChat.messages.last;
@@ -130,6 +184,9 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
         _recentChats = recentChats;
         _isLoading = false;
       });
+
+      // 在设置完状态后，预加载所有用户信息
+      await _preloadUserInfo(userIds);
     } catch (e) {
       print('加载最近聊天出错: $e');
       setState(() {
@@ -140,6 +197,7 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final themeColor = widget.currentCharacter.color;
 
     return Scaffold(
@@ -209,8 +267,6 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
   Widget _buildChatItem(RecentChat chat) {
     final themeColor = widget.currentCharacter.color;
 
-    print(chat.userName);
-    print("--------------------------------");
     return InkWell(
       onTap: () {
         _getuserinf(chat.userId);
@@ -221,14 +277,15 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 头像
-            FutureBuilder<String>(
-              future: _getuserpic(chat.userId),
+            FutureBuilder<Map<String, dynamic>>(
+              future: _getUserInfo(chat.userId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
+                    snapshot.hasData &&
+                    snapshot.data!['userPic'] != null) {
                   return CircleAvatar(
                     radius: 28,
-                    backgroundImage: NetworkImage(snapshot.data!),
+                    backgroundImage: NetworkImage(snapshot.data!['userPic']),
                     backgroundColor: Colors.transparent,
                     onBackgroundImageError: (exception, stackTrace) {
                       return;
@@ -263,14 +320,14 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
                     children: [
                       Row(
                         children: [
-                          FutureBuilder<String>(
-                            future: _getnickname(chat.userId),
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: _getUserInfo(chat.userId),
                             builder: (context, snapshot) {
                               return Text(
                                 snapshot.connectionState ==
                                             ConnectionState.done &&
                                         snapshot.hasData
-                                    ? snapshot.data!
+                                    ? snapshot.data!['nickname']
                                     : chat.userName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,

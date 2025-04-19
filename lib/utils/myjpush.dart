@@ -3,9 +3,12 @@ import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/main.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import 'package:Navi/page/chat/screen/chat_screen.dart';
+import 'package:Navi/page/chat/screen/privtschatcreen.dart';
+import 'package:Navi/api/userAPI.dart';
 
 class Myjpush {
   final JPush jpush = JPush(); // 添加 JPush 实例
+  final UserService userService = UserService(); // 添加用户服务实例
 
   // 示例方法：发送聊天通知
   Future<void> sendChatNotification({
@@ -80,84 +83,58 @@ class Myjpush {
         },
         onOpenNotification: (Map<String, dynamic> message) async {
           print("点击通知: $message");
+          print("-----------  VB---------------------");
+          print(message.entries);
+          print("--------------BV------------------");
 
-          // 解析通知类型和参数
           try {
-            if (message.containsKey('extras')) {
+            // 解析通知中的extras数据
+            if (message.containsKey('extras') && message['extras'] is Map) {
               var extras = message['extras'];
-              var notificationType = extras['type'] as String?;
 
-              // 如果是私聊通知
-              if (notificationType == 'chat') {
-                var senderUsername = extras['username'] as String?;
-                var senderNickname = extras['nickname'] as String?;
-                var senderAvatar = extras['userPic'] as String?;
-                var senderBio = extras['bio'] as String?;
+              // 进一步解析EXTRA字段中的数据
+              if (extras.containsKey('cn.jpush.android.EXTRA') &&
+                  extras['cn.jpush.android.EXTRA'] is Map) {
+                var extraData = extras['cn.jpush.android.EXTRA'];
 
-                if (senderUsername != null && senderNickname != null) {
-                  print("跳转到与 $senderNickname 的私聊");
+                // 检查是否是聊天消息并获取senderId
+                if (extraData.containsKey('messageType') &&
+                    extraData['messageType'] == 'chat' &&
+                    extraData.containsKey('senderId')) {
+                  String senderId = extraData['senderId'].toString();
+                  print("检测到聊天通知，发送者ID: $senderId");
 
-                  // 使用 NavigatorKey 导航到聊天界面
-                  final currentContext = MyApp.NavigatorKey.currentContext;
-                  if (currentContext != null) {
-                    // 查看当前是否已经在聊天界面
-                    final currentRoute = ModalRoute.of(currentContext);
-                    final isInChatScreen =
-                        currentRoute?.settings.name == '/chat' ||
-                        currentRoute?.settings.arguments is ChatScreen;
+                  // 通过senderId获取用户信息
+                  Map<String, dynamic> userInfoResponse = await userService
+                      .getsomeUserinfo(senderId);
 
-                    if (isInChatScreen) {
-                      // TODO: 如果已经在聊天界面，可以尝试找到ChatScreen实例并调用其方法切换聊天对象
-                      // 这需要聊天页面提供相应的方法。为简单起见，这里仍然创建新页面
-                      print("已经在聊天界面，创建新页面");
+                  if (userInfoResponse.containsKey('data') &&
+                      userInfoResponse['data'] != null) {
+                    var userData = userInfoResponse['data'];
+                    print("获取到用户信息: $userData");
+
+                    // 导航到私聊界面
+                    // 使用MyApp中定义的NavigatorKey
+                    if (MyApp.NavigatorKey.currentContext != null) {
+                      Navigator.push(
+                        MyApp.NavigatorKey.currentContext!,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  PrivtsChatScreen(character: userData),
+                        ),
+                      );
+                    } else {
+                      print("无法获取当前上下文，无法导航到私聊界面");
                     }
-
-                    MyApp.NavigatorKey.currentState?.push(
-                      MaterialPageRoute(
-                        settings: RouteSettings(name: '/chat'),
-                        builder:
-                            (context) => ChatScreen(
-                              // initialChatUsername: senderUsername,
-                              // initialChatName: senderNickname,
-                              // initialChatAvatar: senderAvatar ?? '',
-                              // initialChatBio: senderBio ?? '',
-                            ),
-                      ),
-                    );
+                  } else {
+                    print("获取用户信息失败: $userInfoResponse");
                   }
-                  return;
-                }
-              }
-              // 如果是文章通知
-              else if (notificationType == 'article') {
-                var articleId = extras['articleId'] as String?;
-
-                if (articleId != null) {
-                  // 使用 NavigatorKey 导航到文章详情
-                  MyApp.NavigatorKey.currentState?.push(
-                    MaterialPageRoute(
-                      builder: (context) => Articledetail(articleData: null),
-                    ),
-                  );
-                  return;
                 }
               }
             }
-
-            // 默认跳转(如果没有匹配到特定类型或信息不完整)
-            MyApp.NavigatorKey.currentState?.push(
-              MaterialPageRoute(
-                builder: (context) => Articledetail(articleData: null),
-              ),
-            );
           } catch (e) {
-            print("处理推送通知跳转出错: $e");
-            // 发生错误时使用默认跳转
-            MyApp.NavigatorKey.currentState?.push(
-              MaterialPageRoute(
-                builder: (context) => Articledetail(articleData: null),
-              ),
-            );
+            print("处理点击通知出错: $e");
           }
         },
         onReceiveMessage: (Map<String, dynamic> message) async {
