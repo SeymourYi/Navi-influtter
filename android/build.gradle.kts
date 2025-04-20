@@ -3,7 +3,7 @@ buildscript {
         google()
         mavenCentral()
         maven { url = uri("https://maven.google.com") }
-      
+        maven { url = uri("https://developer.huawei.com/repo/") }
     }
     
     dependencies {
@@ -18,7 +18,7 @@ allprojects {
         google()
         mavenCentral()
         maven { url = uri("https://maven.google.com") }
-      
+        maven { url = uri("https://developer.huawei.com/repo/") }
     }
 }
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
