@@ -629,16 +629,20 @@ class _ArticleState extends State<Article> {
                                   ),
                                 );
                               },
-                              child: _buildActionButton(
-                                icon:
-                                    widget.articleData['commentcount'] !=
-                                                null &&
-                                            widget.articleData['commentcount'] >
-                                                0
-                                        ? "lib/assets/icons/chatbubble-ellipses.svg"
-                                        : "lib/assets/icons/chatbubble-ellipses-outline.svg",
-                                count: widget.articleData['commentcount'],
-                                color: Color.fromRGBO(29, 161, 242, 1.0),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: _buildActionButton(
+                                  icon:
+                                      widget.articleData['commentcount'] !=
+                                                  null &&
+                                              widget.articleData['commentcount'] >
+                                                  0
+                                          ? "lib/assets/icons/chatbubble-ellipses.svg"
+                                          : "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                                  count: widget.articleData['commentcount'],
+                                  color: Color.fromRGBO(29, 161, 242, 1.0),
+                                ),
                               ),
                             ),
 
@@ -656,21 +660,29 @@ class _ArticleState extends State<Article> {
                                   ),
                                 );
                               },
-                              child: _buildActionButton(
-                                icon: "lib/assets/icons/repeat-outline.svg",
-                                count: widget.articleData['repeatcount'],
-                                color: Color.fromRGBO(23, 191, 99, 1.0),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: _buildActionButton(
+                                  icon: "lib/assets/icons/repeat-outline.svg",
+                                  count: widget.articleData['repeatcount'],
+                                  color: Color.fromRGBO(23, 191, 99, 1.0),
+                                ),
                               ),
                             ),
 
                             // 点赞按钮
                             InkWell(
                               onTap: _handleLike,
-                              child: _buildLikeButton(),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: _buildLikeButton(),
+                              ),
                             ),
 
                             // 空白占位，保持按钮分布均匀
-                            SizedBox(width: 16),
+                            SizedBox(width: 8),
                           ],
                         ),
                       ),

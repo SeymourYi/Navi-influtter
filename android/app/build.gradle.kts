@@ -18,6 +18,11 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+    repositories {
+        flatDir {
+            dirs("libs")
+        }
+    }
 
     signingConfigs {
         create("release") {
@@ -47,7 +52,7 @@ android {
         manifestPlaceholders["JPUSH_PKGNAME"] = "com.Navi"
         manifestPlaceholders["JPUSH_APPKEY"] = "8b8a7faafb8dbceffabf0bdb" // NOTE: JPush 上注册的包名对应的 Appkey.
         manifestPlaceholders["JPUSH_CHANNEL"] = "Navi" //暂时填写默认值即可.
-        manifestPlaceholders["XIAOMI_APPID"] = "2882303761520401700" //小米的APPID
+        manifestPlaceholders["XIAOMI_APPID"] = "2882303761520372137" //小米的APPID
         manifestPlaceholders["XIAOMI_APPKEY"] = "5482037264137" //小米的APPKEY
     }
 
@@ -62,9 +67,10 @@ android {
 dependencies {
     // 极光推送核心SDK
     implementation("cn.jiguang.sdk:jpush:5.6.0")
-    
+    // 小米推送SDK，使用正确的Kotlin DSL语法
+    implementation(files("libs/MiPush_SDK_Client_6_0_1-C_3rd.aar"))
     // 小米厂商通道
-    implementation("cn.jiguang.sdk.plugin:xiaomi:5.6.0")
+    // implementation("cn.jiguang.sdk.plugin:xiaomi:5.6.0")
 }
 
 flutter {

@@ -21,6 +21,22 @@ import 'package:flutter/services.dart';
 import 'package:Navi/api/userAPI.dart'; // 添加UserService的导入
 import 'package:Navi/page/chat/screen/privtschatcreen.dart'; // 添加PrivtsChatScreen的导入
 
+// 添加生命周期事件处理类
+class LifecycleEventHandler extends WidgetsBindingObserver {
+  final AsyncCallback? resumeCallBack;
+
+  LifecycleEventHandler({this.resumeCallBack});
+
+  @override
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      if (resumeCallBack != null) {
+        await resumeCallBack!();
+      }
+    }
+  }
+}
+
 void main(List<String> args) async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,116 +77,11 @@ class _MyAppState extends State<MyApp> {
   final JPush jpush = JPush(); // 添加 JPush 实例
   final Myjpush myJPush = Myjpush(); // 创建自定义JPush工具类实例
 
-  // 添加一个变量存储可能从通知打开应用时的初始消息数据
-  Map<String, dynamic>? initialMessage;
-
   @override
   void initState() {
     super.initState();
     _checkToken();
-    _initPushNotification();
-  }
-
-  // 初始化推送通知并处理应用从被杀死状态启动的情况
-  Future<void> _initPushNotification() async {
-    // 设置监听器处理从被杀死状态启动的情况
-    jpush.addEventHandler(
-      onReceiveNotification: (Map<String, dynamic> message) async {
-        print("收到通知 (前台): $message");
-      },
-      onOpenNotification: (Map<String, dynamic> message) async {
-        print("点击通知 (前台/后台): $message");
-        _processNotificationMessage(message);
-      },
-      // 接收从原生Android端传入的自定义消息
-      onReceiveMessage: (Map<String, dynamic> message) async {
-        print("收到自定义消息: $message");
-      },
-      // 检查应用启动参数，查看是否是通过通知启动的应用
-      onReceiveNotificationAuthorization: (Map<String, dynamic> message) async {
-        print("通知授权状态: $message");
-      },
-    );
-
-    // 获取初始消息（从被杀死状态通过通知打开应用时）
-    try {
-      jpush.getRegistrationID().then((rid) {
-        print("应用启动, RegistrationID: $rid");
-      });
-
-      // 尝试获取初始通知数据
-      final dynamic launchDetails = await jpush.getLaunchAppNotification();
-      if (launchDetails != null && launchDetails is Map<String, dynamic>) {
-        print("应用从通知启动，启动数据: $launchDetails");
-        initialMessage = launchDetails;
-
-        // 处理从通知打开的情况 (应用被杀死的情况)
-        // 延迟处理以确保应用已完全初始化
-        Future.delayed(Duration(seconds: 1), () {
-          _processNotificationMessage(initialMessage!);
-        });
-      }
-    } catch (e) {
-      print("获取启动通知数据错误: $e");
-    }
-  }
-
-  // 统一处理通知消息
-  void _processNotificationMessage(Map<String, dynamic> message) {
-    // 检查是否有附加数据
-    try {
-      if (message.containsKey('extras') && message['extras'] is Map) {
-        var extras = message['extras'];
-
-        // 尝试解析通知类型
-        if (extras.containsKey('cn.jpush.android.EXTRA') &&
-            extras['cn.jpush.android.EXTRA'] is Map) {
-          var extraData = extras['cn.jpush.android.EXTRA'];
-
-          // 根据通知类型导航到不同页面
-          if (extraData.containsKey('messageType')) {
-            String messageType = extraData['messageType'].toString();
-
-            // 聊天消息类型的通知
-            if (messageType == 'chat' && extraData.containsKey('senderId')) {
-              String senderId = extraData['senderId'].toString();
-              print("处理聊天通知, 发送者ID: $senderId");
-
-              // 导航到聊天页面
-              // 先获取发送者信息，然后导航
-              SharedPrefsUtils.isLoggedIn().then((isLoggedIn) {
-                if (isLoggedIn) {
-                  // 这里应该获取用户信息并导航到聊天页面
-                  // 示例仅做参考，实际应根据你的应用逻辑调整
-                  UserService userService = UserService();
-                  userService.getsomeUserinfo(senderId).then((
-                    userInfoResponse,
-                  ) {
-                    if (userInfoResponse.containsKey('data') &&
-                        userInfoResponse['data'] != null) {
-                      var userData = userInfoResponse['data'];
-                      if (MyApp.NavigatorKey.currentState != null) {
-                        MyApp.NavigatorKey.currentState!.push(
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    PrivtsChatScreen(character: userData),
-                          ),
-                        );
-                      }
-                    }
-                  });
-                }
-              });
-            }
-
-            // 其他类型的通知可以在这里扩展处理
-          }
-        }
-      }
-    } catch (e) {
-      print("处理通知消息出错: $e");
-    }
+    _setupNotificationDetection();
   }
 
   Future<void> _checkToken() async {
@@ -196,6 +107,33 @@ class _MyAppState extends State<MyApp> {
         });
       }
     });
+  }
+
+  // 设置通知检测，用于捕获从JNotifyActivity启动的情况
+  void _setupNotificationDetection() {
+    // 监听应用生命周期变化
+    WidgetsBinding.instance.addObserver(
+      LifecycleEventHandler(
+        resumeCallBack: () async {
+          print("应用恢复到前台，检查是否从通知启动");
+          // 当应用从后台恢复到前台时，检查是否是通过通知启动的
+          // 用户点击通知后可能会导致应用从后台恢复
+          try {
+            // 这里直接调用myJPush中的方法获取最新通知
+            final notificationData = await jpush.getLaunchAppNotification();
+            if (notificationData != null) {
+              print("检测到从通知恢复应用，通知数据: $notificationData");
+              if (notificationData is Map<String, dynamic>) {
+                // 交由MyJPush类处理
+                await myJPush.processNotificationMessage(notificationData);
+              }
+            }
+          } catch (e) {
+            print("应用恢复检查通知错误: $e");
+          }
+        },
+      ),
+    );
   }
 
   @override

@@ -4,10 +4,14 @@ import 'package:Navi/components/CommentWidget%20.dart';
 import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/page/Home/articlelist.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/page/post/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'articleimage.dart';
 import '../components/userinfo.dart';
+import '../Store/storeutils.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class Articledetail extends StatefulWidget {
   const Articledetail({super.key, this.articleData});
@@ -20,10 +24,49 @@ class Articledetail extends StatefulWidget {
 class _ArticledetailState extends State<Articledetail> {
   ArticleService service = ArticleService();
   List<dynamic> articleComments = [];
+  bool isLiked = false;
+  int likeCount = 0;
+  String username = ''; // 存储当前用户名
+  bool isLikeLoading = false; // 点赞加载状态
+  bool isRepostLoading = false; // 转发加载状态
+  Map<String, dynamic>? _currentUser; // 当前用户信息
+  TextEditingController _repostController = TextEditingController(); // 转发内容控制器
+  final ImagePicker _picker = ImagePicker(); // 图片选择器实例
+  String? _selectedImagePath; // 选择的图片路径
+
   @override
   void initState() {
     super.initState();
     getarticleComments();
+
+    // 初始化点赞状态
+    if (widget.articleData != null) {
+      isLiked = widget.articleData['islike'] ?? false;
+      likeCount = widget.articleData['likecont'] ?? 0;
+    }
+    // 获取当前用户信息
+    _loadCurrentUserInfo();
+  }
+
+  @override
+  void dispose() {
+    _repostController.dispose();
+    super.dispose();
+  }
+
+  // 加载当前用户信息
+  Future<void> _loadCurrentUserInfo() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo != null && userInfo['username'] != null) {
+        setState(() {
+          username = userInfo['username'];
+          _currentUser = userInfo;
+        });
+      }
+    } catch (e) {
+      print('加载用户信息失败: $e');
+    }
   }
 
   void getarticleComments() async {
@@ -33,6 +76,209 @@ class _ArticledetailState extends State<Articledetail> {
     setState(() {
       articleComments = result['data'];
     });
+  }
+
+  // 处理点赞操作
+  void _handleLike() async {
+    // 如果用户名为空或点赞请求正在处理中，则不执行操作
+    if (username.isEmpty || isLikeLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(username.isEmpty ? '请先登录后再点赞' : '正在处理，请稍候...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // 检查文章ID是否存在
+    if (widget.articleData == null || widget.articleData['id'] == null) {
+      return;
+    }
+
+    // 先在UI上直接反映点赞状态变化，提高响应速度
+    bool newLikedState = !isLiked;
+    int newLikeCount = newLikedState ? likeCount + 1 : likeCount - 1;
+
+    // 在UI上立即应用变更
+    setState(() {
+      isLiked = newLikedState;
+      likeCount = newLikeCount;
+      isLikeLoading = true;
+    });
+
+    try {
+      // 使用API调用
+      GetArticleInfoService service = GetArticleInfoService();
+
+      var result = await service.likesomearticle(
+        username,
+        widget.articleData['id'].toString(),
+      );
+
+      // 处理API响应
+      if (result != null && result['code'] == 0) {
+        // 更新原始数据，保证UI一致性
+        if (widget.articleData != null) {
+          widget.articleData['islike'] = isLiked;
+          widget.articleData['likecont'] = likeCount;
+        }
+      } else {
+        // API失败，回滚状态
+        setState(() {
+          isLiked = !newLikedState;
+          likeCount = isLiked ? likeCount + 1 : likeCount - 1;
+        });
+
+        // 显示错误信息
+        String errorMsg = '操作失败';
+        if (result != null) {
+          errorMsg += ': ${result['msg'] ?? result['message'] ?? '未知错误'}';
+        } else {
+          errorMsg += ': 服务器无响应';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg), duration: Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      // 处理异常，回滚状态
+      setState(() {
+        isLiked = !newLikedState;
+        likeCount = isLiked ? likeCount + 1 : likeCount - 1;
+      });
+
+      // 提取错误信息
+      String errorMessage = e.toString();
+      if (errorMessage.length > 100) {
+        errorMessage = '${errorMessage.substring(0, 97)}...';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('点赞失败: $errorMessage'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      // 重置加载状态
+      setState(() {
+        isLikeLoading = false;
+      });
+    }
+  }
+
+  // 处理转发/引用帖子
+  void _handleRepost() {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 使用PostPage页面进行转发，与article.dart中完全一致
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => PostPage(type: '转发', articelData: widget.articleData),
+      ),
+    );
+  }
+
+  // 选择图片方法
+  Future<void> _pickRepostImage(StateSetter setState) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImagePath = image.path;
+        });
+      }
+    } catch (e) {
+      print('图片选择失败: $e');
+    }
+  }
+
+  // 提交转发
+  Future<void> _submitRepost(BuildContext context) async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再转发'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 检查文章ID是否存在
+    if (widget.articleData == null || widget.articleData['id'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('无效的文章'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    setState(() {
+      isRepostLoading = true;
+    });
+
+    try {
+      GetArticleInfoService service = GetArticleInfoService();
+
+      var result = await service.addReapetArticle(
+        beShareArticleId: widget.articleData['id'].toString(),
+        content: _repostController.text,
+        createUserId: _currentUser!['id'],
+        createUserName: _currentUser!['username'],
+        imagePath: _selectedImagePath,
+      );
+
+      setState(() {
+        isRepostLoading = false;
+        _repostController.clear();
+        _selectedImagePath = null;
+      });
+
+      // 关闭底部表单
+      Navigator.pop(context);
+
+      // 显示成功信息
+      if (result != null && result['code'] == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('转发成功!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        String errorMsg = result != null ? result['msg'] ?? '转发失败' : '转发失败';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        isRepostLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('转发失败: ${e.toString()}'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _navigatetoarticledetail() {
@@ -286,7 +532,7 @@ class _ArticledetailState extends State<Articledetail> {
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  "${widget.articleData['likecont'] ?? '0'}",
+                  "${likeCount}",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -307,51 +553,115 @@ class _ArticledetailState extends State<Articledetail> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildActionButton(
-                icon: SvgPicture.asset(
-                  'lib/assets/icons/chatbubble-ellipses-outline.svg',
-                  width: 16,
-                  height: 16,
-                  color:
-                      widget.articleData['commentcount'] > 0
-                          ? Color.fromRGBO(29, 161, 242, 1.0)
-                          : Colors.grey[600],
-                ),
-                label: "评论",
+              // 评论按钮
+              InkWell(
                 onTap: () {
-                  // 评论操作
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => PostPage(
+                            type: '评论',
+                            articelData: widget.articleData,
+                          ),
+                    ),
+                  );
                 },
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'lib/assets/icons/chatbubble-ellipses-outline.svg',
+                        width: 16,
+                        height: 16,
+                        color:
+                            widget.articleData['commentcount'] > 0
+                                ? Color.fromRGBO(29, 161, 242, 1.0)
+                                : Colors.grey[600],
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        "评论",
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              _buildActionButton(
-                icon: SvgPicture.asset(
-                  'lib/assets/icons/repeat-outline.svg',
-                  width: 16,
-                  height: 16,
-                  color:
-                      widget.articleData['repeatcount'] > 0
-                          ? Color.fromRGBO(23, 191, 99, 1.0)
-                          : Colors.grey[600],
+
+              // 转发按钮
+              InkWell(
+                onTap: _handleRepost,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'lib/assets/icons/repeat-outline.svg',
+                        width: 16,
+                        height: 16,
+                        color:
+                            widget.articleData['repeatcount'] > 0
+                                ? Color.fromRGBO(23, 191, 99, 1.0)
+                                : Colors.grey[600],
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        "转发",
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
                 ),
-                label: "转发",
-                onTap: () {
-                  // 转发操作
-                },
               ),
-              _buildActionButton(
-                icon: Icon(
-                  widget.articleData['islike'] == true
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  size: 16,
-                  color:
-                      widget.articleData['islike'] == true
-                          ? Color.fromRGBO(224, 36, 94, 1.0)
-                          : Colors.grey[600],
+
+              // 喜欢按钮
+              InkWell(
+                onTap: _handleLike,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      isLikeLoading
+                          ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                const Color.fromRGBO(224, 36, 94, 1.0),
+                              ),
+                            ),
+                          )
+                          : Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            size: 16,
+                            color:
+                                isLiked
+                                    ? const Color.fromRGBO(224, 36, 94, 1.0)
+                                    : Colors.grey[600],
+                          ),
+                      SizedBox(width: 4),
+                      Text(
+                        "喜欢",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color:
+                              isLiked
+                                  ? const Color.fromRGBO(224, 36, 94, 1.0)
+                                  : Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                label: "喜欢",
-                onTap: () {
-                  // 喜欢操作
-                },
               ),
             ],
           ),
@@ -378,30 +688,6 @@ class _ArticledetailState extends State<Articledetail> {
               ],
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required Widget icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-            ),
-          ],
-        ),
       ),
     );
   }
