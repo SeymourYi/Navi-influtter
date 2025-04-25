@@ -8,6 +8,7 @@ import 'package:Navi/page/login/smslogin.dart';
 import 'package:Navi/page/login/user_agreement.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:giffy_dialog/giffy_dialog.dart' hide LinearGradient;
+import 'package:jverify/jverify.dart';
 import 'package:lottie/lottie.dart';
 import 'dart:io';
 import '../../api/loginAPI.dart';
@@ -43,6 +44,122 @@ class _LoginPageState extends State<LoginPage> {
 
     // 检查是否已经接受过协议
     _checkAgreementStatus();
+    _myjver();
+  }
+
+  void _myjver() {
+    Jverify jverify = Jverify();
+    jverify.setup(
+      appKey: "8b8a7faafb8dbceffabf0bdb",
+      channel: "devloper-default",
+    );
+    jverify.setDebugMode(true); // 打开调试模式
+
+    // 检查是否支持认证
+    jverify.checkVerifyEnable().then((map) {
+      bool result = map["result"];
+      if (result) {
+        // 当前网络环境支持认证
+        print("当前网络环境支持认证");
+
+        // 获取token，用于获取手机号
+        jverify.getToken().then((map) {
+          int code = map["code"]; // 返回码，2000代表获取成功
+          String token = map["content"] ?? ""; // 成功时为token
+          String operator = map["operator"] ?? ""; // 运营商信息
+
+          print("获取token结果: code=$code, operator=$operator");
+
+          if (code == 2000) {
+            // token获取成功，可以自动填充手机号
+            print("成功获取token: $token");
+
+            // 设置自定义UI
+            JVUIConfig uiConfig = JVUIConfig();
+            uiConfig.navColor = Color(0xFF6F6BCC).value;
+            uiConfig.navText = "一键登录";
+            uiConfig.navTextColor = Colors.white.value;
+
+            uiConfig.logoWidth = 80;
+            uiConfig.logoHeight = 80;
+            uiConfig.logoOffsetY = 10;
+            uiConfig.logoHidden = false;
+
+            uiConfig.numberColor = Colors.black.value;
+            uiConfig.numberSize = 18;
+
+            uiConfig.logBtnText = "本机号码一键登录";
+            uiConfig.logBtnTextColor = Colors.white.value;
+            uiConfig.logBtnTextSize = 16;
+
+            uiConfig.privacyState = true; // 设置默认勾选
+            uiConfig.privacyCheckboxSize = 20;
+
+            uiConfig.privacyText = ["登录即同意", "《隐私政策》", "和", "《用户协议》"];
+            uiConfig.privacyTextSize = 13;
+            uiConfig.clauseColor = Color(0xFF6F6BCC).value;
+
+            // 设置协议1
+            uiConfig.clauseName = "隐私政策";
+            uiConfig.clauseUrl = "https://privacy.policy.url";
+
+            // 设置协议2
+            uiConfig.clauseNameTwo = "用户协议";
+            uiConfig.clauseUrlTwo = "https://user.agreement.url";
+
+            // 添加事件监听
+            jverify.addLoginAuthCallBackListener((event) {
+              print(
+                "登录回调: code=${event.code}, message=${event.message}, operator=${event.operator}",
+              );
+
+              if (event.code == 6000) {
+                // 登录成功，获取到的token可用于服务端换取手机号
+                print("一键登录成功: ${event.message}");
+
+                // 这里可以调用接口完成登录流程
+                // 可以直接设置手机号到输入框中
+                setState(() {
+                  final message = event.message;
+                  // 安全处理null和长度问题
+                  if (message != null && message.length >= 11) {
+                    _emailController.text = message.substring(0, 11);
+                  } else {
+                    _emailController.text = message ?? "";
+                  }
+                });
+
+                // 关闭登录界面
+                jverify.dismissLoginAuthView();
+              } else {
+                // 登录失败
+                print("一键登录失败: ${event.message}");
+                // 显示错误提示
+                if (mounted) {
+                  _showErrorDialog("一键登录失败: ${event.message}");
+                }
+              }
+            });
+
+            // 显示一键登录页面
+            jverify.setCustomAuthorizationView(true, uiConfig);
+            jverify.loginAuthSyncApi(autoDismiss: true);
+          } else {
+            // token获取失败
+            print("获取token失败: ${map["content"]}");
+            if (mounted) {
+              _showErrorDialog("无法获取手机号，请手动输入");
+            }
+          }
+        });
+      } else {
+        // 当前网络环境不支持认证
+        print("当前网络环境不支持认证");
+        if (mounted) {
+          _showErrorDialog("当前网络环境不支持一键获取手机号，请手动输入");
+        }
+      }
+    });
   }
 
   // 检查协议状态并显示对话框
@@ -518,6 +635,33 @@ class _LoginPageState extends State<LoginPage> {
                   ),
 
                   SizedBox(height: 40),
+
+                  // 一键登录按钮
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: Icon(Icons.phone_android, size: 18),
+                      label: Text(
+                        "本机号码一键登录",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _myjver,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF5254e5),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 16),
 
                   // 登录按钮
                   Container(
