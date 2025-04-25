@@ -10,6 +10,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.util.Log
 import cn.jpush.android.api.BasicPushNotificationBuilder
@@ -33,13 +35,26 @@ class NaviApplication : Application() {
         // 获取RegID的辅助方法，可以在需要的地方调用
         fun getRegId(context: Context): String {
             val regId = MiPushClient.getRegId(context)
-            Log.d(TAG, "当前RegID: ${if (regId.isNullOrEmpty()) "未注册" else regId}")
+            Log.e(TAG, "【小米推送】当前RegID: ${if (regId.isNullOrEmpty()) "未注册" else regId}")
             return regId ?: ""
+        }
+        
+        // 为小米推送设置别名
+        fun setMiPushAlias(context: Context, alias: String) {
+            try {
+                Log.e(TAG, "【小米推送】正在设置别名: $alias")
+                MiPushClient.setAlias(context, alias, null)
+            } catch (e: Exception) {
+                Log.e(TAG, "【小米推送】设置别名失败: ${e.message}", e)
+            }
         }
     }
     
     override fun onCreate() {
         super.onCreate()
+        
+        // 在应用启动时立即输出明显的日志标记
+        printSeparator("应用启动")
         
         // 创建通知渠道（Android 8.0+要求）
         createNotificationChannel()
@@ -76,28 +91,109 @@ class NaviApplication : Application() {
         JPushInterface.setDefaultPushNotificationBuilder(basicBuilder)
         
         // 初始化小米推送，仅在主进程中初始化
+        printSeparator("开始初始化小米推送")
         if (shouldInit()) {
             try {
                 // 使用硬编码的正确AppID和AppKey
-                Log.d(TAG, "小米推送初始化 - AppID: $MI_APP_ID, AppKey: $MI_APP_KEY")
+                Log.e(TAG, "【小米推送】准备初始化 - AppID: $MI_APP_ID, AppKey: $MI_APP_KEY")
                 
                 // 初始化小米推送
                 MiPushClient.registerPush(this, MI_APP_ID, MI_APP_KEY)
-                Log.d(TAG, "小米推送初始化完成")
+                Log.e(TAG, "【小米推送】初始化API调用完成，等待结果...")
                 
-                // 检查是否获取到RegID
-                val regId = MiPushClient.getRegId(this)
-                Log.d(TAG, "当前RegID: ${if (regId.isNullOrEmpty()) "尚未注册" else regId}")
+                // 定时查询RegID
+                scheduleRegIdCheck()
+                
+                // 立即检查一次RegID
+                printCurrentRegId()
+                
+                // 监听极光设置的别名并同步到小米推送
+                monitorJPushAlias()
                 
             } catch (e: Exception) {
-                Log.e(TAG, "初始化小米推送失败: ${e.message}", e)
+                Log.e(TAG, "【小米推送】初始化失败: ${e.message}", e)
             }
         } else {
-            Log.d(TAG, "不是主进程，跳过小米推送初始化")
+            Log.e(TAG, "【小米推送】不是主进程，跳过初始化")
         }
         
         // 设置小米推送日志记录器，提高日志级别以便调试
         setupMiPushLogger()
+    }
+    
+    // 监听极光设置的别名并同步到小米推送
+    private fun monitorJPushAlias() {
+        // 获取当前极光推送的别名（演示，实际应该从你的系统中获取）
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
+            try {
+                // 从SharedPreferences获取极光别名，如果你有别的存储方式可以替换
+                val sharedPrefs = getSharedPreferences("JPushAlias", Context.MODE_PRIVATE)
+                val jpushAlias = sharedPrefs.getString("alias", "")
+                
+                // 如果获取到极光别名，并且不为空，则设置给小米推送
+                if (!jpushAlias.isNullOrEmpty()) {
+                    // 设置小米推送别名
+                    setMiPushAlias(this, jpushAlias)
+                    Log.e(TAG, "【推送同步】已将极光别名 '$jpushAlias' 同步设置到小米推送")
+                } else {
+                    // 尝试获取极光默认别名（这里假设极光别名可能是用户ID）
+                    val userId = "2222" // 替换为实际获取用户ID的逻辑
+                    if (!userId.isNullOrEmpty()) {
+                        // 设置小米推送别名为用户ID
+                        setMiPushAlias(this, userId)
+                        Log.e(TAG, "【推送同步】未找到极光别名，已将用户ID '$userId' 设置为小米推送别名")
+                    } else {
+                        Log.e(TAG, "【推送同步】无法获取极光别名或用户ID")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "【推送同步】同步别名时发生错误: ${e.message}", e)
+            }
+        }, 5000) // 5秒后执行，确保极光推送别名已设置
+    }
+    
+    // 定时查询RegID
+    private fun scheduleRegIdCheck() {
+        val handler = Handler(Looper.getMainLooper())
+        
+        // 5秒后查询RegID
+        handler.postDelayed({
+            printCurrentRegId()
+        }, 5000)
+        
+        // 10秒后再次查询RegID
+        handler.postDelayed({
+            printCurrentRegId()
+        }, 10000)
+        
+        // 30秒后再次查询RegID
+        handler.postDelayed({
+            printCurrentRegId()
+        }, 30000)
+    }
+    
+    // 打印当前RegID
+    private fun printCurrentRegId() {
+        try {
+            val regId = MiPushClient.getRegId(this)
+            if (!regId.isNullOrEmpty()) {
+                printSeparator("小米推送RegID")
+                Log.e(TAG, "【小米推送】RegID 获取成功：$regId")
+                printSeparator("RegID结束")
+            } else {
+                Log.e(TAG, "【小米推送】RegID 尚未获取")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "【小米推送】获取RegID异常: ${e.message}", e)
+        }
+    }
+    
+    // 打印分隔符，使日志更醒目
+    private fun printSeparator(message: String) {
+        Log.e(TAG, "===================================================")
+        Log.e(TAG, "============ $message ============")
+        Log.e(TAG, "===================================================")
     }
     
     // 检查是否是主进程，只在主进程初始化推送服务
@@ -107,16 +203,16 @@ class NaviApplication : Application() {
         val mainProcessName = applicationInfo.processName
         val myPid = Process.myPid()
         
-        Log.d(TAG, "当前进程名: $mainProcessName, PID: $myPid")
+        Log.e(TAG, "【进程检查】当前进程名: $mainProcessName, PID: $myPid")
         
         for (info in processInfos) {
             if (info.pid == myPid && mainProcessName == info.processName) {
-                Log.d(TAG, "找到主进程，将初始化小米推送")
+                Log.e(TAG, "【进程检查】找到主进程，将初始化小米推送")
                 return true
             }
         }
         
-        Log.d(TAG, "不是主进程，不初始化小米推送")
+        Log.e(TAG, "【进程检查】不是主进程，不初始化小米推送")
         return false
     }
     
@@ -148,17 +244,17 @@ class NaviApplication : Application() {
                 }
                 
                 override fun log(content: String, t: Throwable?) {
-                    Log.e(TAG, content, t) // 使用Error级别以确保日志可见
+                    Log.e(TAG, "【小米推送日志】$content", t) // 使用Error级别以确保日志可见
                 }
                 
                 override fun log(content: String) {
-                    Log.e(TAG, content) // 使用Error级别以确保日志可见
+                    Log.e(TAG, "【小米推送日志】$content") // 使用Error级别以确保日志可见
                 }
             }
             Logger.setLogger(this, logger)
-            Log.d(TAG, "小米推送日志记录器设置成功")
+            Log.e(TAG, "【小米推送】日志记录器设置成功")
         } catch (e: Exception) {
-            Log.e(TAG, "设置小米推送日志记录器失败: ${e.message}")
+            Log.e(TAG, "【小米推送】设置日志记录器失败: ${e.message}")
         }
     }
 } 

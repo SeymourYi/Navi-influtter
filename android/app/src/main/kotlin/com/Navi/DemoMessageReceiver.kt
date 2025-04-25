@@ -26,13 +26,19 @@ class DemoMessageReceiver : PushMessageReceiver() {
     private var mEndTime: String? = null
     private val handler = Handler(Looper.getMainLooper())
 
-    // 安全地在UI线程显示Toast
-    private fun showToast(context: Context, message: String) {
-        handler.post {
-            try {
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Log.e(TAG, "显示Toast失败: ${e.message}", e)
+    // 只在特定情况下显示Toast，默认只打印日志
+    private fun showToast(context: Context, message: String, showToast: Boolean = false) {
+        // 打印到控制台
+        Log.i(TAG, message)
+        
+        // 仅当需要时显示Toast
+        if (showToast) {
+            handler.post {
+                try {
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Log.e(TAG, "显示Toast失败: ${e.message}", e)
+                }
             }
         }
     }
@@ -51,7 +57,8 @@ class DemoMessageReceiver : PushMessageReceiver() {
             }
         }
         Log.d(TAG, "用户点击了通知: $mMessage")
-        showToast(context, "点击通知: $mMessage")
+        // 用户点击通知时仍然显示Toast
+        showToast(context, "点击通知: $mMessage", true)
     }
 
     override fun onNotificationMessageArrived(context: Context, message: MiPushMessage) {
@@ -68,6 +75,7 @@ class DemoMessageReceiver : PushMessageReceiver() {
             }
         }
         Log.d(TAG, "收到通知: $mMessage")
+        // 收到通知时只打印日志，不显示Toast
         showToast(context, "收到通知: $mMessage")
     }
 
@@ -81,9 +89,13 @@ class DemoMessageReceiver : PushMessageReceiver() {
             MiPushClient.COMMAND_REGISTER -> {
                 if (message.resultCode == ErrorCode.SUCCESS.toLong()) {
                     mRegId = cmdArg1
-                    Log.d(TAG, "注册成功，RegID: $mRegId")
+                    // 注册成功只打印日志，不显示Toast
+                    Log.i(TAG, "=========================================")
+                    Log.i(TAG, "小米推送注册成功，RegID: $mRegId")
+                    Log.i(TAG, "=========================================")
                     showToast(context, "小米推送注册成功，RegID: $mRegId")
                 } else {
+                    // 注册失败时仍然打印错误日志
                     Log.e(TAG, "注册失败，错误码: ${message.resultCode}")
                     showToast(context, "小米推送注册失败，错误码: ${message.resultCode}")
                 }
@@ -133,8 +145,10 @@ class DemoMessageReceiver : PushMessageReceiver() {
         if (MiPushClient.COMMAND_REGISTER == command) {
             if (message.resultCode == ErrorCode.SUCCESS.toLong()) {
                 mRegId = cmdArg1
-                Log.d(TAG, "注册成功，RegID: $mRegId")
-                // 将RegID保存起来，方便查看
+                // 注册成功只打印日志，不显示Toast
+                Log.i(TAG, "**************************************")
+                Log.i(TAG, "小米推送注册成功，RegID: $mRegId")
+                Log.i(TAG, "**************************************")
                 showToast(context, "小米推送注册成功，RegID: $mRegId")
             } else {
                 Log.e(TAG, "注册失败，错误码: ${message.resultCode}, 原因: ${message.reason}")
