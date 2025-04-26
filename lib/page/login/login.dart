@@ -1,3 +1,4 @@
+import 'package:Navi/api/smsloginAPI.dart';
 import 'package:Navi/page/Home/home.dart';
 import 'package:Navi/page/login/smslogin.dart';
 import 'package:Navi/page/login/smsregister.dart';
@@ -27,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final SmsLoginService smsLoginService = SmsLoginService();
   bool _isLoading = false;
   bool _agreementAccepted = false;
   List<dynamic> articleList = [];
@@ -123,13 +125,28 @@ class _LoginPageState extends State<LoginPage> {
                     final response = await loginService.verifyJVerifyToken(
                       loginToken,
                     );
+                    print("2222222222222222222222233333333333333");
+                    print(response);
+                    print("2222222222222222222222233333333333333");
+                    if (response['code'] == 8000) {
+                      print("1111111111111111111111111111111111111");
+                      print(response['phone']);
+                      var number = await loginService.decryptToken(
+                        response['phone'],
+                      );
 
-                    if (response['code'] == 0 && response['data'] != null) {
+                      var smslogin = await smsLoginService.smsLogin(
+                        number['data'],
+                      );
                       // 服务端验证成功并返回了JWT token
-                      final jwtToken = response['data'].toString();
+                      print(smslogin);
+                      print(
+                        "ddddddddddddddddddd33333333333333333333333333dddddddddddddddddddddd",
+                      );
+                      final Token = smslogin['data'].toString();
 
                       // 保存JWT token
-                      await SharedPrefsUtils.saveToken(jwtToken);
+                      await SharedPrefsUtils.saveToken(Token);
 
                       // 重新初始化 HttpClient 以使用新token
                       await HttpClient.init();

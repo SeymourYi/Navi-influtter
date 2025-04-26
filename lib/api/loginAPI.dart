@@ -19,7 +19,6 @@ class LoginService {
     try {
       // 1. 正确构建认证信息
       final appKey = '8b8a7faafb8dbceffabf0bdb'; // 你的AppKey
-      // 尝试使用API DevSecret替代Master Secret
       final masterSecret = 'cbd5388077b22bdadde5e9fd'; // API DevSecret
 
       // 2. Base64编码认证信息
@@ -77,5 +76,13 @@ class LoginService {
       print('调用极光API出错: $e');
       throw Exception('极光一键登录验证失败: $e');
     }
+  }
+
+  // 解密返回的token
+  Future<Map<String, dynamic>> decryptToken(String token) async {
+    var response = await HttpClient.dio.post(
+      "/user/decryptUserNumberToken?token=${token}",
+    );
+    return response.data;
   }
 }
