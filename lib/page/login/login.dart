@@ -44,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
 
     // 检查是否已经接受过协议
     _checkAgreementStatus();
-    _myjver();
   }
 
   void _myjver() {
@@ -116,28 +115,85 @@ class _LoginPageState extends State<LoginPage> {
               if (event.code == 6000) {
                 // 登录成功，获取到的token可用于服务端换取手机号
                 print("一键登录成功: ${event.message}");
+                final loginToken = event.message.toString();
+                void _loginWithJverifyToken() async {
+                  try {
+                    // 调用服务端接口验证极光token
+                    final loginService = LoginService();
+                    final response = await loginService.verifyJVerifyToken(
+                      loginToken,
+                    );
 
-                // 这里可以调用接口完成登录流程
-                // 可以直接设置手机号到输入框中
-                setState(() {
-                  final message = event.message;
-                  // 安全处理null和长度问题
-                  if (message != null && message.length >= 11) {
-                    _emailController.text = message.substring(0, 11);
-                  } else {
-                    _emailController.text = message ?? "";
+                    if (response['code'] == 0 && response['data'] != null) {
+                      // 服务端验证成功并返回了JWT token
+                      final jwtToken = response['data'].toString();
+
+                      // 保存JWT token
+                      await SharedPrefsUtils.saveToken(jwtToken);
+
+                      // 重新初始化 HttpClient 以使用新token
+                      await HttpClient.init();
+
+                      // 获取用户信息
+                      final userService = UserService();
+                      final userInfoResponse = await userService.getUserinfo();
+
+                      if (userInfoResponse['code'] == 0 &&
+                          userInfoResponse['data'] != null) {
+                        // 保存用户信息
+                        await SharedPrefsUtils.saveUserInfo(
+                          userInfoResponse['data'],
+                        );
+
+                        // 设置登录状态
+                        await SharedPrefsUtils.setBool('is_logged_in', true);
+
+                        if (!mounted) return;
+
+                        // 显示成功提示
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('登录成功'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+
+                        // 导航到主页
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MyHome(),
+                            ),
+                          );
+                        }
+                      } else {
+                        throw Exception(userInfoResponse['msg'] ?? '获取用户信息失败');
+                      }
+                    } else {
+                      throw Exception(response['msg'] ?? '极光认证失败');
+                    }
+                  } catch (e) {
+                    print('极光一键登录错误: $e'); // 调试日志
+                    // 清理可能保存的token
+                    await SharedPrefsUtils.clearToken();
+                    if (mounted) {
+                      _showErrorDialog(
+                        e.toString().contains('Exception:')
+                            ? e.toString().split('Exception: ')[1]
+                            : '网络错误，请检查网络连接',
+                      );
+                    }
                   }
-                });
+                }
 
-                // 关闭登录界面
+                _loginWithJverifyToken();
                 jverify.dismissLoginAuthView();
               } else {
                 // 登录失败
                 print("一键登录失败: ${event.message}");
                 // 显示错误提示
-                if (mounted) {
-                  _showErrorDialog("一键登录失败: ${event.message}");
-                }
+                if (mounted) {}
               }
             });
 

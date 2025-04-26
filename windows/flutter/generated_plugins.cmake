@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
+  fast_rsa
   file_selector_windows
   permission_handler_windows
   rive_common
