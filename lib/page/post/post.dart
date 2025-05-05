@@ -45,6 +45,8 @@ class _PostPageState extends State<PostPage> {
   String? _selectedTag;
   // 选择的图片
   File? _selectedImage;
+  // 图片列表，用于支持多张图片
+  List<File> _selectedImages = [];
   // 标签列表
   List<String> _tags = [];
 
@@ -84,7 +86,15 @@ class _PostPageState extends State<PostPage> {
 
     if (pickedImage != null) {
       setState(() {
-        _selectedImage = pickedImage;
+        // 如果图片数量小于9张，则添加
+        if (_selectedImages.length < 9) {
+          _selectedImages.add(pickedImage);
+        } else {
+          // 如果已经有9张图片，显示提示
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('最多只能选择9张图片')));
+        }
       });
 
       // 打印图片路径
@@ -136,7 +146,7 @@ class _PostPageState extends State<PostPage> {
             child: ElevatedButton(
               // 当有内容时才能点击发布
               onPressed:
-                  (_characterCount > 0 || _selectedImage != null) &&
+                  (_characterCount > 0 || _selectedImages.isNotEmpty) &&
                           !_isLoading &&
                           _selectedTag != null
                       ? _handlePost
@@ -144,7 +154,7 @@ class _PostPageState extends State<PostPage> {
               style: ElevatedButton.styleFrom(
                 // 根据是否有内容设置不同的按钮颜色
                 backgroundColor:
-                    (_characterCount > 0 || _selectedImage != null)
+                    (_characterCount > 0 || _selectedImages.isNotEmpty)
                         ? Colors.blue
                         : Colors.grey.shade400,
                 shape: RoundedRectangleBorder(
@@ -188,6 +198,7 @@ class _PostPageState extends State<PostPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildCharCounter(),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -203,21 +214,21 @@ class _PostPageState extends State<PostPage> {
                     maxLength: _maxCharacters, // 最大字符限制
                     decoration: const InputDecoration(
                       hintText: '想记下点什么？',
-                      hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                       border: InputBorder.none,
                       counterText: '', // 隐藏默认的字符计数器
                       contentPadding: EdgeInsets.zero,
                     ),
-                    style: const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 16),
                     // 监听文本变化，更新字符计数
                     onChanged: (text) {
                       setState(() => _characterCount = text.length);
                     },
                   ),
                 ),
-                if (_selectedImage != null) ...[
+                if (_selectedImages.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  _buildImagePreview(),
+                  _buildImagesGrid(),
                 ],
                 const SizedBox(height: 16),
                 _buildActionButtons(),
@@ -227,8 +238,8 @@ class _PostPageState extends State<PostPage> {
                 // 添加足够的底部空间，防止内容被遮挡
                 if (widget.type != "发布")
                   PostLitArticle(articleData: widget.articelData),
+
                 // SizedBox(height: MediaQuery.of(context).size.height * 0.4),
-                _buildCharCounter(),
               ],
             ),
           ),
@@ -279,11 +290,11 @@ class _PostPageState extends State<PostPage> {
                         _selectedTag != null
                             ? const Color.fromRGBO(111, 107, 204, 1)
                             : Colors.black87,
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight:
                         _selectedTag != null
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                            ? FontWeight.w500
+                            : FontWeight.w500,
                   ),
                 ),
               ),
@@ -337,8 +348,6 @@ class _PostPageState extends State<PostPage> {
 
   /// 构建操作按钮
   Widget _buildActionButtons() {
-    // 如果已经选择图片了就不显示此按钮
-    if (_selectedImage != null) return const SizedBox.shrink();
     return Container(
       margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.02),
       child: Row(
@@ -357,8 +366,8 @@ class _PostPageState extends State<PostPage> {
                 color: Colors.white,
                 size: 28,
               ),
-              onPressed: _pickImage,
-              tooltip: '添加图片',
+              onPressed: _selectedImages.length < 9 ? _pickImage : null,
+              tooltip: '添加图片 (${_selectedImages.length}/9)',
             ),
           ),
         ],
@@ -366,17 +375,32 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
-  /// 构建图片预览
-  Widget _buildImagePreview() {
+  /// 构建图片网格显示
+  Widget _buildImagesGrid() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 30),
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          image: FileImage(_selectedImage!),
-          fit: BoxFit.cover,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
         ),
+        itemCount: _selectedImages.length,
+        itemBuilder: (context, index) {
+          return _buildImageTile(_selectedImages[index], index);
+        },
+      ),
+    );
+  }
+
+  /// 构建单个图片瓦片
+  Widget _buildImageTile(File image, int index) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        image: DecorationImage(image: FileImage(image), fit: BoxFit.cover),
       ),
       child: Stack(
         children: [
@@ -384,8 +408,8 @@ class _PostPageState extends State<PostPage> {
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: _showFullScreenImage,
-              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showFullScreenImage(index),
+              borderRadius: BorderRadius.circular(8),
               child: Container(width: double.infinity, height: double.infinity),
             ),
           ),
@@ -396,52 +420,21 @@ class _PostPageState extends State<PostPage> {
             child: GestureDetector(
               onTap: () {
                 setState(() {
-                  _selectedImage = null;
+                  _selectedImages.removeAt(index);
                 });
               },
               child: Container(
-                margin: const EdgeInsets.all(8),
-                padding: const EdgeInsets.all(6),
+                margin: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // 显示全屏图片预览
-  void _showFullScreenImage() {
-    if (_selectedImage == null) return;
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder:
-            (context) => Scaffold(
-              backgroundColor: Colors.black,
-              appBar: AppBar(
-                backgroundColor: Colors.black,
-                iconTheme: const IconThemeData(color: Colors.white),
-                title: const Text(
-                  '图片预览',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              body: Center(
-                child: InteractiveViewer(
-                  panEnabled: true,
-                  boundaryMargin: const EdgeInsets.all(20),
-                  minScale: 0.5,
-                  maxScale: 4,
-                  child: Image.file(_selectedImage!, fit: BoxFit.contain),
-                ),
-              ),
-            ),
       ),
     );
   }
@@ -452,27 +445,67 @@ class _PostPageState extends State<PostPage> {
     final remainingChars = _maxCharacters - _characterCount;
     final isNearLimit = remainingChars <= 20;
 
+    // 获取当前时间
+    final now = DateTime.now();
+    final month = now.month;
+    final day = now.day;
+    final hour = now.hour;
+    final minute = now.minute;
+
+    // 确定时间段
+    String period;
+    if (hour >= 5 && hour < 12) {
+      period = "上午";
+    } else if (hour >= 12 && hour < 18) {
+      period = "下午";
+    } else if (hour >= 18 && hour < 22) {
+      period = "晚上";
+    } else {
+      period = "凌晨";
+    }
+
+    // 格式化时间，确保分钟为两位数
+    final minuteStr = minute < 10 ? "0$minute" : minute.toString();
+    final timeString = "$month月$day日 $period$hour:$minuteStr";
+
     return Container(
-      margin: const EdgeInsets.only(left: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            '$_characterCount/$_maxCharacters',
+            timeString,
             style: TextStyle(
-              color: isNearLimit ? Colors.red : Colors.grey,
+              color: Colors.grey.shade600,
               fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          if (isNearLimit) ...[
-            const SizedBox(width: 8),
-            CircularProgressIndicator(
-              value: _characterCount / _maxCharacters,
-              strokeWidth: 2,
-              color: remainingChars <= 0 ? Colors.red : Colors.orange,
-              backgroundColor: Colors.grey.shade200,
-            ),
-          ],
+          Row(
+            children: [
+              Text(
+                "$_characterCount字",
+                style: TextStyle(
+                  color: isNearLimit ? Colors.red : Colors.grey.shade600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (isNearLimit) ...[
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    value: _characterCount / _maxCharacters,
+                    strokeWidth: 2,
+                    color: remainingChars <= 0 ? Colors.red : Colors.orange,
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -524,7 +557,7 @@ class _PostPageState extends State<PostPage> {
           articleId: articleId,
           categoryId: categoryId,
           becommentarticleId: articleId,
-          imageFile: _selectedImage, // 传递选择的图片文件
+          imageFiles: _selectedImages, // 传递选择的图片文件列表
         );
       } else if (widget.type == '转发') {
         // 确保文章数据中的 ID 是整数类型
@@ -538,16 +571,23 @@ class _PostPageState extends State<PostPage> {
           userId: _userInfo!['id'],
           username: _userInfo!['username'],
           categoryId: categoryId,
-          imageFile: _selectedImage, // 传递选择的图片文件
+          imageFiles: _selectedImages, // 传递选择的图片文件列表
         );
       } else {
-        await _postService.postArticle(
-          content: content,
-          userId: _userInfo!['id'],
-          username: _userInfo!['username'],
-          categoryId: categoryId,
-          imageFile: _selectedImage, // 传递选择的图片文件
-        );
+        print("发布文章");
+        print(content);
+        print(_userInfo!['id']);
+        print(_userInfo!['username']);
+        print(categoryId);
+        print(_selectedImages);
+        print("发布文章");
+        // await _postService.postArticle(
+        //   content: content,
+        //   userId: _userInfo!['id'],
+        //   username: _userInfo!['username'],
+        //   categoryId: categoryId,
+        //   imageFiles: _selectedImages, // 传递选择的图片文件列表
+        // );
       }
 
       // 发布成功后返回上一页
@@ -575,5 +615,50 @@ class _PostPageState extends State<PostPage> {
         });
       }
     }
+  }
+
+  // 显示全屏图片预览
+  void _showFullScreenImage([int index = 0]) {
+    if (_selectedImages.isEmpty) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                iconTheme: const IconThemeData(color: Colors.white),
+                title: Text(
+                  '图片预览 ${index + 1}/${_selectedImages.length}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              body: PageView.builder(
+                controller: PageController(initialPage: index),
+                itemCount: _selectedImages.length,
+                itemBuilder: (context, pageIndex) {
+                  return Center(
+                    child: InteractiveViewer(
+                      panEnabled: true,
+                      boundaryMargin: const EdgeInsets.all(20),
+                      minScale: 0.5,
+                      maxScale: 4,
+                      child: Image.file(
+                        _selectedImages[pageIndex],
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+      ),
+    );
+  }
+
+  /// 构建图片预览 (弃用)
+  Widget _buildImagePreview() {
+    return const SizedBox.shrink();
   }
 }

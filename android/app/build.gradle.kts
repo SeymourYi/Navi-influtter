@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.Navi"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
     
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -60,6 +60,7 @@ android {
         release {
             // 使用我们定义的签名配置，而不是debug签名
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
 }
@@ -71,6 +72,13 @@ dependencies {
     implementation(files("libs/MiPush_SDK_Client_6_0_1-C_3rd.aar"))
     // 小米厂商通道
     // implementation("cn.jiguang.sdk.plugin:xiaomi:5.6.0")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    implementation("org.bouncycastle:bcpkix-jdk15on:1.70")
+    implementation("org.bouncycastle:bcutil-jdk15on:1.70")
+    
+    // 添加Play Core依赖
+    implementation("com.google.android.play:core:1.10.3")
+    implementation("com.google.android.play:core-ktx:1.8.1")
 }
 
 flutter {

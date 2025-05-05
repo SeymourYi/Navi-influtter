@@ -42,8 +42,6 @@ class _UseSelectScreenState extends State<UseSelectScreen>
             padding: const EdgeInsets.symmetric(vertical: 6),
             itemBuilder: (context, index) {
               final character = _friends[index];
-              print(character);
-              print("CVVASFASFASFASDASAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
               final List<Color> colorOptions = [
                 redColor,
                 greenColor,

@@ -674,8 +674,7 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   Future<void> _loadUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
-      print(userInfo);
-      print("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+
       Myjpush().initPlatformState(userInfo!['username']);
       setState(() {
         _userInfo = userInfo;

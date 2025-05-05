@@ -60,9 +60,7 @@ class _ArticleState extends State<Article> {
           _currentUser = userInfo;
         });
       }
-    } catch (e) {
-      print('加载用户信息失败: $e');
-    }
+    } catch (e) {}
   }
 
   // 处理点赞操作
@@ -390,9 +388,7 @@ class _ArticleState extends State<Article> {
           _selectedImagePath = image.path;
         });
       }
-    } catch (e) {
-      print('图片选择失败: $e');
-    }
+    } catch (e) {}
   }
 
   // 提交转发

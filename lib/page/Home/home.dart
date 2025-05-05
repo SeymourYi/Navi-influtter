@@ -1697,8 +1697,7 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
   Future<void> _loadUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
-      print(userInfo);
-      print("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+
       Myjpush().initPlatformState(userInfo!['username']);
       setState(() {
         _userInfo = userInfo;
@@ -2049,12 +2048,12 @@ class _MyHomeState extends State<MyHome> with SingleTickerProviderStateMixin {
         controller: _tabController,
         children: [
           // Text("133323"),
-          Articletest(),
-          // HomeTab(
-          //   userInfo: _userInfo,
-          //   onSearchPressed: _navigateToSearch,
-          //   onAddPostPressed: _navigateToPost,
-          // ),
+          // Articletest(),
+          HomeTab(
+            userInfo: _userInfo,
+            onSearchPressed: _navigateToSearch,
+            onAddPostPressed: _navigateToPost,
+          ),
           _isChatInitialized && _selectedCharacter != null
               ? RecentChatsScreen(
                 chatService: _chatService!,

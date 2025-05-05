@@ -57,11 +57,6 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
 
   void _handleUsersReceived(List<CharacterRole> characters) {
     if (mounted) {
-      print('收到在线用户列表: ${characters.length} 个用户');
-      for (var char in characters) {
-        print('在线用户: ${char.id} - ${char.name}');
-      }
-
       setState(() {
         _onlineCharacters = characters;
       });
@@ -125,7 +120,6 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
               _errorMessage = "";
 
               // 主动请求在线用户列表
-              print('连接成功，请求在线用户列表');
               _chatService.requestOnlineUsers();
 
               // 如果需要加载聊天记录，但尚未启动加载
@@ -185,7 +179,6 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
         }
       }
     } catch (e) {
-      print('初始化当前用户出错: $e');
       setState(() {
         _errorMessage = "初始化用户失败: $e";
         _isLoadingHistory = false;
@@ -305,7 +298,6 @@ class _PrivtsChatScreenState extends State<PrivtsChatScreen> {
   @override
   void initState() {
     super.initState();
-    print(widget.character);
     if (widget.character != null) {
       _initializeWithCurrentUser();
     }

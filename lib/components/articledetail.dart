@@ -64,9 +64,7 @@ class _ArticledetailState extends State<Articledetail> {
           _currentUser = userInfo;
         });
       }
-    } catch (e) {
-      print('加载用户信息失败: $e');
-    }
+    } catch (e) {}
   }
 
   void getarticleComments() async {
@@ -201,9 +199,7 @@ class _ArticledetailState extends State<Articledetail> {
           _selectedImagePath = image.path;
         });
       }
-    } catch (e) {
-      print('图片选择失败: $e');
-    }
+    } catch (e) {}
   }
 
   // 提交转发
@@ -286,9 +282,7 @@ class _ArticledetailState extends State<Articledetail> {
     // if (widget.articleData == null || widget.articleData['id'] == null) {
     //   return;
     // }
-    print("111111111111111111111111111");
-    print(widget.articleData['beShareArticleId']);
-    print("11111122222222222211111111111");
+
     // String beShareArticleId = "${widget.articleData['beShareArticleId']}";
     //得到文章详情
     // final result = await ArticleService().getArticleDetail(beShareArticleId);

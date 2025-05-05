@@ -100,7 +100,7 @@ class _ArticlelistState extends State<Articlelist>
                 ? _buildEmptyView()
                 : ListView.builder(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  cacheExtent: 2000, // 缓存额外 2000 像素的内容
+                  cacheExtent: 200, // 缓存额外 2000 像素的内容
                   itemCount: articleList.length,
                   itemBuilder: (context, index) {
                     return Article(articleData: articleList[index]);
