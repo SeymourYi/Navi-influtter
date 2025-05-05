@@ -4,6 +4,7 @@ import 'package:Navi/page/post/post.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:provider/provider.dart';
 import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
@@ -21,7 +22,8 @@ class Article extends StatefulWidget {
   State<Article> createState() => _ArticleState();
 }
 
-class _ArticleState extends State<Article> {
+class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
   bool isLiked = false;
   int likeCount = 0;
   String username = ''; // 存储当前用户名
@@ -31,7 +33,7 @@ class _ArticleState extends State<Article> {
   TextEditingController _repostController = TextEditingController(); // 转发内容控制器
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   String? _selectedImagePath; // 选择的图片路径
-
+  bool option = false;
   @override
   void initState() {
     super.initState();
@@ -40,6 +42,11 @@ class _ArticleState extends State<Article> {
       isLiked = widget.articleData['islike'] ?? false;
       likeCount = widget.articleData['likecont'] ?? 0;
     }
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 200),
+    );
+    _animationController.value = 1.0;
     // 获取当前用户信息
     _loadCurrentUserInfo();
   }
@@ -476,10 +483,10 @@ class _ArticleState extends State<Article> {
         borderRadius: BorderRadius.circular(0),
         side: BorderSide(color: Colors.grey.shade200, width: 0.5),
       ),
-      child: InkWell(
+      child: GestureDetector(
         onTap: _NavigateToArticleDetail,
-        splashColor: Colors.grey.withOpacity(0.1),
-        highlightColor: Colors.grey.withOpacity(0.05),
+        // splashColor: Colors.grey.withOpacity(0.1),
+        // highlightColor: Colors.grey.withOpacity(0.05),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           child: Row(
@@ -541,27 +548,27 @@ class _ArticleState extends State<Article> {
                             "${widget.articleData['nickname']}",
                             style: TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                               color: Colors.black,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(width: 4),
-                          Text(
-                            "@${widget.articleData['username']}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            " · ${widget.articleData['uptonowTime']}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          // Text(
+                          //   "@${widget.articleData['username']}",
+                          //   style: TextStyle(
+                          //     fontSize: 13,
+                          //     color: Colors.grey[600],
+                          //   ),
+                          //   overflow: TextOverflow.ellipsis,
+                          // ),
+                          // Text(
+                          //   " · ${widget.articleData['uptonowTime']}",
+                          //   style: TextStyle(
+                          //     fontSize: 13,
+                          //     color: Colors.grey[600],
+                          //   ),
+                          // ),
                         ],
                       ),
 
@@ -606,80 +613,231 @@ class _ArticleState extends State<Article> {
                         ),
 
                       // 互动栏
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // 评论按钮
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => PostPage(
-                                          type: '评论',
-                                          articelData: widget.articleData,
-                                        ),
+                      // Padding(
+                      //   padding: const EdgeInsets.only(top: 8),
+                      //   child: Row(
+                      //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //     children: [
+                      //       // 评论按钮
+                      //       InkWell(
+                      //         onTap: () {
+                      //           Navigator.push(
+                      //             context,
+                      //             MaterialPageRoute(
+                      //               builder:
+                      //                   (context) => PostPage(
+                      //                     type: '评论',
+                      //                     articelData: widget.articleData,
+                      //                   ),
+                      //             ),
+                      //           );
+                      //         },
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         child: Padding(
+                      //           padding: const EdgeInsets.all(8.0),
+                      //           child: _buildActionButton(
+                      //             icon:
+                      //                 widget.articleData['commentcount'] !=
+                      //                             null &&
+                      //                         widget.articleData['commentcount'] >
+                      //                             0
+                      //                     ? "lib/assets/icons/chatbubble-ellipses.svg"
+                      //                     : "lib/assets/icons/chatbubble-ellipses-outline.svg",
+                      //             count: widget.articleData['commentcount'],
+                      //             color: Color.fromRGBO(29, 161, 242, 1.0),
+                      //           ),
+                      //         ),
+                      //       ),
+
+                      //       // 转发按钮
+                      //       InkWell(
+                      //         onTap: () {
+                      //           Navigator.push(
+                      //             context,
+                      //             MaterialPageRoute(
+                      //               builder:
+                      //                   (context) => PostPage(
+                      //                     type: '转发',
+                      //                     articelData: widget.articleData,
+                      //                   ),
+                      //             ),
+                      //           );
+                      //         },
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         child: Padding(
+                      //           padding: const EdgeInsets.all(8.0),
+                      //           child: _buildActionButton(
+                      //             icon: "lib/assets/icons/repeat-outline.svg",
+                      //             count: widget.articleData['repeatcount'],
+                      //             color: Color.fromRGBO(23, 191, 99, 1.0),
+                      //           ),
+                      //         ),
+                      //       ),
+
+                      //       // 点赞按钮
+                      //       InkWell(
+                      //         onTap: _handleLike,
+                      //         borderRadius: BorderRadius.circular(20),
+                      //         child: Padding(
+                      //           padding: const EdgeInsets.all(8.0),
+                      //           child: _buildLikeButton(),
+                      //         ),
+                      //       ),
+
+                      //       // 空白占位，保持按钮分布均匀
+                      //       SizedBox(width: 8),
+                      //     ],
+                      //   ),
+                      // ),
+                      Stack(children: [
+  
+],
+                      ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque, // 阻止事件冒泡
+                        onTap: () {
+                          if (option == true) {
+                            //打开操作栏
+                            _animationController.forward();
+                            print("打开");
+                            setState(() {
+                              option = !option;
+                            });
+                          } else {
+                            //关闭操作栏
+                            _animationController.reverse();
+                            print("关闭");
+                            setState(() {
+                              option = !option;
+                            });
+                          }
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            right: MediaQuery.of(context).size.width * 0.05,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                child: Text(
+                                  widget.articleData["uptonowTime"],
+                                  style: TextStyle(
+                                    fontSize: 10, // 字体大小
+                                    color: Colors.grey, // 字体颜色
+                                    fontWeight: FontWeight.w600, // 字重（正常/加粗等）
+                                    fontStyle: FontStyle.normal, // 字体样式（正常/斜体）
                                   ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: _buildActionButton(
-                                  icon:
-                                      widget.articleData['commentcount'] !=
-                                                  null &&
-                                              widget.articleData['commentcount'] >
-                                                  0
-                                          ? "lib/assets/icons/chatbubble-ellipses.svg"
-                                          : "lib/assets/icons/chatbubble-ellipses-outline.svg",
-                                  count: widget.articleData['commentcount'],
-                                  color: Color.fromRGBO(29, 161, 242, 1.0),
                                 ),
                               ),
-                            ),
+                              // Container(
+                              //   child: Text(
+                              //     "商丘市",
+                              //     style: TextStyle(
+                              //       fontSize: 10, // 字体大小
+                              //       color: const Color.fromARGB(
+                              //         144,
+                              //         43,
+                              //         45,
+                              //         48,
+                              //       ), // 字体颜色
+                              //       fontWeight: FontWeight.w600, // 字重（正常/加粗等）
+                              //       fontStyle: FontStyle.normal, // 字体样式（正常/斜体）
+                              //     ),
+                              //   ),
+                              // ),
+                              Spacer(),
+                              AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      100 * _animationController.value,
+                                      0,
+                                    ),
+                                    child: Transform.scale(
+                                      scale: 1 - 1 * _animationController.value,
+                                      child: Opacity(
+                                        opacity:
+                                            1.0 - _animationController.value,
+                                        child: Container(
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(
+                                              0.1,
+                                            ), // 微信风格的半透明背景
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ), // 更大的圆角
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                          ), // 左右内边距
+                                          child: Row(
+                                            mainAxisSize:
+                                                MainAxisSize.min, // 让容器包裹内容
+                                            children: [
+                                              // 点赞按钮
+                                              _buildActionButtona(
+                                                icon:
+                                                    'lib/assets/icons/Vector (9).svg',
+                                                label: '赞',
+                                                showDivider: true,
+                                              ),
 
-                            // 转发按钮
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => PostPage(
-                                          type: '转发',
-                                          articelData: widget.articleData,
+                                              // 评论按钮
+                                              _buildActionButtona(
+                                                icon:
+                                                    'lib/assets/icons/chatbubble-ellipses-outline.svg',
+                                                label: '评论',
+                                                showDivider: true,
+                                              ),
+                                              // 转发按钮
+                                              _buildActionButtona(
+                                                icon:
+                                                    'lib/assets/icons/repeat-outline.svg',
+                                                label: '转发',
+                                                showDivider: false,
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // 辅助方法：构建单个操作按钮
+                              SizedBox(width: 10),
+                              Container(
+                                width: 20, // 建议设置固定宽度，确保点击区域足够
+                                height: 20, // 建议设置固定高度
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(
+                                    0.1,
+                                  ), // 微信风格的半透明红色背景
+                                  borderRadius: BorderRadius.circular(
+                                    6,
+                                  ), // 微信风格的圆角大小
+                                ),
+                                child: Center(
+                                  // 确保图标居中
+                                  child: SvgPicture.asset(
+                                    'lib/assets/icons/Vector9.svg',
+                                    width: 6, // 适当调大图标尺寸
+                                    height: 6,
+                                    color: const Color.fromARGB(
+                                      94,
+                                      0,
+                                      226,
+                                      1,
+                                    ), // 微信风格的红色图标
                                   ),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: _buildActionButton(
-                                  icon: "lib/assets/icons/repeat-outline.svg",
-                                  count: widget.articleData['repeatcount'],
-                                  color: Color.fromRGBO(23, 191, 99, 1.0),
                                 ),
                               ),
-                            ),
-
-                            // 点赞按钮
-                            InkWell(
-                              onTap: _handleLike,
-                              borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: _buildLikeButton(),
-                              ),
-                            ),
-
-                            // 空白占位，保持按钮分布均匀
-                            SizedBox(width: 8),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -690,6 +848,89 @@ class _ArticleState extends State<Article> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButtona({
+    required String icon,
+    required String label,
+    required bool showDivider,
+  }) {
+    // 设置不同按钮的颜色
+    Color iconColor;
+    Color textColor;
+
+    if (label == '赞') {
+      iconColor =
+          isLiked ? const Color.fromRGBO(224, 36, 94, 1.0) : Colors.grey[700]!;
+      textColor =
+          isLiked ? const Color.fromRGBO(224, 36, 94, 1.0) : Colors.grey[700]!;
+    } else if (label == '评论') {
+      iconColor = Color.fromRGBO(29, 161, 242, 1.0); // 蓝色
+      textColor = Colors.grey[700]!;
+    } else if (label == '转发') {
+      iconColor = Color.fromRGBO(23, 191, 99, 1.0); // 绿色
+      textColor = Colors.grey[700]!;
+    } else {
+      iconColor = Colors.grey[700]!;
+      textColor = Colors.grey[700]!;
+    }
+
+    return Row(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque, // 确保整个区域可点击
+          onTap: () {
+            // 处理点击事件
+            if (label == '评论') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                          PostPage(type: '评论', articelData: widget.articleData),
+                ),
+              );
+            } else if (label == '转发') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                          PostPage(type: '转发', articelData: widget.articleData),
+                ),
+              );
+            } else if (label == '赞') {
+              _handleLike(); // 正确调用点赞方法
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  icon,
+                  width: 16, // 稍大的图标
+                  height: 16,
+                  color: iconColor, // 使用动态颜色
+                ),
+                SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12, color: textColor), // 使用动态颜色
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider)
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            height: 12,
+            width: 1,
+            color: Colors.grey.withOpacity(0.3), // 更淡的分隔线
+          ),
+      ],
     );
   }
 
