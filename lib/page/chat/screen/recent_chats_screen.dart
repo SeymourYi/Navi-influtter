@@ -283,13 +283,25 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
                 if (snapshot.connectionState == ConnectionState.done &&
                     snapshot.hasData &&
                     snapshot.data!['userPic'] != null) {
-                  return CircleAvatar(
-                    radius: 28,
-                    backgroundImage: NetworkImage(snapshot.data!['userPic']),
-                    backgroundColor: Colors.transparent,
-                    onBackgroundImageError: (exception, stackTrace) {
-                      return;
-                    },
+                  return
+                  //  CircleAvatar(
+                  //   radius: 28,
+                  //   backgroundImage: NetworkImage(snapshot.data!['userPic']),
+                  //   backgroundColor: Colors.transparent,
+                  //   onBackgroundImageError: (exception, stackTrace) {
+                  //     return;
+                  //   },
+                  // );
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5), // Circular
+                      image: DecorationImage(
+                        image: NetworkImage(snapshot.data!['userPic']),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   );
                 } else {
                   // 加载中或出错时显示默认头像
@@ -336,14 +348,14 @@ class _RecentChatsScreenState extends State<RecentChatsScreen>
                               );
                             },
                           ),
-                          SizedBox(width: 4),
-                          Text(
-                            '@${chat.userId.substring(0, math.min(6, chat.userId.length))}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
+                          // SizedBox(width: 4),
+                          // Text(
+                          //   '@${chat.userId.substring(0, math.min(6, chat.userId.length))}',
+                          //   style: TextStyle(
+                          //     color: Colors.grey.shade600,
+                          //     fontSize: 14,
+                          //   ),
+                          // ),
                         ],
                       ),
                       Text(

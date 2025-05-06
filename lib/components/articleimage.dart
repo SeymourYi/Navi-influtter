@@ -58,7 +58,6 @@ class ArticleImage extends StatelessWidget {
     if (imageUrls.isEmpty) {
       return Container();
     }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Column(
@@ -92,13 +91,13 @@ class ArticleImage extends StatelessWidget {
       child: Padding(
         // padding: const EdgeInsets.all(24),
         padding: EdgeInsets.only(
-          left: MediaQuery.of(context).size.width * 0.02,
-          right: MediaQuery.of(context).size.width * 0.06,
-          top: MediaQuery.of(context).size.width * 0.02,
-          bottom: MediaQuery.of(context).size.width * 0.02,
+          left: MediaQuery.of(context).size.width * 0.0001,
+          right: MediaQuery.of(context).size.width * 0.0001,
+          top: MediaQuery.of(context).size.width * 0.0001,
+          bottom: MediaQuery.of(context).size.width * 0.0001,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          // borderRadius: BorderRadius.circular(16),
           child: ConstrainedBox(
             //设置一个最大高度
             constraints: BoxConstraints(
@@ -118,6 +117,8 @@ class ArticleImage extends StatelessWidget {
                       (context, error, stackTrace) => Container(
                         width: double.infinity,
                         height: double.infinity, // 错误时也填充相同高度
+                        // width: 233,
+                        // height: 23,
                         color: Colors.grey[200],
                         child: const Icon(
                           Icons.broken_image,

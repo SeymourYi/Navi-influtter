@@ -88,11 +88,16 @@ class _UserHomeState extends State<UserHome> {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(
-                    0.9 * (_dragDistance / _screenWidth),
+                    0.9 * (1 - _dragDistance / _screenWidth), // 反向计算透明度
                   ),
-                  blurRadius: 10.0 * (_dragDistance / _screenWidth),
-                  spreadRadius: 15.0 * (_dragDistance / _screenWidth),
-                  offset: Offset(-5.0 * (_dragDistance / _screenWidth), 0),
+                  blurRadius:
+                      10.0 * (1 - _dragDistance / _screenWidth), // 反向计算模糊半径
+                  spreadRadius:
+                      15.0 * (1 - _dragDistance / _screenWidth), // 反向计算扩散半径
+                  offset: Offset(
+                    -5.0 * (1 - _dragDistance / _screenWidth),
+                    0,
+                  ), // 反向计算偏移量
                 ),
               ],
             ),
