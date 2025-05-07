@@ -279,8 +279,7 @@ class _PostPageState extends State<PostPage> {
               // 当有内容时才能点击发布
               onPressed:
                   (_characterCount > 0 || _selectedImages.isNotEmpty) &&
-                          !_isLoading &&
-                          _selectedTag != null
+                          !_isLoading
                       ? _handlePost
                       : null,
               style: ElevatedButton.styleFrom(
@@ -411,7 +410,7 @@ class _PostPageState extends State<PostPage> {
                   : const Icon(
                     Icons.local_offer_outlined,
                     size: 20,
-                    color: Colors.grey,
+                    color: Colors.black,
                   ),
               const SizedBox(width: 12),
               Expanded(
