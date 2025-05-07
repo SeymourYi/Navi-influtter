@@ -1,5 +1,6 @@
 import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/userAPI.dart';
+import 'package:Navi/components/full_screen_image_view.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:Navi/page/chat/screen/chat_screen.dart';
 import 'package:Navi/page/chat/screen/privtschatcreen.dart';
@@ -130,13 +131,30 @@ class _UserHomeState extends State<UserHome> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Avatar
-                            CircleAvatar(
-                              radius: 35,
-                              backgroundImage: NetworkImage(
-                                _userinfo["userPic"] ??
-                                    "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => FullScreenImageView(
+                                          // imageUrls: List.from(
+                                          //   _userinfo["userPic"],
+                                          // ),
+                                          imageUrls: [_userinfo["userPic"]],
+                                          initialIndex: 0,
+                                        ),
+                                  ),
+                                );
+                              },
+                              child: CircleAvatar(
+                                radius: 35,
+                                backgroundImage: NetworkImage(
+                                  _userinfo["userPic"] ??
+                                      "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
+                                ),
                               ),
                             ),
+
                             const SizedBox(width: 12),
                             // User info
                             Expanded(

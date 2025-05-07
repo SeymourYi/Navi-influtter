@@ -1021,6 +1021,7 @@
 //   }
 // }
 import 'package:Navi/api/emailAPI.dart';
+import 'package:Navi/components/full_screen_image_view.dart';
 import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
@@ -1134,15 +1135,41 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage:
-                          widget.userInfo != null &&
-                                  widget.userInfo!['userPic'].isNotEmpty
-                              ? _avatarImageProvider
-                              : AssetImage("lib/assets/images/userpic.jpg")
-                                  as ImageProvider,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (context) => FullScreenImageView(
+                                  // imageUrls: List.from(
+                                  //   _userinfo["userPic"],
+                                  // ),
+                                  imageUrls: [widget.userInfo!['userPic']],
+                                  initialIndex: 0,
+                                ),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage:
+                            widget.userInfo != null &&
+                                    widget.userInfo!['userPic'].isNotEmpty
+                                ? _avatarImageProvider
+                                : AssetImage("lib/assets/images/userpic.jpg")
+                                    as ImageProvider,
+                      ),
                     ),
+
+                    // CircleAvatar(
+                    //   radius: 20,
+                    //   backgroundImage:
+                    //       widget.userInfo != null &&
+                    //               widget.userInfo!['userPic'].isNotEmpty
+                    //           ? _avatarImageProvider
+                    //           : AssetImage("lib/assets/images/userpic.jpg")
+                    //               as ImageProvider,
+                    // ),
                   ],
                 ),
                 SizedBox(height: 16),

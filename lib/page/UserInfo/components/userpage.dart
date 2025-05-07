@@ -1,3 +1,4 @@
+import 'package:Navi/components/full_screen_image_view.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/components/article.dart';
 import 'package:Navi/api/articleAPI.dart';
@@ -242,31 +243,73 @@ class _ProfilePageState extends State<ProfilePage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // 头像
-                              Material(
-                                elevation: 4,
-                                shape: const CircleBorder(),
-                                clipBehavior: Clip.antiAlias,
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: Colors.white,
-                                  child:
-                                      _userInfo != null &&
-                                              _userInfo!['userPic'].isNotEmpty
-                                          ? CircleAvatar(
-                                            radius: 38,
-                                            backgroundImage:
-                                                CachedNetworkImageProvider(
-                                                  _userInfo!['userPic'],
-                                                ),
-                                          )
-                                          : const CircleAvatar(
-                                            radius: 38,
-                                            backgroundImage: AssetImage(
-                                              "lib/assets/images/1.jpg",
-                                            ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => FullScreenImageView(
+                                            // imageUrls: List.from(
+                                            //   _userinfo["userPic"],
+                                            // ),
+                                            imageUrls: [_userInfo!['userPic']],
+                                            initialIndex: 0,
                                           ),
+                                    ),
+                                  );
+                                },
+                                child: Material(
+                                  elevation: 4,
+                                  shape: const CircleBorder(),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: CircleAvatar(
+                                    radius: 40,
+                                    backgroundColor: Colors.white,
+                                    child:
+                                        _userInfo != null &&
+                                                _userInfo!['userPic'].isNotEmpty
+                                            ? CircleAvatar(
+                                              radius: 38,
+                                              backgroundImage:
+                                                  CachedNetworkImageProvider(
+                                                    _userInfo!['userPic'],
+                                                  ),
+                                            )
+                                            : const CircleAvatar(
+                                              radius: 38,
+                                              backgroundImage: AssetImage(
+                                                "lib/assets/images/1.jpg",
+                                              ),
+                                            ),
+                                  ),
                                 ),
                               ),
+
+                              // Material(
+                              //   elevation: 4,
+                              //   shape: const CircleBorder(),
+                              //   clipBehavior: Clip.antiAlias,
+                              //   child: CircleAvatar(
+                              //     radius: 40,
+                              //     backgroundColor: Colors.white,
+                              //     child:
+                              //         _userInfo != null &&
+                              //                 _userInfo!['userPic'].isNotEmpty
+                              //             ? CircleAvatar(
+                              //               radius: 38,
+                              //               backgroundImage:
+                              //                   CachedNetworkImageProvider(
+                              //                     _userInfo!['userPic'],
+                              //                   ),
+                              //             )
+                              //             : const CircleAvatar(
+                              //               radius: 38,
+                              //               backgroundImage: AssetImage(
+                              //                 "lib/assets/images/1.jpg",
+                              //               ),
+                              //             ),
+                              //   ),
+                              // ),
 
                               // 编辑资料按钮
                               _isCurrentUser

@@ -20,7 +20,7 @@ class FullScreenImageView extends StatefulWidget {
 }
 
 class _FullScreenImageViewState extends State<FullScreenImageView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late PageController _pageController;
   late int _currentIndex;
 
@@ -33,6 +33,15 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   // 缩放状态
   bool _isZoomed = false;
+  double _currentScale = 1.0;
+  double _startScale = 1.0;
+  Offset _normalizedPosition = Offset.zero;
+
+  // 双击放大相关变量
+  bool _isAnimating = false;
+  int _doubleTapCount = 0;
+  double _previousScale = 1.0;
+  final double _maxDoubleTapScale = 3.0; // 双击最大放大倍数
 
   // 滑动速度计算
   DateTime _lastDragUpdate = DateTime.now();
@@ -44,6 +53,10 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
   late Animation<Offset> _offsetAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
+
+  // 缩放动画控制器
+  late AnimationController _zoomAnimationController;
+  late Animation<double> _zoomAnimation;
 
   @override
   void initState() {
@@ -71,12 +84,42 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       begin: 0.5,
       end: 0.5,
     ).animate(_animationController);
+
+    // 初始化缩放动画控制器
+    _zoomAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _zoomAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _zoomAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _zoomAnimationController.addListener(() {
+      setState(() {
+        _currentScale = _zoomAnimation.value;
+      });
+    });
+
+    _zoomAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _isAnimating = false;
+        // 更新缩放状态
+        setState(() {
+          _isZoomed = _currentScale > 1.05;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _animationController.dispose();
+    _zoomAnimationController.dispose();
     super.dispose();
   }
 
@@ -218,21 +261,72 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     });
   }
 
-  // 检测缩放状态
+  // 处理缩放开始事件
+  void _handleScaleStart(ScaleStartDetails details) {
+    _startScale = _currentScale;
+    // 记录归一化后的触摸位置作为缩放中心点
+    _normalizedPosition = details.localFocalPoint;
+
+    // 存储双击位置坐标
+    if (!_isAnimating) {
+      _previousScale = _currentScale;
+    }
+  }
+
+  // 处理缩放更新事件
   void _handleScaleUpdate(ScaleUpdateDetails details) {
+    if (_isAnimating) return;
+
+    // 限制最大最小缩放比例
+    final newScale = (_startScale * details.scale).clamp(0.8, 4.0);
+
     setState(() {
-      _isZoomed = details.scale > 1.05;
+      _currentScale = newScale;
+      _isZoomed = _currentScale > 1.05;
     });
   }
 
-  // 缩放结束
+  // 处理缩放结束事件
   void _handleScaleEnd(ScaleEndDetails details) {
-    if (_isZoomed) {
-      // 允许缩放后自然回弹到原始状态
-      setState(() {
-        _isZoomed = false;
-      });
+    if (_isAnimating) return;
+
+    // 如果缩放比例小于1.0，则恢复到1.0
+    if (_currentScale < 1.0) {
+      _animateScale(1.0);
+    } else if (_currentScale > 4.0) {
+      _animateScale(4.0);
     }
+  }
+
+  // 处理双击事件
+  void _handleDoubleTap(TapDownDetails details) {
+    // 记录双击位置
+    final tapPosition = details.localPosition;
+
+    if (_currentScale > 1.05) {
+      // 如果已经放大，双击恢复原始大小
+      _animateScale(1.0);
+    } else {
+      // 如果是原始大小，双击放大
+      _animateScale(_maxDoubleTapScale);
+    }
+  }
+
+  // 缩放动画
+  void _animateScale(double targetScale) {
+    _isAnimating = true;
+    _zoomAnimation = Tween<double>(
+      begin: _currentScale,
+      end: targetScale,
+    ).animate(
+      CurvedAnimation(
+        parent: _zoomAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _zoomAnimationController.reset();
+    _zoomAnimationController.forward();
   }
 
   // 显示操作菜单
@@ -281,28 +375,10 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
             _isDragging ? _backgroundOpacity : _opacityAnimation.value;
 
         return Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.black.withOpacity(currentOpacity),
           body: Stack(
             fit: StackFit.expand,
             children: [
-              // 背景层 - 半透明
-              Container(
-                color: Colors.transparent,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    gradient: RadialGradient(
-                      center: Alignment.center,
-                      radius: 1.5,
-                      colors: [
-                        // Colors.black.withOpacity(currentOpacity * 0.7),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.6, 1.0],
-                    ),
-                  ),
-                ),
-              ),
               // 图片内容区
               Transform.translate(
                 offset: currentOffset,
@@ -342,12 +418,18 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       },
       child: GestureDetector(
         // 统一的手势检测器
-        onVerticalDragStart: _handleDragStart,
-        onVerticalDragUpdate: _handleDragUpdate,
-        onVerticalDragEnd: _handleDragEnd,
+        onVerticalDragStart: _isZoomed ? null : _handleDragStart,
+        onVerticalDragUpdate: _isZoomed ? null : _handleDragUpdate,
+        onVerticalDragEnd: _isZoomed ? null : _handleDragEnd,
         onVerticalDragCancel: _handleDragCancel,
-        onTap: () => Navigator.of(context).pop(),
+        onTap: _isZoomed ? null : () => Navigator.of(context).pop(),
         onLongPress: _showActionMenu,
+        // 双击手势检测器
+        onDoubleTapDown: _handleDoubleTap,
+        // 缩放手势
+        onScaleStart: _handleScaleStart,
+        onScaleUpdate: _handleScaleUpdate,
+        onScaleEnd: _handleScaleEnd,
         // 内容区域
         child: PageView.builder(
           controller: _pageController,
@@ -359,19 +441,16 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
           onPageChanged: (index) {
             setState(() {
               _currentIndex = index;
+              // 重置缩放状态
+              _currentScale = 1.0;
+              _isZoomed = false;
             });
           },
           itemBuilder: (context, index) {
             return Hero(
               tag: 'article_image_$index',
-              child: InteractiveViewer(
-                clipBehavior: Clip.none,
-                maxScale: 4.0,
-                minScale: 0.8,
-                panEnabled: true,
-                boundaryMargin: const EdgeInsets.all(double.infinity),
-                onInteractionUpdate: (details) => _handleScaleUpdate(details),
-                onInteractionEnd: _handleScaleEnd,
+              child: Transform.scale(
+                scale: _currentScale,
                 child: Center(
                   child: Image.network(
                     widget.imageUrls[index],

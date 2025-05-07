@@ -1,4 +1,5 @@
 // post_page.dart - 发布页面
+import 'package:Navi/components/class/utils/DialogUtils.dart';
 import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/components/postlitarticle.dart';
 import 'package:Navi/page/post/components/imagepicker.dart';
@@ -73,6 +74,21 @@ class _PostPageState extends State<PostPage> {
     _checkFirstTimeUsingImagePicker();
   }
 
+  void _showAgreementDialog() {
+    DialogUtils.showPrivacyDialog(
+      context: context,
+      title: '请阅读下方隐私政策',
+      content: "SAD",
+      onAgree: () {
+        setState(() {});
+        Navigator.of(context).pop();
+      },
+      onDisagree: () {
+        Navigator.of(context).pop();
+      },
+    );
+  }
+
   // 获取用户信息
   Future<void> _loadUserInfo() async {
     final userInfo = await SharedPrefsUtils.getUserInfo();
@@ -98,7 +114,8 @@ class _PostPageState extends State<PostPage> {
       // 延迟显示提示，让界面先加载完成
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
-          _showImagePickerTutorial();
+          // _showImagePickerTutorial();
+          _showAgreementDialog();
         }
       });
     }
@@ -109,7 +126,9 @@ class _PostPageState extends State<PostPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (context) =>
+          // _showAgreementDialog();
+          AlertDialog(
             title: Row(
               children: [
                 Icon(Icons.info_outline, color: Theme.of(context).primaryColor),

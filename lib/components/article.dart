@@ -516,16 +516,15 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
             ),
           );
         },
-
-        // onTap: _NavigateToArticleDetail,
-        // splashColor: Colors.grey.withOpacity(0.1),
-        // highlightColor: Colors.grey.withOpacity(0.05),
+        behavior:
+            HitTestBehavior
+                .opaque, // This prevents taps from passing through empty spaces
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 左侧头像
+              // 左侧头像 - Wrapped in its own GestureDetector
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -533,8 +532,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                     PageRouteBuilder(
                       pageBuilder:
                           (context, animation, secondaryAnimation) =>
-                          // Testpage(),
-                          UserHome(userId: widget.articleData['username']),
+                              UserHome(userId: widget.articleData['username']),
                       transitionsBuilder: (
                         context,
                         animation,
@@ -561,10 +559,10 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                   );
                 },
                 child: Container(
-                  width: 35, // 方形边长 = 圆形直径 (radius * 2)
+                  width: 35,
                   height: 35,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4), // 可以调整圆角大小
+                    borderRadius: BorderRadius.circular(4),
                     image: DecorationImage(
                       image: NetworkImage(widget.articleData['userPic']),
                       fit: BoxFit.cover,
@@ -593,21 +591,6 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                             overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(width: 4),
-                          // Text(
-                          //   "@${widget.articleData['username']}",
-                          //   style: TextStyle(
-                          //     fontSize: 13,
-                          //     color: Colors.grey[600],
-                          //   ),
-                          //   overflow: TextOverflow.ellipsis,
-                          // ),
-                          // Text(
-                          //   " · ${widget.articleData['uptonowTime']}",
-                          //   style: TextStyle(
-                          //     fontSize: 13,
-                          //     color: Colors.grey[600],
-                          //   ),
-                          // ),
                         ],
                       ),
 
@@ -626,32 +609,13 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
 
                       // 文章图片
                       if (widget.articleData['coverImg'] != "")
-                        // if (true)
-                        GestureDetector(
-                          onTap: () {
-                            // 这里可以添加查看大图的逻辑
-                            return;
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 10),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: ArticleImage(
-                                imageUrls: List<String>.from(
-                                  widget.articleData['coverImgList'],
-                                ),
-                                // imageUrls: widget.articleData['coverImgList'],
-                                // imageUrls: [
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                // ],
+                        Padding(
+                          padding: EdgeInsets.only(right: 10),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: ArticleImage(
+                              imageUrls: List<String>.from(
+                                widget.articleData['coverImgList'],
                               ),
                             ),
                           ),
@@ -669,97 +633,18 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                           child: LitArticle(articleData: widget.articleData),
                         ),
 
-                      // 互动栏
-                      // Padding(
-                      //   padding: const EdgeInsets.only(top: 8),
-                      //   child: Row(
-                      //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      //     children: [
-                      //       // 评论按钮
-                      //       InkWell(
-                      //         onTap: () {
-                      //           Navigator.push(
-                      //             context,
-                      //             MaterialPageRoute(
-                      //               builder:
-                      //                   (context) => PostPage(
-                      //                     type: '评论',
-                      //                     articelData: widget.articleData,
-                      //                   ),
-                      //             ),
-                      //           );
-                      //         },
-                      //         borderRadius: BorderRadius.circular(20),
-                      //         child: Padding(
-                      //           padding: const EdgeInsets.all(8.0),
-                      //           child: _buildActionButton(
-                      //             icon:
-                      //                 widget.articleData['commentcount'] !=
-                      //                             null &&
-                      //                         widget.articleData['commentcount'] >
-                      //                             0
-                      //                     ? "lib/assets/icons/chatbubble-ellipses.svg"
-                      //                     : "lib/assets/icons/chatbubble-ellipses-outline.svg",
-                      //             count: widget.articleData['commentcount'],
-                      //             color: Color.fromRGBO(29, 161, 242, 1.0),
-                      //           ),
-                      //         ),
-                      //       ),
-
-                      //       // 转发按钮
-                      //       InkWell(
-                      //         onTap: () {
-                      //           Navigator.push(
-                      //             context,
-                      //             MaterialPageRoute(
-                      //               builder:
-                      //                   (context) => PostPage(
-                      //                     type: '转发',
-                      //                     articelData: widget.articleData,
-                      //                   ),
-                      //             ),
-                      //           );
-                      //         },
-                      //         borderRadius: BorderRadius.circular(20),
-                      //         child: Padding(
-                      //           padding: const EdgeInsets.all(8.0),
-                      //           child: _buildActionButton(
-                      //             icon: "lib/assets/icons/repeat-outline.svg",
-                      //             count: widget.articleData['repeatcount'],
-                      //             color: Color.fromRGBO(23, 191, 99, 1.0),
-                      //           ),
-                      //         ),
-                      //       ),
-
-                      //       // 点赞按钮
-                      //       InkWell(
-                      //         onTap: _handleLike,
-                      //         borderRadius: BorderRadius.circular(20),
-                      //         child: Padding(
-                      //           padding: const EdgeInsets.all(8.0),
-                      //           child: _buildLikeButton(),
-                      //         ),
-                      //       ),
-
-                      //       // 空白占位，保持按钮分布均匀
-                      //       SizedBox(width: 8),
-                      //     ],
-                      //   ),
-                      // ),
                       GestureDetector(
-                        behavior: HitTestBehavior.opaque, // 阻止事件冒泡
+                        behavior: HitTestBehavior.opaque,
                         onTap: () {
                           if (option == true) {
-                            //打开操作栏
                             _animationController.forward();
-                            print("打开");
+                            print("关闭");
                             setState(() {
                               option = !option;
                             });
                           } else {
-                            //关闭操作栏
                             _animationController.reverse();
-                            print("关闭");
+                            print("打开");
                             setState(() {
                               option = !option;
                             });
@@ -776,29 +661,13 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                 child: Text(
                                   widget.articleData["uptonowTime"],
                                   style: TextStyle(
-                                    fontSize: 10, // 字体大小
-                                    color: Colors.grey, // 字体颜色
-                                    fontWeight: FontWeight.w600, // 字重（正常/加粗等）
-                                    fontStyle: FontStyle.normal, // 字体样式（正常/斜体）
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                    fontStyle: FontStyle.normal,
                                   ),
                                 ),
                               ),
-                              // Container(
-                              //   child: Text(
-                              //     "商丘市",
-                              //     style: TextStyle(
-                              //       fontSize: 10, // 字体大小
-                              //       color: const Color.fromARGB(
-                              //         144,
-                              //         43,
-                              //         45,
-                              //         48,
-                              //       ), // 字体颜色
-                              //       fontWeight: FontWeight.w600, // 字重（正常/加粗等）
-                              //       fontStyle: FontStyle.normal, // 字体样式（正常/斜体）
-                              //     ),
-                              //   ),
-                              // ),
                               Spacer(),
                               AnimatedBuilder(
                                 animation: _animationController,
@@ -824,31 +693,26 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                             ),
                                             borderRadius: BorderRadius.circular(
                                               5,
-                                            ), // 更大的圆角
+                                            ),
                                           ),
                                           padding: EdgeInsets.symmetric(
                                             horizontal: 10,
-                                          ), // 左右内边距
+                                          ),
                                           child: Row(
-                                            mainAxisSize:
-                                                MainAxisSize.min, // 让容器包裹内容
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              // 点赞按钮
                                               _buildActionButtona(
                                                 icon:
                                                     'lib/assets/icons/Vector (9).svg',
                                                 label: '赞',
                                                 showDivider: true,
                                               ),
-
-                                              // 评论按钮
                                               _buildActionButtona(
                                                 icon:
                                                     'lib/assets/icons/chatbubble-ellipses-outline.svg',
                                                 label: '评论',
                                                 showDivider: true,
                                               ),
-                                              // 转发按钮
                                               _buildActionButtona(
                                                 icon:
                                                     'lib/assets/icons/repeat-outline.svg',
@@ -863,32 +727,20 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                   );
                                 },
                               ),
-
-                              // 辅助方法：构建单个操作按钮
                               SizedBox(width: 10),
                               Container(
-                                width: 20, // 建议设置固定宽度，确保点击区域足够
-                                height: 20, // 建议设置固定高度
+                                width: 20,
+                                height: 20,
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(
-                                    0.1,
-                                  ), // 微信风格的半透明红色背景
-                                  borderRadius: BorderRadius.circular(
-                                    6,
-                                  ), // 微信风格的圆角大小
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Center(
-                                  // 确保图标居中
                                   child: SvgPicture.asset(
                                     'lib/assets/icons/Vector9.svg',
-                                    width: 6, // 适当调大图标尺寸
+                                    width: 6,
                                     height: 6,
-                                    color: const Color.fromARGB(
-                                      94,
-                                      0,
-                                      226,
-                                      1,
-                                    ), // 微信风格的红色图标
+                                    color: const Color.fromARGB(94, 0, 226, 1),
                                   ),
                                 ),
                               ),
@@ -899,24 +751,15 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
 
                       Container(
                         decoration: BoxDecoration(
-                          color:
-                              Colors
-                                  .grey[100], // Lighter background color like WeChat
-                          borderRadius: BorderRadius.circular(
-                            3,
-                          ), // Rounded corners
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(3),
                         ),
-                        width:
-                            MediaQuery.of(context).size.width *
-                            0.8, // Slightly narrower
-                        padding: EdgeInsets.all(8), // Internal padding
-                        margin: EdgeInsets.only(
-                          right: 8,
-                          bottom: 4,
-                        ), // Spacing like WeChat
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        padding: EdgeInsets.all(8),
+                        margin: EdgeInsets.only(right: 8, bottom: 4),
                         child: Wrap(
-                          spacing: 6, // Space between items
-                          runSpacing: 6, // Space between lines
+                          spacing: 6,
+                          runSpacing: 6,
                           children: [
                             Icon(
                               Icons.favorite_border_outlined,
@@ -927,9 +770,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                               width: 25,
                               height: 25,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  2,
-                                ), // Circular
+                                borderRadius: BorderRadius.circular(2),
                                 image: DecorationImage(
                                   image: NetworkImage(
                                     widget.articleData['userPic'],
@@ -1014,7 +855,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
               setState(() {
                 option = !option;
               });
-              // _handleLike(); // 正确调用点赞方法
+              _handleLike(); // 正确调用点赞方法
             }
           },
           child: Padding(
