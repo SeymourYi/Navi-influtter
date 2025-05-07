@@ -633,102 +633,102 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                           child: LitArticle(articleData: widget.articleData),
                         ),
 
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          if (option == true) {
-                            _animationController.forward();
-                            print("关闭");
-                            setState(() {
-                              option = !option;
-                            });
-                          } else {
-                            _animationController.reverse();
-                            print("打开");
-                            setState(() {
-                              option = !option;
-                            });
-                          }
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            right: MediaQuery.of(context).size.width * 0.05,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                child: Text(
-                                  widget.articleData["uptonowTime"],
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FontStyle.normal,
-                                  ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          right: MediaQuery.of(context).size.width * 0.05,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              child: Text(
+                                widget.articleData["uptonowTime"],
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.normal,
                                 ),
                               ),
-                              Spacer(),
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Transform.translate(
-                                    offset: Offset(
-                                      100 * _animationController.value,
-                                      0,
-                                    ),
-                                    child: Transform.scale(
-                                      scale: 1 - 1 * _animationController.value,
-                                      child: Opacity(
-                                        opacity:
-                                            1.0 - _animationController.value,
-                                        child: Container(
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                              255,
-                                              40,
-                                              44,
-                                              52,
+                            ),
+                            Spacer(),
+                            AnimatedBuilder(
+                              animation: _animationController,
+                              builder: (context, child) {
+                                return Transform.translate(
+                                  offset: Offset(
+                                    100 * _animationController.value,
+                                    0,
+                                  ),
+                                  child: Transform.scale(
+                                    scale: 1 - 1 * _animationController.value,
+                                    child: Opacity(
+                                      opacity: 1.0 - _animationController.value,
+                                      child: Container(
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            40,
+                                            44,
+                                            52,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _buildActionButtona(
+                                              icon:
+                                                  'lib/assets/icons/Vector (9).svg',
+                                              label: '赞',
+                                              showDivider: true,
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              5,
+                                            _buildActionButtona(
+                                              icon:
+                                                  'lib/assets/icons/chatbubble-ellipses-outline.svg',
+                                              label: '评论',
+                                              showDivider: true,
                                             ),
-                                          ),
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              _buildActionButtona(
-                                                icon:
-                                                    'lib/assets/icons/Vector (9).svg',
-                                                label: '赞',
-                                                showDivider: true,
-                                              ),
-                                              _buildActionButtona(
-                                                icon:
-                                                    'lib/assets/icons/chatbubble-ellipses-outline.svg',
-                                                label: '评论',
-                                                showDivider: true,
-                                              ),
-                                              _buildActionButtona(
-                                                icon:
-                                                    'lib/assets/icons/repeat-outline.svg',
-                                                label: '转发',
-                                                showDivider: false,
-                                              ),
-                                            ],
-                                          ),
+                                            _buildActionButtona(
+                                              icon:
+                                                  'lib/assets/icons/repeat-outline.svg',
+                                              label: '转发',
+                                              showDivider: false,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                              SizedBox(width: 10),
-                              Container(
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(width: 10),
+
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (option == true) {
+                                  _animationController.forward();
+                                  print("关闭");
+                                  setState(() {
+                                    option = !option;
+                                  });
+                                } else {
+                                  _animationController.reverse();
+                                  print("打开");
+                                  setState(() {
+                                    option = !option;
+                                  });
+                                }
+                              },
+                              child: Container(
                                 width: 20,
                                 height: 20,
                                 decoration: BoxDecoration(
@@ -744,8 +744,8 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -761,23 +761,36 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                           spacing: 6,
                           runSpacing: 6,
                           children: [
-                            Icon(
-                              Icons.favorite_border_outlined,
-                              size: 25,
-                              color: const Color.fromARGB(64, 86, 105, 145),
-                            ),
-                            Container(
-                              width: 25,
-                              height: 25,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(2),
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    widget.articleData['userPic'],
-                                  ),
-                                  fit: BoxFit.cover,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.favorite_border_outlined,
+                                  size: 25,
+                                  color: const Color.fromARGB(64, 86, 105, 145),
                                 ),
-                              ),
+                                SizedBox(width: 5),
+                                Row(
+                                  children: List.generate(
+                                    3,
+                                    (index) => Container(
+                                      width: 25,
+                                      height: 25,
+                                      margin: EdgeInsets.only(
+                                        right: 4,
+                                      ), // Add some spacing between avatars
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(2),
+                                        image: DecorationImage(
+                                          image: NetworkImage(
+                                            widget.articleData['userPic'],
+                                          ),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
