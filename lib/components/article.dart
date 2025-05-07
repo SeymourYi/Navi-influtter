@@ -533,7 +533,8 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                     PageRouteBuilder(
                       pageBuilder:
                           (context, animation, secondaryAnimation) =>
-                              UserHome(userId: widget.articleData['username']),
+                          // Testpage(),
+                          UserHome(userId: widget.articleData['username']),
                       transitionsBuilder: (
                         context,
                         animation,
@@ -624,8 +625,8 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                       ),
 
                       // 文章图片
-                      // if (widget.articleData['coverImg'] != "")
-                      if (true)
+                      if (widget.articleData['coverImg'] != "")
+                        // if (true)
                         GestureDetector(
                           onTap: () {
                             // 这里可以添加查看大图的逻辑
@@ -636,18 +637,21 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: ArticleImage(
-                                // imageUrls: ["${widget.articleData['coverImg']}"],
-                                imageUrls: [
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                  "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
-                                ],
+                                imageUrls: List<String>.from(
+                                  widget.articleData['coverImgList'],
+                                ),
+                                // imageUrls: widget.articleData['coverImgList'],
+                                // imageUrls: [
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                //   "https://pic.vjshi.com/2022-04-25/2012b0a6f8a44f62b40dd3f2851d067d/00001.jpg?x-oss-process=style/watermark",
+                                // ],
                               ),
                             ),
                           ),

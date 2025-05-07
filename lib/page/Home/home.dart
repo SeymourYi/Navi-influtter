@@ -1027,7 +1027,7 @@ import 'package:Navi/page/Home/components/things.dart';
 import 'package:Navi/page/UserInfo/userhomemain.dart';
 import 'package:Navi/page/chat/screen/recent_chats_screen.dart';
 import 'package:Navi/providers/notification_provider.dart';
-import 'package:Navi/test/article/articletest.dart';
+// import 'package:Navi/test/article/articletest.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/components/like_notification_list.dart';

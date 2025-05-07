@@ -53,7 +53,7 @@ class PostService {
               ),
             );
           }
-          formMap['files'] = multipartFiles;
+          formMap['file'] = multipartFiles;
         }
       }
 
@@ -61,6 +61,9 @@ class PostService {
 
       // 发送请求
       var response = await HttpClient.dio.post("/article", data: formData);
+      print("00000000000000000000000000");
+      print(formData);
+      print("11111111111111111111111111111");
       return response.data;
     } catch (e) {
       throw Exception('发布文章失败: $e');

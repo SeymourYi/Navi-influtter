@@ -1,4 +1,5 @@
 import 'package:Navi/api/smsloginAPI.dart';
+import 'package:Navi/components/class/utils/DialogUtils.dart';
 import 'package:Navi/page/Home/home.dart';
 import 'package:Navi/page/login/smslogin.dart';
 import 'package:Navi/page/login/smsregister.dart';
@@ -256,120 +257,19 @@ class _LoginPageState extends State<LoginPage> {
 
   // 显示用户协议对话框
   void _showAgreementDialog() {
-    showDialog(
+    DialogUtils.showPrivacyDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          //宽度设置
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(3), // 更小的圆角
-          ),
-          insetPadding: EdgeInsets.symmetric(horizontal: 50), // 修改水平内边距，使对话框更窄
-          backgroundColor: Colors.white,
-          elevation: 0,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.75, // 设置为屏幕宽度的75%
-            padding: const EdgeInsets.fromLTRB(20, 30, 20, 15),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  '请阅读下方隐私政策',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF5D5D5D),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F2), // 浅灰色背景
-                    borderRadius: BorderRadius.circular(4), // 更小的圆角
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        height: 400, // 设置一个固定高度以实现滚动
-                        child: SingleChildScrollView(
-                          child: Text(
-                            '隐私政策\n\n更新日期: 2024/12/6\n生效日期: 2024/12/6\n\n导言\n\nNavi 是一款由 商丘千寻微梦信息科技有限公司 （以下简称 "我们"）提供的产品。 您在使用我们的服务时，我们可能会收集和使用您的相关信息。我们希望通过本《隐私政策》向您说明，在使用我们的服务时，我们如何收集、使用、储存和分享这些信息，以及我们为您提供的访问、更新、控制和保护这些信息的方式。\n\n本《隐私政策》与您所使用的 Navi 服务息息相关，希望您仔细阅读，在需要时，按照本《隐私政策》的指引，作出您认为适当的选择。本《隐私政策》中涉及的相关技术词汇，我们尽量以简明扼要的表述，并提供进一步说明的链接，以便您的理解。\n\n您使用或继续使用我们的服务，即意味着同意我们按照本《隐私政策》收集、使用、储存和分享您的相关信息。\n\n如对本《隐私政策》或相关事宜有任何问题，请通过 19137056165 与我们联系。\n\n我们收集的信息\n我们或我们的第三方合作伙伴提供服务时，可能会收集、储存和使用下列与您有关的信息。如果您不提供相关信息，可能无法注册成为我们的用户或无法享受我们提供的某些服务，或者无法达到相关服务拟达到的效果。\n\n手机号 您在注册账户时，向我们提供个人手机号，我们通过发送短信的方式验证。手机号用于绑定您的账号，用于日后的登录，以及密码找回等\n\n职业，位置，加入时间 进入 Navi 后你可以自定义编辑职业，位置， 不要求真实性，此为个人自愿填写。用于在个人信息等界面的展示。加入时间为账号注册的时间，也是用于在个人信息等界面的展示。\n\n信息的存储\n2.1 信息存储的方式和期限\n我们会通过安全的方式存储您的信息，包括本地存储（例如利用 APP 进行数据缓存）、数据库和服务器日志。\n一般情况下，我们只会在为实现服务目的所必需的时间内或法律法规规定的条件下存储您的个人信息。\n\n2.2 信息存储的地域\n我们会按照法律法规规定，将境内收集的用户个人信息存储于中国境内。\n目前我们不会跨境传输或存储您的个人信息。将来如需跨境传输或存储的，我们会向您告知信息出境的目的、接收方、安全保证措施和安全风险，并征得您的同意。\n\n2.3 产品或服务停止运营时的通知\n当我们的产品或服务发生停止运营的情况时，我们将以推送通知、公告等形式通知您，并在合理期限内删除您的个人信息或进行匿名化处理，法律法规另有规定的除外。\n\n信息安全\n我们使用各种安全技术和程序，以防信息的丢失、不当使用、未经授权阅览或披露。例如，在某些服务中，我们将利用加密技术（例如 SSL）来保护您提供的个人信息。但请您理解，由于技术的限制以及可能存在的各种恶意手段，在互联网行业，即便竭尽所能加强安全措施，也不可能始终保证信息百分之百的安全。\n\n第三方隐私 SDK 说明\n4.1 腾讯云短信 SDK\n使用目的：短信登录验证。通过手机号，发送短信验证码，进行注册或登录验证。\n腾讯云短信 SDK 官网链接 / 隐私政策：https://cloud.tencent.com/document/sdk\n\n4.2 极光推送 SDK\n使用目的：消息推送服务，用于向您的设备推送通知和消息。\n极光推送 SDK 官网链接 / 隐私政策：https://www.jiguang.cn/license/privacy',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF5D5D5D),
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        style: TextButton.styleFrom(
-                          minimumSize: Size.zero,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          '不同意',
-                          style: TextStyle(
-                            color: Color(0xFF5D5D5D),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 30),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _agreementAccepted = true;
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        style: TextButton.styleFrom(
-                          minimumSize: Size.zero,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          '同意',
-                          style: TextStyle(
-                            color: Color(0xFF4170CD),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+      title: '请阅读下方隐私政策',
+      content:
+          '隐私政策\n\n更新日期: 2024/12/6\n生效日期: 2024/12/6\n\n导言\n\nNavi 是一款由 商丘千寻微梦信息科技有限公司 （以下简称 "我们"）提供的产品。 您在使用我们的服务时，我们可能会收集和使用您的相关信息。我们希望通过本《隐私政策》向您说明，在使用我们的服务时，我们如何收集、使用、储存和分享这些信息，以及我们为您提供的访问、更新、控制和保护这些信息的方式。\n\n本《隐私政策》与您所使用的 Navi 服务息息相关，希望您仔细阅读，在需要时，按照本《隐私政策》的指引，作出您认为适当的选择。本《隐私政策》中涉及的相关技术词汇，我们尽量以简明扼要的表述，并提供进一步说明的链接，以便您的理解。\n\n您使用或继续使用我们的服务，即意味着同意我们按照本《隐私政策》收集、使用、储存和分享您的相关信息。\n\n如对本《隐私政策》或相关事宜有任何问题，请通过 19137056165 与我们联系。\n\n我们收集的信息\n我们或我们的第三方合作伙伴提供服务时，可能会收集、储存和使用下列与您有关的信息。如果您不提供相关信息，可能无法注册成为我们的用户或无法享受我们提供的某些服务，或者无法达到相关服务拟达到的效果。\n\n手机号 您在注册账户时，向我们提供个人手机号，我们通过发送短信的方式验证。手机号用于绑定您的账号，用于日后的登录，以及密码找回等\n\n职业，位置，加入时间 进入 Navi 后你可以自定义编辑职业，位置， 不要求真实性，此为个人自愿填写。用于在个人信息等界面的展示。加入时间为账号注册的时间，也是用于在个人信息等界面的展示。\n\n信息的存储\n2.1 信息存储的方式和期限\n我们会通过安全的方式存储您的信息，包括本地存储（例如利用 APP 进行数据缓存）、数据库和服务器日志。\n一般情况下，我们只会在为实现服务目的所必需的时间内或法律法规规定的条件下存储您的个人信息。\n\n2.2 信息存储的地域\n我们会按照法律法规规定，将境内收集的用户个人信息存储于中国境内。\n目前我们不会跨境传输或存储您的个人信息。将来如需跨境传输或存储的，我们会向您告知信息出境的目的、接收方、安全保证措施和安全风险，并征得您的同意。\n\n2.3 产品或服务停止运营时的通知\n当我们的产品或服务发生停止运营的情况时，我们将以推送通知、公告等形式通知您，并在合理期限内删除您的个人信息或进行匿名化处理，法律法规另有规定的除外。\n\n信息安全\n我们使用各种安全技术和程序，以防信息的丢失、不当使用、未经授权阅览或披露。例如，在某些服务中，我们将利用加密技术（例如 SSL）来保护您提供的个人信息。但请您理解，由于技术的限制以及可能存在的各种恶意手段，在互联网行业，即便竭尽所能加强安全措施，也不可能始终保证信息百分之百的安全。\n\n第三方隐私 SDK 说明\n4.1 腾讯云短信 SDK\n使用目的：短信登录验证。通过手机号，发送短信验证码，进行注册或登录验证。\n腾讯云短信 SDK 官网链接 / 隐私政策：https://cloud.tencent.com/document/sdk\n\n4.2 极光推送 SDK\n使用目的：消息推送服务，用于向您的设备推送通知和消息。\n极光推送 SDK 官网链接 / 隐私政策：https://www.jiguang.cn/license/privacy',
+      onAgree: () {
+        setState(() {
+          _agreementAccepted = true;
+        });
+        Navigator.of(context).pop();
+      },
+      onDisagree: () {
+        Navigator.of(context).pop();
       },
     );
   }

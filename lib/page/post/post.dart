@@ -1,13 +1,16 @@
 // post_page.dart - 发布页面
 import 'package:Navi/components/litarticle.dart';
 import 'package:Navi/components/postlitarticle.dart';
+import 'package:Navi/page/post/components/imagepicker.dart';
 import 'package:flutter/material.dart';
+// import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 // ignore: unused_import
 import '../../models/post_article_model.dart';
 import '../../Store/storeutils.dart';
 import '../../api/postApi.dart';
-import '../../utils/imagepick.dart';
+// import '../../utils/imagepick.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'components/targlist.dart';
 
 /// 发布页面的无状态组件
@@ -54,6 +57,8 @@ class _PostPageState extends State<PostPage> {
   bool _showTagSelector = false;
   // 文章服务
   final PostService _postService = PostService();
+  // 标记是否是第一次使用图片选择器
+  bool _isFirstTimeUsingImagePicker = true;
 
   @override
   void initState() {
@@ -64,6 +69,8 @@ class _PostPageState extends State<PostPage> {
     });
     // 获取用户信息
     _loadUserInfo();
+    // 检查是否第一次使用图片选择器
+    _checkFirstTimeUsingImagePicker();
   }
 
   // 获取用户信息
@@ -80,25 +87,131 @@ class _PostPageState extends State<PostPage> {
     });
   }
 
-  // 选择图片
-  Future<void> _pickImage() async {
-    final File? pickedImage = await ImagePickerUtil.pickImageFromGallery();
-
-    if (pickedImage != null) {
-      setState(() {
-        // 如果图片数量小于9张，则添加
-        if (_selectedImages.length < 9) {
-          _selectedImages.add(pickedImage);
-        } else {
-          // 如果已经有9张图片，显示提示
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('最多只能选择9张图片')));
+  // 检查是否第一次使用图片选择器
+  Future<void> _checkFirstTimeUsingImagePicker() async {
+    final prefs = await SharedPreferences.getInstance();
+    final firstTime = prefs.getBool('first_time_using_image_picker') ?? true;
+    setState(() {
+      _isFirstTimeUsingImagePicker = firstTime;
+    });
+    if (firstTime) {
+      // 延迟显示提示，让界面先加载完成
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          _showImagePickerTutorial();
         }
       });
+    }
+  }
 
-      // 打印图片路径
-      debugPrint('选择的图片路径: ${pickedImage.path}');
+  // 显示图片选择器教程
+  void _showImagePickerTutorial() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.info_outline, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 10),
+                const Text('图片选择器使用提示'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text('📸 点击相机图标打开图片选择器'),
+                SizedBox(height: 8),
+                Text('✅ 可以同时选择多张图片（最多9张）'),
+                SizedBox(height: 8),
+                Text('🔄 长按图片可以进行编辑、预览等操作'),
+                SizedBox(height: 8),
+                Text('⬆️ 上滑关闭图片选择器'),
+                SizedBox(height: 8),
+                Text('📋 点击"排序"可以调整图片顺序'),
+                SizedBox(height: 8),
+                Text('👆 点击图片可以查看大图'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('知道了'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // 标记为不再显示
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('first_time_using_image_picker', false);
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('不再提示'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 选择图片
+  Future<void> _pickImage() async {
+    try {
+      // 如果是第一次使用，先显示教程
+      if (_isFirstTimeUsingImagePicker) {
+        setState(() {
+          _isFirstTimeUsingImagePicker = false;
+        });
+        // 保存用户已经看过教程
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_time_using_image_picker', false);
+      }
+
+      final result = await Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) => ImagePickerScreen(
+                initialImages: _selectedImages,
+                onImagesSelected: (images) {
+                  setState(() {
+                    _selectedImages = images;
+                  });
+                },
+                maxImages: 9,
+              ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOut;
+
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
+            var offsetAnimation = animation.drive(tween);
+
+            return SlideTransition(position: offsetAnimation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+      );
+
+      // 如果返回了结果（选择了图片），则更新状态
+      if (result != null && result is List<File>) {
+        setState(() {
+          _selectedImages = result;
+        });
+        debugPrint('选择了 ${_selectedImages.length} 张图片');
+      }
+    } catch (e) {
+      debugPrint('打开图片选择器失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('打开图片选择器失败: $e')));
+      }
     }
   }
 
@@ -360,14 +473,69 @@ class _PostPageState extends State<PostPage> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Color(0xFF26C485), width: 3),
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.camera_alt_outlined,
-                color: Colors.white,
-                size: 28,
-              ),
-              onPressed: _selectedImages.length < 9 ? _pickImage : null,
-              tooltip: '添加图片 (${_selectedImages.length}/9)',
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  onPressed: _selectedImages.length < 9 ? _pickImage : null,
+                  tooltip: '添加图片 (${_selectedImages.length}/9)',
+                ),
+                if (_selectedImages.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${_selectedImages.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                // 添加新手引导提示
+                if (_isFirstTimeUsingImagePicker)
+                  Positioned(
+                    top: -24,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.arrow_downward,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '点击这里选择图片',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -410,7 +578,13 @@ class _PostPageState extends State<PostPage> {
             child: InkWell(
               onTap: () => _showFullScreenImage(index),
               borderRadius: BorderRadius.circular(8),
-              child: Container(width: double.infinity, height: double.infinity),
+              child: Hero(
+                tag: 'preview_image_$index',
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
             ),
           ),
           // 右上角删除按钮
@@ -574,20 +748,20 @@ class _PostPageState extends State<PostPage> {
           imageFiles: _selectedImages, // 传递选择的图片文件列表
         );
       } else {
-        print("发布文章");
-        print(content);
-        print(_userInfo!['id']);
-        print(_userInfo!['username']);
-        print(categoryId);
-        print(_selectedImages);
-        print("发布文章");
-        // await _postService.postArticle(
-        //   content: content,
-        //   userId: _userInfo!['id'],
-        //   username: _userInfo!['username'],
-        //   categoryId: categoryId,
-        //   imageFiles: _selectedImages, // 传递选择的图片文件列表
-        // );
+        // print("发布文章");
+        // print(content);
+        // print(_userInfo!['id']);
+        // print(_userInfo!['username']);
+        // print(categoryId);
+        // print(_selectedImages);
+        // print("发布文章");
+        await _postService.postArticle(
+          content: content,
+          userId: _userInfo!['id'],
+          username: _userInfo!['username'],
+          categoryId: categoryId,
+          imageFiles: _selectedImages, // 传递选择的图片文件列表
+        );
       }
 
       // 发布成功后返回上一页
@@ -633,20 +807,43 @@ class _PostPageState extends State<PostPage> {
                   '图片预览 ${index + 1}/${_selectedImages.length}',
                   style: const TextStyle(color: Colors.white),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        _selectedImages.removeAt(index);
+                      });
+                      if (_selectedImages.isEmpty ||
+                          index >= _selectedImages.length) {
+                        Navigator.pop(context);
+                      }
+                    },
+                    tooltip: '删除图片',
+                  ),
+                ],
               ),
               body: PageView.builder(
                 controller: PageController(initialPage: index),
                 itemCount: _selectedImages.length,
                 itemBuilder: (context, pageIndex) {
-                  return Center(
-                    child: InteractiveViewer(
-                      panEnabled: true,
-                      boundaryMargin: const EdgeInsets.all(20),
-                      minScale: 0.5,
-                      maxScale: 4,
-                      child: Image.file(
-                        _selectedImages[pageIndex],
-                        fit: BoxFit.contain,
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Center(
+                      child: InteractiveViewer(
+                        panEnabled: true,
+                        boundaryMargin: const EdgeInsets.all(20),
+                        minScale: 0.5,
+                        maxScale: 4,
+                        child: Hero(
+                          tag: 'preview_image_$pageIndex',
+                          child: Image.file(
+                            _selectedImages[pageIndex],
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                       ),
                     ),
                   );

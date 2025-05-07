@@ -8,6 +8,8 @@ class ArticleService {
       var response = await HttpClient.dio.get(
         "/article/AllArticleList?userid=${userId}",
       );
+      print(response.data);
+      print(":1111111111111");
       return response.data;
     } catch (e) {
       throw Exception('Failed to load articles: $e');
