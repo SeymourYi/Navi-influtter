@@ -461,7 +461,9 @@ class _ArticledetailState extends State<Articledetail> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: ArticleImage(
-                        imageUrls: ["${widget.articleData['coverImg']}"],
+                        imageUrls: List<String>.from(
+                          widget.articleData['coverImgList'],
+                        ),
                       ),
                     ),
                   ),

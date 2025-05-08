@@ -1,3 +1,4 @@
+import 'package:Navi/api/getarticleinfoAPI.dart';
 import 'package:dio/dio.dart';
 import '../utils/mydio.dart';
 import '../api/emailAPI.dart';
@@ -8,8 +9,6 @@ class ArticleService {
       var response = await HttpClient.dio.get(
         "/article/AllArticleList?userid=${userId}",
       );
-      print(response.data);
-      print(":1111111111111");
       return response.data;
     } catch (e) {
       throw Exception('Failed to load articles: $e');
@@ -51,6 +50,17 @@ class ArticleService {
     try {
       var response = await HttpClient.dio.get(
         "/article/getArticle?articleId=${articleId}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('Failed to load articles: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getArticlelikers(String articleId) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/article/articleInfo/likers?articleid=${articleId}",
       );
       return response.data;
     } catch (e) {

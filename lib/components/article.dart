@@ -34,6 +34,8 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   String? _selectedImagePath; // 选择的图片路径
   bool option = false;
+  ArticleService articleService = ArticleService();
+  List<dynamic> articlelikersList = [];
   @override
   void initState() {
     super.initState();
@@ -49,6 +51,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     _animationController.value = 1.0;
     // 获取当前用户信息
     _loadCurrentUserInfo();
+    _loadarticlelikers(widget.articleData['id']);
   }
 
   @override
@@ -68,6 +71,18 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
         });
       }
     } catch (e) {}
+  }
+
+  Future<void> _loadarticlelikers(String articleId) async {
+    try {
+      final result = await articleService.getArticlelikers(articleId);
+      setState(() {
+        articlelikersList = result['data'];
+      });
+      print(result);
+    } catch (e) {
+      print("Error loading article likers: $e");
+    }
   }
 
   // 处理点赞操作
@@ -99,6 +114,24 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       isLikeLoading = true;
     });
 
+    if (!isLiked) {
+      // 取消点赞，需要从列表中移除当前用户
+      setState(() {
+        articlelikersList.removeWhere((user) => user["username"] == username);
+      });
+    } else {
+      // 点赞，需要添加当前用户到列表中，避免重复等待API响应
+      if (_currentUser != null &&
+          !articlelikersList.any((user) => user["username"] == username)) {
+        setState(() {
+          articlelikersList.add({
+            "username": username,
+            "userPic": _currentUser!["userPic"],
+          });
+        });
+      }
+    }
+
     try {
       // 使用API调用
       GetArticleInfoService service = GetArticleInfoService();
@@ -115,11 +148,33 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
           widget.articleData['islike'] = isLiked;
           widget.articleData['likecont'] = likeCount;
         }
+
+        // API成功后重新加载点赞用户列表，确保数据与服务器同步
+        _loadarticlelikers(widget.articleData['id'].toString());
       } else {
         // API失败，回滚状态
         setState(() {
           isLiked = !newLikedState;
           likeCount = isLiked ? likeCount + 1 : likeCount - 1;
+
+          // 回滚点赞者列表
+          if (isLiked) {
+            // 重新添加用户到列表
+            if (_currentUser != null &&
+                !articlelikersList.any(
+                  (user) => user["username"] == username,
+                )) {
+              articlelikersList.add({
+                "username": username,
+                "userPic": _currentUser!["userPic"],
+              });
+            }
+          } else {
+            // 从列表中移除用户
+            articlelikersList.removeWhere(
+              (user) => user["username"] == username,
+            );
+          }
         });
 
         // 显示错误信息
@@ -139,6 +194,21 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       setState(() {
         isLiked = !newLikedState;
         likeCount = isLiked ? likeCount + 1 : likeCount - 1;
+
+        // 回滚点赞者列表
+        if (isLiked) {
+          // 重新添加用户到列表
+          if (_currentUser != null &&
+              !articlelikersList.any((user) => user["username"] == username)) {
+            articlelikersList.add({
+              "username": username,
+              "userPic": _currentUser!["userPic"],
+            });
+          }
+        } else {
+          // 从列表中移除用户
+          articlelikersList.removeWhere((user) => user["username"] == username);
+        }
       });
 
       // 提取错误信息
@@ -771,20 +841,35 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                 SizedBox(width: 5),
                                 Row(
                                   children: List.generate(
-                                    3,
-                                    (index) => Container(
-                                      width: 25,
-                                      height: 25,
-                                      margin: EdgeInsets.only(
-                                        right: 4,
-                                      ), // Add some spacing between avatars
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(2),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
-                                            widget.articleData['userPic'],
+                                    articlelikersList.length,
+                                    (index) => GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => UserHome(
+                                                  userId:
+                                                      articlelikersList[index]['username'],
+                                                ),
                                           ),
-                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                      child: Container(
+                                        width: 25,
+                                        height: 25,
+                                        margin: EdgeInsets.only(
+                                          right: 4,
+                                        ), // Add some spacing between avatars
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            2,
+                                          ),
+                                          image: DecorationImage(
+                                            image: NetworkImage(
+                                              articlelikersList[index]['userPic'],
+                                            ),
+                                            fit: BoxFit.cover,
+                                          ),
                                         ),
                                       ),
                                     ),
