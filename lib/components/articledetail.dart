@@ -680,7 +680,10 @@ class _ArticledetailState extends State<Articledetail> {
                     ),
                   ),
                 ),
-                CommentWidget(comments: articleComments),
+                CommentWidget(
+                  comments: articleComments,
+                  uparticledata: widget.articleData,
+                ),
               ],
             ),
         ],

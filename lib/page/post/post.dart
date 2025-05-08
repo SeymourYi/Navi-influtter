@@ -19,11 +19,14 @@ class PostPage extends StatefulWidget {
   const PostPage({
     Key? key,
     this.articelData, // Optional article data
+    this.uparticledata,
     required this.type,
   }) : super(key: key);
 
   final dynamic
   articelData; // Consider using a specific type instead of dynamic
+  final dynamic
+  uparticledata; // Consider using a specific type instead of dynamic
   final String
   type; // Changed from dynamic to String since we know it's a string
 
@@ -114,8 +117,8 @@ class _PostPageState extends State<PostPage> {
       // 延迟显示提示，让界面先加载完成
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
-          // _showImagePickerTutorial();
-          _showAgreementDialog();
+          _showImagePickerTutorial();
+          // _showAgreementDialog();
         }
       });
     }
@@ -764,6 +767,26 @@ class _PostPageState extends State<PostPage> {
           username: _userInfo!['username'],
           categoryId: categoryId,
           imageFiles: _selectedImages, // 传递选择的图片文件列表
+        );
+      } else if (widget.type == '回复') {
+        print(widget.articelData);
+        print(widget.articelData);
+        print(widget.articelData);
+        final int articleId =
+            widget.articelData['id'] is int
+                ? widget.articelData['id']
+                : int.parse(widget.articelData['id'].toString());
+        final tousername = widget.articelData['username'];
+        final uparticleId = int.parse(widget.uparticledata["id"]);
+        await _postService.postComment(
+          content: content,
+          userId: _userInfo!['id'],
+          username: _userInfo!['username'],
+          articleId: articleId,
+          categoryId: categoryId,
+          becommentarticleId: uparticleId,
+          imageFiles: _selectedImages, // 传递选择的图片文件列表
+          tousername: tousername,
         );
       } else {
         // print("发布文章");

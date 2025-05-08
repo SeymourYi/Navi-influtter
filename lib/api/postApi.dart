@@ -146,6 +146,7 @@ class PostService {
     required int articleId,
     required int categoryId,
     required int becommentarticleId,
+    String? tousername,
     File? imageFile,
     List<File>? imageFiles,
   }) async {
@@ -159,6 +160,7 @@ class PostService {
         'categoryId': categoryId,
         'becomment_articleID': becommentarticleId,
         'createUserName': username,
+        'tousername': tousername,
       };
 
       // 处理单张图片
