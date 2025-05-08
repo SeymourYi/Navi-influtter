@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 导入services包以使用HapticFeedback
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'dart:math' as math;
+// 安全地导入振动包，但使用条件导入避免编译错误
+// import 'package:vibration/vibration.dart' if (false) 'vibration_stub.dart';
 
 class FullScreenImageView extends StatefulWidget {
   final List<String> imageUrls;
@@ -329,8 +332,22 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     _zoomAnimationController.forward();
   }
 
+  // 尝试执行震动
+  void _tryVibrate() {
+    try {
+      // 使用Flutter内置的HapticFeedback类提供振动反馈
+      HapticFeedback.mediumImpact();
+    } catch (e) {
+      // 忽略振动错误
+      debugPrint('Haptic feedback error: $e');
+    }
+  }
+
   // 显示操作菜单
   void _showActionMenu() {
+    // 尝试触发振动
+    _tryVibrate();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
