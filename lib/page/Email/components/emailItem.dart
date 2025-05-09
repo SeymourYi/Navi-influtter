@@ -1,5 +1,7 @@
 import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/emailAPI.dart';
+import 'package:Navi/api/getarticleinfoAPI.dart';
+import 'package:Navi/page/post/post.dart';
 import 'package:Navi/providers/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,11 @@ class _EmailitemState extends State<Emailitem>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   EmailService emailService = EmailService();
+  GetArticleInfoService _articleInfoService = GetArticleInfoService();
   bool isRead = false;
+  Map<String, dynamic>? _currentUser;
+  bool isLikeLoading = false;
+  bool isReplyLoading = false;
 
   @override
   void initState() {
@@ -34,6 +40,23 @@ class _EmailitemState extends State<Emailitem>
 
     // 初始化已读状态
     isRead = widget.email['isRead'] ?? false;
+
+    // 获取当前用户信息
+    _loadCurrentUserInfo();
+  }
+
+  // 加载当前用户信息
+  Future<void> _loadCurrentUserInfo() async {
+    try {
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      if (userInfo != null && userInfo['username'] != null) {
+        setState(() {
+          _currentUser = userInfo;
+        });
+      }
+    } catch (e) {
+      print('获取用户信息失败: $e');
+    }
   }
 
   @override
@@ -126,6 +149,111 @@ class _EmailitemState extends State<Emailitem>
       context,
       listen: false,
     ).setnotificationcount(0);
+  }
+
+  // 处理回复评论
+  void _handleReply() async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再回复'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 设置加载状态
+    setState(() {
+      isReplyLoading = true;
+    });
+
+    try {
+      // 导航到评论回复页面
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => PostPage(
+                type: '回复',
+                articelData: {
+                  'content': widget.email['newArticleContent'],
+                  'username': widget.email['senderId'],
+                  'nickname': widget.email['senderNickName'],
+                  'userPic': widget.email['senderUserPic'],
+                },
+                uparticledata: widget.email['oldArticleId'],
+              ),
+        ),
+      );
+    } catch (e) {
+      print('跳转到评论页面失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('处理回复失败，请稍后再试'), duration: Duration(seconds: 2)),
+      );
+    } finally {
+      // 重置加载状态
+      if (mounted) {
+        setState(() {
+          isReplyLoading = false;
+        });
+      }
+    }
+  }
+
+  // 处理喜欢评论功能
+  void _handleLike() async {
+    if (_currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('请先登录后再喜欢'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+
+    // 设置加载状态
+    setState(() {
+      isLikeLoading = true;
+    });
+
+    try {
+      // 调用API进行点赞
+      final result = await _articleInfoService.likesomearticle(
+        _currentUser!['username'],
+        widget.email['newArticleId'].toString(),
+      );
+
+      if (result != null && result['code'] == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('喜欢成功'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        String errorMsg = result != null ? result['msg'] ?? '操作失败' : '操作失败';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('喜欢操作失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('喜欢失败，请稍后再试'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      // 重置加载状态
+      if (mounted) {
+        setState(() {
+          isLikeLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -414,6 +542,121 @@ class _EmailitemState extends State<Emailitem>
                             height: 1.4,
                           ),
                         ),
+                      ),
+                    if (widget.email['type'] == 'comment')
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap:
+                                    // () {
+                                    //   print("功能待实现");
+                                    // },
+                                    isReplyLoading ? null : _handleReply,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      isReplyLoading
+                                          ? SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.blue.shade700,
+                                                  ),
+                                            ),
+                                          )
+                                          : Icon(
+                                            Icons.reply_rounded,
+                                            size: 18,
+                                            color: Colors.blue.shade700,
+                                          ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "回复",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.blue.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: isLikeLoading ? null : _handleLike,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.pink.shade50,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.pink.shade200,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      isLikeLoading
+                                          ? SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.pink.shade700,
+                                                  ),
+                                            ),
+                                          )
+                                          : Icon(
+                                            Icons.favorite_border_rounded,
+                                            size: 18,
+                                            color: Colors.pink.shade700,
+                                          ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "喜欢",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.pink.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),

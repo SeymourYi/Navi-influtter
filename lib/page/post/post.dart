@@ -776,7 +776,9 @@ class _PostPageState extends State<PostPage> {
             widget.articelData['id'] is int
                 ? widget.articelData['id']
                 : int.parse(widget.articelData['id'].toString());
+
         final tousername = widget.articelData['username'];
+
         final uparticleId = int.parse(widget.uparticledata["id"]);
         await _postService.postComment(
           content: content,

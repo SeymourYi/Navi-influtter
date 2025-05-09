@@ -1022,6 +1022,7 @@
 // }
 import 'package:Navi/api/emailAPI.dart';
 import 'package:Navi/components/full_screen_image_view.dart';
+import 'package:Navi/page/About/aboutNavi.dart';
 import 'package:Navi/page/Email/components/infopage.dart';
 import 'package:Navi/page/Email/emailList.dart';
 import 'package:Navi/page/Home/components/things.dart';
@@ -1392,7 +1393,9 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                   title: "关于Navi",
                   icon: Icons.info_outline,
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => Aboutnavi()),
+                    );
                   },
                 ),
               ],
