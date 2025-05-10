@@ -112,6 +112,8 @@ class Myjpush {
       // 设置别名（通常使用用户ID）
       jpush.setAlias(username).then((map) {
         print("设置别名结果: $map");
+        // 保存别名到SharedPreferences
+        SharedPrefsUtils.setString("alias", username);
       });
 
       // 处理可能从通知启动的应用

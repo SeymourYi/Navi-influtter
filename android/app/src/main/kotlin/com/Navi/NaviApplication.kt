@@ -127,9 +127,9 @@ class NaviApplication : Application() {
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed({
             try {
-                // 从SharedPreferences获取极光别名，如果你有别的存储方式可以替换
-                val sharedPrefs = getSharedPreferences("JPushAlias", Context.MODE_PRIVATE)
-                val jpushAlias = sharedPrefs.getString("alias", "")
+                // 从SharedPreferences获取极光别名
+                val sharedPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                val jpushAlias = sharedPrefs.getString("flutter.alias", "")
                 
                 // 如果获取到极光别名，并且不为空，则设置给小米推送
                 if (!jpushAlias.isNullOrEmpty()) {
