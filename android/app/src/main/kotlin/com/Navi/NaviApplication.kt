@@ -123,7 +123,6 @@ class NaviApplication : Application() {
     
     // 监听极光设置的别名并同步到小米推送
     private fun monitorJPushAlias() {
-        // 获取当前极光推送的别名（演示，实际应该从你的系统中获取）
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed({
             try {
@@ -133,16 +132,24 @@ class NaviApplication : Application() {
                 
                 // 如果获取到极光别名，并且不为空，则设置给小米推送
                 if (!jpushAlias.isNullOrEmpty()) {
-                    // 设置小米推送别名
-                    setMiPushAlias(this, jpushAlias)
-                    Log.e(TAG, "【推送同步】已将极光别名 '$jpushAlias' 同步设置到小米推送")
+                    // 先清除旧别名
+                    MiPushClient.unsetAlias(this, null, null)
+                    // 延迟1秒后设置新别名，确保清除操作完成
+                    handler.postDelayed({
+                        setMiPushAlias(this, jpushAlias)
+                        Log.e(TAG, "【推送同步】已将极光别名 '$jpushAlias' 同步设置到小米推送")
+                    }, 1000)
                 } else {
                     // 尝试获取极光默认别名（这里假设极光别名可能是用户ID）
                     val userId = "2222" // 替换为实际获取用户ID的逻辑
                     if (!userId.isNullOrEmpty()) {
-                        // 设置小米推送别名为用户ID
-                        setMiPushAlias(this, userId)
-                        Log.e(TAG, "【推送同步】未找到极光别名，已将用户ID '$userId' 设置为小米推送别名")
+                        // 先清除旧别名
+                        MiPushClient.unsetAlias(this, null, null)
+                        // 延迟1秒后设置新别名
+                        handler.postDelayed({
+                            setMiPushAlias(this, userId)
+                            Log.e(TAG, "【推送同步】未找到极光别名，已将用户ID '$userId' 设置为小米推送别名")
+                        }, 1000)
                     } else {
                         Log.e(TAG, "【推送同步】无法获取极光别名或用户ID")
                     }
