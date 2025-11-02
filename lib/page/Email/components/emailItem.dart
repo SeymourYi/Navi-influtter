@@ -2,9 +2,12 @@ import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/emailAPI.dart';
 import 'package:Navi/api/getarticleinfoAPI.dart';
 import 'package:Navi/page/post/post.dart';
+import 'package:Navi/components/articledetail.dart';
 import 'package:Navi/providers/notification_provider.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Emailitem extends StatefulWidget {
@@ -77,39 +80,39 @@ class _EmailitemState extends State<Emailitem>
   IconData _getTypeIcon() {
     switch (widget.email['type']) {
       case 'like':
-        return Icons.favorite_rounded;
+        return Icons.favorite;
       case 'comment':
-        return Icons.chat_bubble_rounded;
+        return Icons.chat_bubble_outline;
       case 'reArticle':
-        return Icons.repeat_rounded;
+        return Icons.repeat;
       default:
-        return Icons.bookmark_rounded;
+        return Icons.bookmark_outline;
     }
   }
 
   Color _getTypeColor() {
     switch (widget.email['type']) {
       case 'like':
-        return Colors.redAccent;
+        return Colors.red;
       case 'comment':
-        return Colors.blueAccent;
+        return Color(0xFF6201E7);
       case 'reArticle':
-        return Colors.greenAccent.shade700;
+        return Colors.green;
       default:
-        return Colors.amberAccent.shade700;
+        return Colors.amber;
     }
   }
 
   String _getTypeText() {
     switch (widget.email['type']) {
       case 'like':
-        return ' 被喜欢了';
+        return '赞了你的帖子';
       case 'comment':
-        return ' 被评论了';
+        return '评论了你的帖子';
       case 'reArticle':
-        return ' 被转发了';
+        return '转发了你的帖子';
       default:
-        return ' 被收藏了';
+        return '收藏了你的帖子';
     }
   }
 
@@ -140,22 +143,67 @@ class _EmailitemState extends State<Emailitem>
     }
   }
 
-  //阅读所有邮件
-  Future<void> _readallEmail() async {
-    final userInfo = await SharedPrefsUtils.getUserInfo();
-    await emailService.readAllEmail(int.parse(userInfo!['username']));
-    //邮件数清零
-    Provider.of<NotificationProvider>(
-      context,
-      listen: false,
-    ).setnotificationcount(0);
+  // 跳转到文章详情页
+  void _navigateToArticleDetail() async {
+    try {
+      // 根据通知类型确定要跳转的文章ID
+      String? articleId;
+      if (widget.email['type'] == 'like' || widget.email['type'] == 'reArticle') {
+        // 点赞和转发通知：跳转到被操作的原文章
+        articleId = widget.email['oldArticleId']?.toString();
+      } else if (widget.email['type'] == 'comment') {
+        // 评论通知：跳转到原文章（被评论的文章）
+        articleId = widget.email['oldArticleId']?.toString();
+      }
+      
+      if (articleId == null || articleId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('无法获取文章信息'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      // 获取文章详情
+      final articleResult = await _articleInfoService.getArticleInfo(int.parse(articleId));
+      
+      if (articleResult != null && articleResult['code'] == 0 && articleResult['data'] != null) {
+        // 导航到文章详情页
+        Navigator.push(
+          context,
+          RouteUtils.slideFromRight(
+            Articledetail(articleData: articleResult['data']),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('获取文章详情失败'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('跳转到文章详情失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('跳转失败: ${e.toString()}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   // 处理回复评论
   void _handleReply() async {
     if (_currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先登录后再回复'), duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('请先登录后再回复'),
+          duration: Duration(seconds: 2),
+        ),
       );
       return;
     }
@@ -166,27 +214,36 @@ class _EmailitemState extends State<Emailitem>
     });
 
     try {
+      // 对于评论通知，newArticleId 是评论的ID，oldArticleId 是原文章的ID
+      // 需要传递评论数据以便回复
+      final commentData = {
+        'id': widget.email['newArticleId']?.toString(),
+        'content': widget.email['newArticleContent'] ?? '',
+        'username': widget.email['senderId']?.toString(),
+        'nickname': widget.email['senderNickName'] ?? '',
+        'userPic': widget.email['senderUserPic'] ?? '',
+      };
+
       // 导航到评论回复页面
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder:
-              (context) => PostPage(
-                type: '回复',
-                articelData: {
-                  'content': widget.email['newArticleContent'],
-                  'username': widget.email['senderId'],
-                  'nickname': widget.email['senderNickName'],
-                  'userPic': widget.email['senderUserPic'],
-                },
-                uparticledata: widget.email['oldArticleId'],
-              ),
+        RouteUtils.slideFromBottom(
+          PostPage(
+            type: '回复',
+            articelData: commentData,
+            uparticledata: {
+              'id': widget.email['oldArticleId']?.toString(),
+            },
+          ),
         ),
       );
     } catch (e) {
       print('跳转到评论页面失败: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('处理回复失败，请稍后再试'), duration: Duration(seconds: 2)),
+        SnackBar(
+          content: Text('处理回复失败: ${e.toString()}'),
+          duration: const Duration(seconds: 2),
+        ),
       );
     } finally {
       // 重置加载状态
@@ -198,11 +255,14 @@ class _EmailitemState extends State<Emailitem>
     }
   }
 
-  // 处理喜欢评论功能
+  // 处理点赞功能
   void _handleLike() async {
     if (_currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先登录后再喜欢'), duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('请先登录后再点赞'),
+          duration: Duration(seconds: 2),
+        ),
       );
       return;
     }
@@ -213,16 +273,34 @@ class _EmailitemState extends State<Emailitem>
     });
 
     try {
+      String? articleId;
+      
+      // 根据通知类型确定要点赞的ID
+      if (widget.email['type'] == 'like') {
+        // 点赞通知：点赞原文章（可以再次点赞或取消点赞）
+        articleId = widget.email['oldArticleId']?.toString();
+      } else if (widget.email['type'] == 'comment') {
+        // 评论通知：点赞评论本身（newArticleId 是评论ID）
+        articleId = widget.email['newArticleId']?.toString();
+      } else if (widget.email['type'] == 'reArticle') {
+        // 转发通知：点赞原文章
+        articleId = widget.email['oldArticleId']?.toString();
+      }
+
+      if (articleId == null || articleId.isEmpty) {
+        throw Exception('无法获取文章ID');
+      }
+
       // 调用API进行点赞
       final result = await _articleInfoService.likesomearticle(
         _currentUser!['username'],
-        widget.email['newArticleId'].toString(),
+        articleId,
       );
 
       if (result != null && result['code'] == 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('喜欢成功'),
+          const SnackBar(
+            content: Text('操作成功'),
             duration: Duration(seconds: 1),
             backgroundColor: Colors.green,
           ),
@@ -232,17 +310,17 @@ class _EmailitemState extends State<Emailitem>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMsg),
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
-      print('喜欢操作失败: $e');
+      print('点赞操作失败: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('喜欢失败，请稍后再试'),
-          duration: Duration(seconds: 2),
+          content: Text('操作失败: ${e.toString()}'),
+          duration: const Duration(seconds: 2),
           backgroundColor: Colors.red,
         ),
       );
@@ -259,10 +337,11 @@ class _EmailitemState extends State<Emailitem>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      //点击邮件
+      //点击邮件 - 跳转到文章详情页并标记为已读
       onTap: () {
         _playAnimation();
         _readsomeEmail();
+        _navigateToArticleDetail();
       },
       //点击邮件动画
       child: AnimatedBuilder(
@@ -271,425 +350,288 @@ class _EmailitemState extends State<Emailitem>
           return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.12),
-                spreadRadius: 1,
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: isRead ? Colors.white : Colors.blue.shade50.withOpacity(0.3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 用户头像 - 方形圆角
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: CachedNetworkImage(
+                  imageUrl: widget.email['senderUserPic'] ?? '',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    width: 40,
+                    height: 40,
+                    color: Colors.grey[300],
+                    child: const Icon(
+                      Icons.person,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: 40,
+                    height: 40,
+                    color: Colors.grey[300],
+                    child: const Icon(
+                      Icons.person,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
               ),
-            ],
-            border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Material(
-              color: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+              const SizedBox(width: 12),
+              // 通知内容
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 用户信息和操作类型
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _getTypeColor().withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            _getTypeIcon(),
-                            color: _getTypeColor(),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: RichText(
-                                      text: TextSpan(
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontFamily: 'PingFangSC-Regular',
-                                          color: Colors.black87,
-                                          height: 1.3,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text:
-                                                widget
-                                                            .email['oldArticleContent']
-                                                            .length >
-                                                        16
-                                                    ? '${widget.email['oldArticleContent'].substring(0, 16)}...'
-                                                    : widget
-                                                        .email['oldArticleContent'],
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: _getTypeText(),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (!widget.email['isRead'])
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.redAccent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                ],
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.black87,
+                                height: 1.4,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.email['uptonow'],
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              // 个人信息卡片
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: _getTypeColor().withOpacity(0.03),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: _getTypeColor().withOpacity(0.1),
+                              children: [
+                                TextSpan(
+                                  text: widget.email['senderNickName'] ?? '用户',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Transform.translate(
-                                          offset: const Offset(
-                                            -5,
-                                            -15,
-                                          ), // 向上移动 4 像素
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: _getTypeColor()
-                                                    .withOpacity(0.2),
-                                                width: 2,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: _getTypeColor()
-                                                      .withOpacity(0.1),
-                                                  blurRadius: 8,
-                                                  spreadRadius: 1,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-
-                                            child: CircleAvatar(
-                                              radius: 18,
-                                              backgroundImage: NetworkImage(
-                                                widget.email['senderUserPic'],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  widget
-                                                      .email['senderNickName'],
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 15,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  '@${widget.email['senderId']}',
-                                                  style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 6),
-                                            // BIO
-                                            if (widget.email['senderBio'] !=
-                                                    null &&
-                                                widget
-                                                    .email['senderBio']
-                                                    .isNotEmpty)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  bottom: 8,
-                                                ),
-                                                child: Text(
-                                                  widget.email['senderBio'],
-                                                  style: TextStyle(
-                                                    color: Colors.black87,
-                                                    fontSize: 13,
-                                                    height: 1.4,
-                                                  ),
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-
-                                    if (widget.email['senderJob'] != null ||
-                                        widget.email['senderLocate'] != null ||
-                                        widget.email['senderJoinDate'] != null)
-                                      Container(
-                                        width: double.infinity,
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.of(
-                                                context,
-                                              ).size.width *
-                                              0.65,
-                                        ),
-                                        child: Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          children: [
-                                            if (widget.email['senderJob'] !=
-                                                null)
-                                              _buildInfoChip(
-                                                Icons.work_outline_rounded,
-                                                widget.email['senderJob'],
-                                              ),
-                                            if (widget.email['senderLocate'] !=
-                                                null)
-                                              _buildInfoChip(
-                                                Icons.location_on_outlined,
-                                                widget.email['senderLocate'],
-                                              ),
-                                            if (widget
-                                                    .email['senderJoinDate'] !=
-                                                null)
-                                              _buildInfoChip(
-                                                Icons.calendar_today_outlined,
-                                                widget.email['senderJoinDate'],
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
+                                TextSpan(
+                                  text: ' ${_getTypeText()}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (!isRead)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF6201E7),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                       ],
                     ),
-                    if (widget.email['type'] == 'comment' ||
-                        widget.email['type'] == 'reArticle')
-                      Container(
-                        margin: const EdgeInsets.only(top: 12, left: 44),
+                    const SizedBox(height: 4),
+                    // 时间
+                    Text(
+                      widget.email['uptonow'] ?? '',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // 被操作的文章内容预览 - 可点击跳转
+                    GestureDetector(
+                      onTap: _navigateToArticleDetail,
+                      child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _getTypeColor().withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: _getTypeColor().withOpacity(0.2),
+                            color: Colors.grey.shade200,
                             width: 1,
                           ),
                         ),
                         child: Text(
-                          widget.email['newArticleContent'],
+                          widget.email['oldArticleContent'] ?? '',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[800],
+                            color: Colors.black87,
                             height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    // 评论或转发的内容
+                    if (widget.email['type'] == 'comment' ||
+                        widget.email['type'] == 'reArticle')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey.shade200,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            widget.email['newArticleContent'] ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              height: 1.4,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
-                    if (widget.email['type'] == 'comment')
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                    // 操作按钮
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
                         children: [
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap:
-                                    // () {
-                                    //   print("功能待实现");
-                                    // },
-                                    isReplyLoading ? null : _handleReply,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.blue.shade200,
-                                      width: 1,
-                                    ),
+                          // 回复按钮（仅评论类型显示）
+                          if (widget.email['type'] == 'comment')
+                            InkWell(
+                              onTap: isReplyLoading ? null : _handleReply,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                    width: 1,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      isReplyLoading
-                                          ? SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.blue.shade700,
-                                                  ),
-                                            ),
-                                          )
-                                          : Icon(
-                                            Icons.reply_rounded,
-                                            size: 18,
-                                            color: Colors.blue.shade700,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isReplyLoading)
+                                      SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Color(0xFF6201E7),
                                           ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "回复",
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.blue.shade700,
-                                          fontWeight: FontWeight.w500,
                                         ),
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.reply_outlined,
+                                        size: 16,
+                                        color: Color(0xFF6201E7),
                                       ),
-                                    ],
-                                  ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "回复",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF6201E7),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
-
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: isLikeLoading ? null : _handleLike,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.pink.shade50,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.pink.shade200,
-                                      width: 1,
-                                    ),
+                          // 点赞按钮（点赞通知不显示，只显示评论和转发的）
+                          if (widget.email['type'] != 'like') ...[
+                            if (widget.email['type'] == 'comment')
+                              const SizedBox(width: 12),
+                            InkWell(
+                              onTap: isLikeLoading ? null : _handleLike,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                    width: 1,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      isLikeLoading
-                                          ? SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.pink.shade700,
-                                                  ),
-                                            ),
-                                          )
-                                          : Icon(
-                                            Icons.favorite_border_rounded,
-                                            size: 18,
-                                            color: Colors.pink.shade700,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isLikeLoading)
+                                      SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Colors.red,
                                           ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "喜欢",
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.pink.shade700,
-                                          fontWeight: FontWeight.w500,
                                         ),
+                                      )
+                                    else
+                                      const Icon(
+                                        Icons.favorite_border,
+                                        size: 16,
+                                        color: Colors.red,
                                       ),
-                                    ],
-                                  ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      widget.email['type'] == 'reArticle' 
+                                          ? '点赞' 
+                                          : '喜欢',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
+                    ),
                   ],
                 ),
               ),
-            ),
+              // 操作类型图标
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _getTypeColor().withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getTypeIcon(),
+                  size: 20,
+                  color: _getTypeColor(),
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String text) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: 120),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.black87),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ),
     );
   }

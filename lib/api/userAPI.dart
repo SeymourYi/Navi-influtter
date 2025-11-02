@@ -107,4 +107,71 @@ class UserService {
       throw Exception('更新用户信息失败: $e');
     }
   }
+
+  // 修改密码接口API
+  Future<Map<String, dynamic>> changePassword({
+    required String username,
+    required String oldPassword,
+    required String newPassword,
+    String? phoneNumber,
+  }) async {
+    try {
+      // 创建FormData对象
+      FormData formData = FormData.fromMap({
+        'username': username,
+        'oldpassword': oldPassword,
+        'newpwd': newPassword,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+      });
+
+      // 发送请求
+      var response = await HttpClient.dio.post(
+        "/user/updatepwd",
+        data: formData,
+      );
+
+      return response.data;
+    } catch (e) {
+      throw Exception('修改密码失败: $e');
+    }
+  }
+
+  // 注销账号
+  Future<Map<String, dynamic>> deleteAccount(String username) async {
+    try {
+      var response = await HttpClient.dio.post(
+        "/user/Deregister?username=${username}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('注销账号失败: $e');
+    }
+  }
+
+  // 获取推荐好友列表
+  Future<Map<String, dynamic>> getRecommendFriendList(String username) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/user/latestUsers?currentUsername=${username}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('获取推荐好友列表失败: $e');
+    }
+  }
+
+  // 关注或者取关用户接口
+  Future<Map<String, dynamic>> followOrUnfollowUser({
+    required String currentUsername,
+    required String targetUsername,
+  }) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/user/addfriend?username=${currentUsername}&friendname=${targetUsername}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('关注/取关用户失败: $e');
+    }
+  }
 }

@@ -10,6 +10,7 @@ import '../Store/storeutils.dart'; // 导入用户信息存储工具
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../utils/route_utils.dart';
 
 class Article extends StatefulWidget {
   const Article({super.key, required this.articleData});
@@ -163,26 +164,7 @@ class _ArticleState extends State<Article> {
 
     Navigator.push(
       context,
-      PageRouteBuilder(
-        pageBuilder:
-            (context, animation, secondaryAnimation) =>
-                Articledetail(articleData: widget.articleData),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
+      RouteUtils.slideFromRight(Articledetail(articleData: widget.articleData)),
     ).then((_) {
       // 从详情页返回后，刷新点赞状态
       if (widget.articleData != null) {
@@ -501,34 +483,9 @@ class _ArticleState extends State<Article> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              PageRouteBuilder(
-                                pageBuilder:
-                                    (context, animation, secondaryAnimation) =>
-                                        ProfilePage(
-                                          // 传递文章作者的用户名
-                                          username:
-                                              widget.articleData['username'],
-                                        ),
-                                transitionsBuilder: (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  const begin = Offset(1.0, 0.0);
-                                  const end = Offset.zero;
-                                  const curve = Curves.ease;
-                                  var tween = Tween(
-                                    begin: begin,
-                                    end: end,
-                                  ).chain(CurveTween(curve: curve));
-
-                                  return SlideTransition(
-                                    position: animation.drive(tween),
-                                    child: child,
-                                  );
-                                },
-                              ),
+                              RouteUtils.slideFromRight(ProfilePage(
+                                username: widget.articleData['username'],
+                              )),
                             );
                           },
                           child: Padding(

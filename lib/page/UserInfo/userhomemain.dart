@@ -1,6 +1,7 @@
 import 'package:Navi/Store/storeutils.dart';
 import 'package:Navi/api/userAPI.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class UserHomeMain extends StatefulWidget {
   const UserHomeMain({super.key});
@@ -67,10 +68,14 @@ class _UserHomeMainState extends State<UserHomeMain>
                     // Avatar
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage: NetworkImage(
-                        _userinfo["userPic"] ??
-                            "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
-                      ),
+                      backgroundImage: _userinfo["userPic"] != null &&
+                              _userinfo["userPic"].toString().isNotEmpty
+                          ? CachedNetworkImageProvider(
+                              _userinfo["userPic"],
+                            )
+                          : CachedNetworkImageProvider(
+                              "https://api.dicebear.com/9.x/adventurer/svg?seed=George",
+                            ),
                     ),
                     const SizedBox(width: 12),
                     // User info

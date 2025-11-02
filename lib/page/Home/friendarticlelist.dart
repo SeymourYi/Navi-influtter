@@ -4,7 +4,9 @@ import 'package:Navi/api/articleAPI.dart';
 import 'package:Navi/components/article.dart';
 
 class FriendArticlelist extends StatefulWidget {
-  const FriendArticlelist({super.key});
+  final Function(double)? onScrollChanged; // 添加滚动变化回调
+
+  const FriendArticlelist({super.key, this.onScrollChanged});
 
   @override
   State<FriendArticlelist> createState() => _FriendArticlelistState();
@@ -16,6 +18,7 @@ class _FriendArticlelistState extends State<FriendArticlelist>
   bool isLoading = false; // 加载状态控制
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  late ScrollController _scrollController; // 添加 ScrollController
 
   Future<int> _fetchID() async {
     final userInfo = await SharedPrefsUtils.getUserInfo();
@@ -61,34 +64,52 @@ class _FriendArticlelistState extends State<FriendArticlelist>
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _fetchArticleList();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (widget.onScrollChanged != null && _scrollController.hasClients) {
+      widget.onScrollChanged!(_scrollController.position.pixels);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // 必须调用，因为使用了AutomaticKeepAliveClientMixin
 
-    return Container(
-      height: MediaQuery.of(context).size.height - 150, // 给列表一个明确的高度
-      child: RefreshIndicator(
-        key: _refreshIndicatorKey,
-        onRefresh: _fetchArticleList,
-        color: Colors.blue, // 刷新指示器颜色
-        backgroundColor: Colors.white, // 刷新指示器背景颜色
-        child:
-            isLoading && articleList.isEmpty
-                ? _buildLoadingView()
-                : articleList.isEmpty
-                ? _buildEmptyView()
-                : ListView.builder(
+    return RefreshIndicator(
+      key: _refreshIndicatorKey,
+      onRefresh: _fetchArticleList,
+      color: Color(0xFF6201E7), // 主题色
+      backgroundColor: Colors.white,
+      child: isLoading && articleList.isEmpty
+          ? _buildLoadingView()
+          : articleList.isEmpty
+              ? _buildEmptyView()
+              : ListView.separated(
+                  controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  cacheExtent: 2000, // 缓存额外 2000 像素的内容
+                  // 优化 cacheExtent：设置为屏幕高度的2倍，优先加载视口附近的图片
+                  cacheExtent: MediaQuery.of(context).size.height * 2,
                   itemCount: articleList.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: Colors.grey[200],
+                  ),
                   itemBuilder: (context, index) {
                     return Article(articleData: articleList[index]);
                   },
                 ),
-      ),
     );
   }
 

@@ -64,7 +64,18 @@ class _LoginPageState extends State<LoginPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('隐私政策'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: Colors.white,
+          title: const Text(
+            '隐私政策',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             height: 400,
@@ -72,19 +83,68 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('欢迎使用Navi！在使用前，请阅读并同意我们的隐私政策：'),
+                  Text(
+                    '欢迎使用Navi！在使用前，请阅读并同意我们的隐私政策：',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 16),
-                  Text('1. 我们会收集您的手机号等必要个人信息，用于账号登录和服务提供。'),
+                  Text(
+                    '1. 我们会收集您的手机号等必要个人信息，用于账号登录和服务提供。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('2. 我们使用腾讯云短信SDK进行短信验证，极光推送SDK进行消息推送。'),
+                  Text(
+                    '2. 我们使用腾讯云短信SDK进行短信验证，极光推送SDK进行消息推送。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('3. 您的个人信息将安全存储在中国境内，不会进行跨境传输。'),
+                  Text(
+                    '3. 您的个人信息将安全存储在中国境内，不会进行跨境传输。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('4. 我们采取多种安全措施保护您的个人信息安全。'),
+                  Text(
+                    '4. 我们采取多种安全措施保护您的个人信息安全。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 16),
-                  Text('请点击"同意"继续使用，或点击"不同意"退出应用。'),
+                  Text(
+                    '请点击"同意"继续使用，或点击"不同意"退出应用。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('点击"查看完整政策"可查看详细内容。'),
+                  Text(
+                    '点击"查看完整政策"可查看详细内容。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -96,7 +156,16 @@ class _LoginPageState extends State<LoginPage> {
                 // 如果用户不同意，退出应用
                 exit(0);
               },
-              child: const Text('不同意'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              child: Text(
+                '不同意',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -107,11 +176,26 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 );
               },
-              child: const Text('查看完整政策'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              child: Text(
+                '查看完整政策',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 126, 121, 211),
+                backgroundColor: const Color(0xFF6201E7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                elevation: 0,
               ),
               onPressed: () async {
                 // 保存用户同意状态
@@ -123,7 +207,13 @@ class _LoginPageState extends State<LoginPage> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('同意'),
+              child: const Text(
+                '同意',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
@@ -236,24 +326,35 @@ class _LoginPageState extends State<LoginPage> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 60),
-                SizedBox(height: 15),
-                Text(
-                  '登录成功',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Icon(
+                  Icons.check_circle,
+                  color: const Color(0xFF6201E7),
+                  size: 48,
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 16),
+                const Text(
+                  '登录成功',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Text(
                   '欢迎回来',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
@@ -270,25 +371,56 @@ class _LoginPageState extends State<LoginPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
           ),
+          backgroundColor: Colors.white,
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red),
-              SizedBox(width: 10),
-              Text('登录失败'),
+              Icon(
+                Icons.error_outline,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '登录失败',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
-          content: Text(errorMessage),
+          content: Text(
+            errorMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6201E7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                elevation: 0,
+              ),
+              child: const Text(
                 '确定',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 126, 121, 211),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

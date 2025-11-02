@@ -44,10 +44,19 @@ void main(List<String> args) async {
 
   // 确保字体被正确加载 - 使用kIsWeb检查是否在Web平台
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    // 启用边缘到边缘模式，让应用内容延伸到系统导航栏下方
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.edgeToEdge,
+      );
+    }
+    
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
   }

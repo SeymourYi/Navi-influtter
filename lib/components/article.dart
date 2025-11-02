@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:provider/provider.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
@@ -33,16 +34,32 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
   TextEditingController _repostController = TextEditingController(); // 转发内容控制器
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   String? _selectedImagePath; // 选择的图片路径
-  bool option = false;
   ArticleService articleService = ArticleService();
-  List<dynamic> articlelikersList = [];
+  
   @override
   void initState() {
     super.initState();
-    // 初始化点赞状态
+    // 直接使用API返回的点赞状态数据（后台接口已更新，islike: true 表示已点赞）
     if (widget.articleData != null) {
-      isLiked = widget.articleData['islike'] ?? false;
-      likeCount = widget.articleData['likecont'] ?? 0;
+      // 处理 islike 字段，可能是布尔值或字符串
+      final islikeValue = widget.articleData['islike'];
+      if (islikeValue is bool) {
+        isLiked = islikeValue;
+      } else if (islikeValue is String) {
+        isLiked = islikeValue.toLowerCase() == 'true' || islikeValue == '1';
+      } else {
+        isLiked = false;
+      }
+      
+      // 处理点赞数量
+      final likecontValue = widget.articleData['likecont'];
+      if (likecontValue is int) {
+        likeCount = likecontValue;
+      } else if (likecontValue is String) {
+        likeCount = int.tryParse(likecontValue) ?? 0;
+      } else {
+        likeCount = 0;
+      }
     }
     _animationController = AnimationController(
       vsync: this,
@@ -51,7 +68,6 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     _animationController.value = 1.0;
     // 获取当前用户信息
     _loadCurrentUserInfo();
-    _loadarticlelikers(widget.articleData['id']);
   }
 
   @override
@@ -71,18 +87,6 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
         });
       }
     } catch (e) {}
-  }
-
-  Future<void> _loadarticlelikers(String articleId) async {
-    try {
-      final result = await articleService.getArticlelikers(articleId);
-      setState(() {
-        articlelikersList = result['data'];
-      });
-      print(result);
-    } catch (e) {
-      print("Error loading article likers: $e");
-    }
   }
 
   // 处理点赞操作
@@ -114,24 +118,6 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       isLikeLoading = true;
     });
 
-    if (!isLiked) {
-      // 取消点赞，需要从列表中移除当前用户
-      setState(() {
-        articlelikersList.removeWhere((user) => user["username"] == username);
-      });
-    } else {
-      // 点赞，需要添加当前用户到列表中，避免重复等待API响应
-      if (_currentUser != null &&
-          !articlelikersList.any((user) => user["username"] == username)) {
-        setState(() {
-          articlelikersList.add({
-            "username": username,
-            "userPic": _currentUser!["userPic"],
-          });
-        });
-      }
-    }
-
     try {
       // 使用API调用
       GetArticleInfoService service = GetArticleInfoService();
@@ -148,33 +134,11 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
           widget.articleData['islike'] = isLiked;
           widget.articleData['likecont'] = likeCount;
         }
-
-        // API成功后重新加载点赞用户列表，确保数据与服务器同步
-        _loadarticlelikers(widget.articleData['id'].toString());
       } else {
         // API失败，回滚状态
         setState(() {
           isLiked = !newLikedState;
           likeCount = isLiked ? likeCount + 1 : likeCount - 1;
-
-          // 回滚点赞者列表
-          if (isLiked) {
-            // 重新添加用户到列表
-            if (_currentUser != null &&
-                !articlelikersList.any(
-                  (user) => user["username"] == username,
-                )) {
-              articlelikersList.add({
-                "username": username,
-                "userPic": _currentUser!["userPic"],
-              });
-            }
-          } else {
-            // 从列表中移除用户
-            articlelikersList.removeWhere(
-              (user) => user["username"] == username,
-            );
-          }
         });
 
         // 显示错误信息
@@ -194,21 +158,6 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       setState(() {
         isLiked = !newLikedState;
         likeCount = isLiked ? likeCount + 1 : likeCount - 1;
-
-        // 回滚点赞者列表
-        if (isLiked) {
-          // 重新添加用户到列表
-          if (_currentUser != null &&
-              !articlelikersList.any((user) => user["username"] == username)) {
-            articlelikersList.add({
-              "username": username,
-              "userPic": _currentUser!["userPic"],
-            });
-          }
-        } else {
-          // 从列表中移除用户
-          articlelikersList.removeWhere((user) => user["username"] == username);
-        }
       });
 
       // 提取错误信息
@@ -231,6 +180,11 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     }
   }
 
+  // 创建支持手势返回的滑动路由（使用RouteUtils统一管理）
+  PageRoute _createSlideRoute(Widget page) {
+    return RouteUtils.slideFromRight(page);
+  }
+
   void _NavigateToArticleDetail({bool focusOnComment = false}) {
     // 检查文章ID是否存在
     if (widget.articleData == null || widget.articleData['id'] == null) {
@@ -241,33 +195,30 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
 
     Navigator.push(
       context,
-      PageRouteBuilder(
-        pageBuilder:
-            (context, animation, secondaryAnimation) =>
-                Articledetail(articleData: widget.articleData),
-        // UserHome(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
+      _createSlideRoute(Articledetail(articleData: widget.articleData)),
     ).then((_) {
       // 从详情页返回后，刷新点赞状态
       if (widget.articleData != null) {
         setState(() {
-          isLiked = widget.articleData['islike'] ?? false;
-          likeCount = widget.articleData['likecont'] ?? 0;
+          // 重新读取点赞状态（从详情页返回后可能已更新）
+          final islikeValue = widget.articleData['islike'];
+          if (islikeValue is bool) {
+            isLiked = islikeValue;
+          } else if (islikeValue is String) {
+            isLiked = islikeValue.toLowerCase() == 'true' || islikeValue == '1';
+          } else {
+            isLiked = false;
+          }
+          
+          // 重新读取点赞数量
+          final likecontValue = widget.articleData['likecont'];
+          if (likecontValue is int) {
+            likeCount = likecontValue;
+          } else if (likecontValue is String) {
+            likeCount = int.tryParse(likecontValue) ?? 0;
+          } else {
+            likeCount = 0;
+          }
         });
       }
     });
@@ -282,173 +233,10 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       return;
     }
 
-    // 显示转发对话框
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // 让底部弹窗可以随着内容滚动
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: StatefulBuilder(
-            builder: (context, setState) {
-              return Container(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '转发帖子',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    Divider(),
-
-                    // 原帖内容预览
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundImage: CachedNetworkImageProvider(
-                                  widget.articleData['userPic'],
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                widget.articleData['nickname'] ?? '用户',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            widget.articleData['content'],
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 16),
-                    // 添加评论输入框
-                    TextField(
-                      controller: _repostController,
-                      decoration: InputDecoration(
-                        hintText: '添加评论...',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-
-                    SizedBox(height: 8),
-
-                    // 图片选择区域
-                    if (_selectedImagePath != null)
-                      Stack(
-                        children: [
-                          Container(
-                            height: 100,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey[300]!),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Image.file(
-                              File(_selectedImagePath!),
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedImagePath = null;
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                    SizedBox(height: 16),
-
-                    // 操作按钮
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.image, color: Colors.green),
-                          onPressed: () => _pickRepostImage(setState),
-                        ),
-                        Spacer(),
-                        ElevatedButton(
-                          onPressed:
-                              isRepostLoading
-                                  ? null
-                                  : () => _submitRepost(context),
-                          child:
-                              isRepostLoading
-                                  ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                  : Text('转发'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
+    // 使用PostPage页面进行转发
+    Navigator.push(
+      context,
+      RouteUtils.slideFromBottom(PostPage(type: '转发', articelData: widget.articleData)),
     );
   }
 
@@ -545,343 +333,242 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.symmetric(vertical: 0, horizontal: 0),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(0),
-        side: BorderSide(color: Colors.grey.shade200, width: 0.5),
-      ),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder:
-                  (context, animation, secondaryAnimation) =>
-                      Articledetail(articleData: widget.articleData),
-              transitionsBuilder: (
-                context,
-                animation,
-                secondaryAnimation,
-                child,
-              ) {
-                const begin = Offset(1.0, 0.0);
-                const end = Offset.zero;
-                const curve = Curves.ease;
-                var tween = Tween(
-                  begin: begin,
-                  end: end,
-                ).chain(CurveTween(curve: curve));
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
+    return InkWell(
+      onTap: () {
+        _NavigateToArticleDetail();
+      },
+      splashColor: Colors.grey[100],
+      highlightColor: Colors.grey[100],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 左侧头像
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  RouteUtils.slideFromRight(UserHome(userId: widget.articleData['username'])),
                 );
               },
-              transitionDuration: Duration(milliseconds: 300),
-              reverseTransitionDuration: Duration(milliseconds: 300),
-              opaque: false,
-              barrierDismissible: true,
-            ),
-          );
-        },
-        behavior:
-            HitTestBehavior
-                .opaque, // This prevents taps from passing through empty spaces
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 左侧头像 - Wrapped in its own GestureDetector
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder:
-                          (context, animation, secondaryAnimation) =>
-                              UserHome(userId: widget.articleData['username']),
-                      transitionsBuilder: (
-                        context,
-                        animation,
-                        secondaryAnimation,
-                        child,
-                      ) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.ease;
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                      transitionDuration: Duration(milliseconds: 300),
-                      reverseTransitionDuration: Duration(milliseconds: 300),
-                      opaque: false,
-                      barrierDismissible: true,
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 35,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    image: DecorationImage(
-                      image: NetworkImage(widget.articleData['userPic']),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundImage: CachedNetworkImageProvider(
+                  widget.articleData['userPic'],
                 ),
               ),
+            ),
 
-              // 右侧内容部分
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 用户信息行
-                      Row(
-                        children: [
-                          Text(
-                            "${widget.articleData['nickname']}",
+            // 右侧内容部分
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 用户信息行
+                    Row(
+                      children: [
+                        // 用户名
+                        Flexible(
+                          child: Text(
+                            "${widget.articleData['nickname'] ?? '用户'}",
                             style: TextStyle(
                               fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
-                          SizedBox(width: 4),
-                        ],
-                      ),
-
-                      // 文章内容区域
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2, bottom: 6),
-                        child: Text(
-                          "${widget.articleData['content']}",
+                        ),
+                        SizedBox(width: 4),
+                        // 认证标志
+                        if (widget.articleData['isVerified'] == true ||
+                            widget.articleData['verified'] == true)
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: Color(0xFF6201E7),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.check,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        SizedBox(width: 6),
+                        // 账号句柄
+                        if (widget.articleData['username'] != null)
+                          Flexible(
+                            flex: 1,
+                            child: Text(
+                              "@${widget.articleData['username']}",
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        SizedBox(width: 8),
+                        // 时间戳
+                        Text(
+                          widget.articleData["uptonowTime"] ?? "",
                           style: TextStyle(
                             fontSize: 15,
-                            height: 1.3,
-                            color: Colors.black,
+                            color: Colors.grey[600],
                           ),
                         ),
+                      ],
+                    ),
+
+                    SizedBox(height: 4),
+
+                    // 文章内容
+                    Padding(
+                      padding: const EdgeInsets.only(top: 0, bottom: 6),
+                      child: Text(
+                        "${widget.articleData['content'] ?? ''}",
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.black87,
+                        ),
+                        maxLines: null,
                       ),
+                    ),
 
-                      // 文章图片
-                      if (widget.articleData['coverImg'] != "")
-                        Padding(
-                          padding: EdgeInsets.only(right: 10),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: ArticleImage(
-                              imageUrls: List<String>.from(
-                                widget.articleData['coverImgList'],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // 转发内容
-                      if (widget.articleData['userShare'] == true)
-                        Container(
-                          margin: EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: LitArticle(articleData: widget.articleData),
-                        ),
-
+                    // 文章图片 - 支持多张图片
+                    if (widget.articleData['coverImg'] != null &&
+                        widget.articleData['coverImg'].toString().isNotEmpty)
                       Padding(
-                        padding: EdgeInsets.only(
-                          right: MediaQuery.of(context).size.width * 0.05,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              child: Text(
-                                widget.articleData["uptonowTime"],
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.normal,
-                                ),
-                              ),
-                            ),
-                            Spacer(),
-                            AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(
-                                    100 * _animationController.value,
-                                    0,
-                                  ),
-                                  child: Transform.scale(
-                                    scale: 1 - 1 * _animationController.value,
-                                    child: Opacity(
-                                      opacity: 1.0 - _animationController.value,
-                                      child: Container(
-                                        height: 30,
-                                        decoration: BoxDecoration(
-                                          color: const Color.fromARGB(
-                                            255,
-                                            40,
-                                            44,
-                                            52,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            5,
-                                          ),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _buildActionButtona(
-                                              icon:
-                                                  'lib/assets/icons/Vector (9).svg',
-                                              label: '赞',
-                                              showDivider: true,
-                                            ),
-                                            _buildActionButtona(
-                                              icon:
-                                                  'lib/assets/icons/chatbubble-ellipses-outline.svg',
-                                              label: '评论',
-                                              showDivider: true,
-                                            ),
-                                            _buildActionButtona(
-                                              icon:
-                                                  'lib/assets/icons/repeat-outline.svg',
-                                              label: '转发',
-                                              showDivider: false,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            SizedBox(width: 10),
-
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                if (option == true) {
-                                  _animationController.forward();
-                                  print("关闭");
-                                  setState(() {
-                                    option = !option;
-                                  });
-                                } else {
-                                  _animationController.reverse();
-                                  print("打开");
-                                  setState(() {
-                                    option = !option;
-                                  });
-                                }
-                              },
-                              child: Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Center(
-                                  child: SvgPicture.asset(
-                                    'lib/assets/icons/Vector9.svg',
-                                    width: 6,
-                                    height: 6,
-                                    color: const Color.fromARGB(94, 0, 226, 1),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        padding: EdgeInsets.only(top: 8, right: 10, bottom: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ArticleImage(
+                            imageUrls: widget.articleData['coverImgList'] != null &&
+                                    widget.articleData['coverImgList'] is List &&
+                                    (widget.articleData['coverImgList'] as List).isNotEmpty
+                                ? List<String>.from(widget.articleData['coverImgList'])
+                                : [widget.articleData['coverImg'].toString()],
+                          ),
                         ),
                       ),
 
+                    // 转发内容
+                    if (widget.articleData['userShare'] == true)
                       Container(
+                        margin: EdgeInsets.only(top: 12),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(3),
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
                         ),
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        padding: EdgeInsets.all(8),
-                        margin: EdgeInsets.only(right: 8, bottom: 4),
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.favorite_border_outlined,
-                                  size: 25,
-                                  color: const Color.fromARGB(64, 86, 105, 145),
-                                ),
-                                SizedBox(width: 5),
-                                Row(
-                                  children: List.generate(
-                                    articlelikersList.length,
-                                    (index) => GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) => UserHome(
-                                                  userId:
-                                                      articlelikersList[index]['username'],
-                                                ),
-                                          ),
-                                        );
-                                      },
-                                      child: Container(
-                                        width: 25,
-                                        height: 25,
-                                        margin: EdgeInsets.only(
-                                          right: 4,
-                                        ), // Add some spacing between avatars
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            2,
-                                          ),
-                                          image: DecorationImage(
-                                            image: NetworkImage(
-                                              articlelikersList[index]['userPic'],
-                                            ),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        child: LitArticle(articleData: widget.articleData),
                       ),
-                    ],
+
+                    // 推特风格的操作栏
+                    Padding(
+                      padding: EdgeInsets.only(top: 8, right: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          // 评论按钮
+                          _buildTwitterActionButton(
+                            icon: Icons.mode_comment_outlined,
+                            count: widget.articleData['commentcount'] ?? 0,
+                            color: Colors.grey[600]!, // 灰色
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                RouteUtils.slideFromBottom(PostPage(
+                                  type: '评论',
+                                  articelData: widget.articleData,
+                                )),
+                              );
+                            },
+                          ),
+                          // 转发按钮
+                          _buildTwitterActionButton(
+                            icon: Icons.repeat_outlined,
+                            count: widget.articleData['repeatcount'] ?? 0,
+                            color: Colors.grey[600]!, // 灰色
+                            onTap: () {
+                              _handleRepost();
+                            },
+                          ),
+                          // 点赞按钮
+                          _buildTwitterActionButton(
+                            icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                            count: likeCount,
+                            color: isLiked
+                                ? Color.fromRGBO(224, 36, 94, 1.0) // 已点赞时红色
+                                : Colors.grey[600]!, // 未点赞时灰色
+                            onTap: () {
+                              _handleLike();
+                            },
+                            isLoading: isLikeLoading,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 推特风格的操作按钮
+  Widget _buildTwitterActionButton({
+    required IconData icon,
+    required int count,
+    required Color color,
+    required VoidCallback onTap,
+    bool isLoading = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: color.withOpacity(0.1),
+        highlightColor: color.withOpacity(0.15),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
+                )
+              else
+                Icon(
+                  icon,
+                  size: 18.5,
+                  color: color,
+                ),
+              SizedBox(width: 6),
+              Text(
+                _formatCount(count),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -891,99 +578,17 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     );
   }
 
-  Widget _buildActionButtona({
-    required String icon,
-    required String label,
-    required bool showDivider,
-  }) {
-    // 设置不同按钮的颜色
-    Color iconColor;
-    Color textColor;
-
-    if (label == '赞') {
-      iconColor =
-          isLiked ? const Color.fromRGBO(224, 36, 94, 1.0) : Colors.grey[700]!;
-      textColor =
-          isLiked ? const Color.fromRGBO(224, 36, 94, 1.0) : Colors.grey[700]!;
-    } else if (label == '评论') {
-      iconColor = Color.fromRGBO(29, 161, 242, 1.0); // 蓝色
-      textColor = Colors.grey[700]!;
-    } else if (label == '转发') {
-      iconColor = Color.fromRGBO(23, 191, 99, 1.0); // 绿色
-      textColor = Colors.grey[700]!;
+  // 格式化数字显示（类似推特：1K, 1M等）
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      double m = count / 1000000;
+      return m % 1 == 0 ? '${m.toInt()}M' : '${m.toStringAsFixed(1)}M';
+    } else if (count >= 1000) {
+      double k = count / 1000;
+      return k % 1 == 0 ? '${k.toInt()}K' : '${k.toStringAsFixed(1)}K';
     } else {
-      iconColor = Colors.grey[700]!;
-      textColor = Colors.grey[700]!;
+      return count.toString();
     }
-
-    return Row(
-      children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque, // 确保整个区域可点击
-          onTap: () {
-            // 处理点击事件
-            if (label == '评论') {
-              _animationController.forward();
-              setState(() {
-                option = !option;
-              });
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          PostPage(type: '评论', articelData: widget.articleData),
-                ),
-              );
-            } else if (label == '转发') {
-              _animationController.forward();
-              setState(() {
-                option = !option;
-              });
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          PostPage(type: '转发', articelData: widget.articleData),
-                ),
-              );
-            } else if (label == '赞') {
-              _animationController.forward();
-              setState(() {
-                option = !option;
-              });
-              _handleLike(); // 正确调用点赞方法
-            }
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                SvgPicture.asset(
-                  icon,
-                  width: 16, // 稍大的图标
-                  height: 16,
-                  color: iconColor, // 使用动态颜色
-                ),
-                SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 12, color: textColor), // 使用动态颜色
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 4),
-            height: 12,
-            width: 1,
-            color: Colors.grey.withOpacity(0.3), // 更淡的分隔线
-          ),
-      ],
-    );
   }
 
   // 构建交互按钮

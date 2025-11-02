@@ -11,12 +11,12 @@ android {
     ndkVersion = "27.0.12077973"
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "17"
     }
     repositories {
         flatDir {
@@ -59,8 +59,10 @@ android {
     buildTypes {
         release {
             // 使用我们定义的签名配置，而不是debug签名
-            signingConfig = signingConfigs.getByName("release")
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            // signingConfig = signingConfigs.getByName("release")
+            // proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            // 临时用 debug 签名打包
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

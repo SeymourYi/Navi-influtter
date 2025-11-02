@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:Navi/page/Home/home.dart';
+import 'package:Navi/page/login/user_agreement.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'dart:async';
 import 'dart:math';
 import '../../api/smsSender.dart';
@@ -28,9 +30,8 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
 
   int _countDown = 60;
   Timer? _timer;
-  String _generatedCode = ''; // 存储生成的验证码
+  String _generatedCode = '';
 
-  // 生成随机6位数字验证码
   String _generateRandomCode() {
     final random = Random();
     String code = '';
@@ -49,15 +50,12 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     super.dispose();
   }
 
-  // 验证是否全是中文字符
   bool _isChineseOnly(String text) {
     final RegExp chineseRegExp = RegExp(r'^[\u4e00-\u9fa5]+$');
     return chineseRegExp.hasMatch(text);
   }
 
-  // 发送验证码
   Future<void> _sendSmsCode() async {
-    // 验证手机号格式
     if (_phoneController.text.isEmpty || _phoneController.text.length != 11) {
       _showErrorDialog('请输入正确的手机号码');
       return;
@@ -65,22 +63,21 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
 
     setState(() {
       _isSendingSms = true;
-      _generatedCode = _generateRandomCode(); // 生成新的验证码
+      _generatedCode = _generateRandomCode();
     });
 
     try {
       final smsSenderService = SmsSenderService();
       final response = await smsSenderService.smsSender(
         _phoneController.text,
-        _generatedCode, // 使用随机生成的验证码
+        _generatedCode,
       );
 
       if (response['code'] == 0) {
-        // 开始倒计时
         _startCountDown();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('验证码已发送: $_generatedCode')));
+        ).showSnackBar(SnackBar(content: Text('验证码已发送')));
       } else {
         throw Exception(response['msg'] ?? '发送验证码失败');
       }
@@ -97,7 +94,6 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     }
   }
 
-  // 开始倒计时
   void _startCountDown() {
     setState(() {
       _countDown = 60;
@@ -114,13 +110,11 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     });
   }
 
-  // 注册账号
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // 验证短信验证码
     if (_smsCodeController.text.isEmpty) {
       _showErrorDialog('请输入验证码');
       return;
@@ -131,12 +125,10 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     });
 
     try {
-      // 验证验证码是否正确
       if (_smsCodeController.text != _generatedCode) {
         throw Exception('验证码错误，请重新输入');
       }
 
-      // 调用注册API
       final registerService = RegisterService();
       final response = await registerService.register(
         _phoneController.text,
@@ -144,7 +136,6 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
       );
 
       if (response['code'] == 0) {
-        // 注册成功后自动登录
         await _loginAfterRegister();
       } else {
         throw Exception(response['msg'] ?? '注册失败');
@@ -162,43 +153,30 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     }
   }
 
-  // 注册成功后自动登录
   Future<void> _loginAfterRegister() async {
     try {
-      // 1. 登录获取token
       final loginService = LoginService();
       final response = await loginService.Login(
         _phoneController.text,
         _passwordController.text,
       );
 
-      print('登录响应: $response'); // 调试日志
-
       if (response['code'] == 0 && response['data'] != null) {
-        // 2. 保存token
         final token = response['data'].toString();
-        print('保存token: $token'); // 调试日志
         await SharedPrefsUtils.saveToken(token);
 
-        // 3. 重新初始化 HttpClient 以使用新token
         await HttpClient.init();
 
-        // 4. 获取用户信息
         final userService = UserService();
         final userInfoResponse = await userService.getUserinfo();
 
-        print('用户信息响应: $userInfoResponse'); // 调试日志
-
         if (userInfoResponse['code'] == 0 && userInfoResponse['data'] != null) {
-          // 5. 保存用户信息
           await SharedPrefsUtils.saveUserInfo(userInfoResponse['data']);
 
-          // 6. 显示成功提示并设置登录状态
           await SharedPrefsUtils.setBool('is_logged_in', true);
 
           if (!mounted) return;
 
-          // 7. 显示成功提示
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('注册并登录成功'),
@@ -206,7 +184,6 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
             ),
           );
 
-          // 8. 导航到主页
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const MyHome()),
@@ -218,8 +195,7 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
         throw Exception(response['msg'] ?? '登录失败');
       }
     } catch (e) {
-      print('登录错误: $e'); // 调试日志
-      // 清理可能保存的token
+      print('登录错误: $e');
       await SharedPrefsUtils.clearToken();
       if (mounted) {
         _showErrorDialog(
@@ -227,37 +203,68 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
               ? e.toString().split('Exception: ')[1]
               : '注册成功，但自动登录失败，请手动登录',
         );
-        // 注册成功但登录失败，返回登录页面
         Navigator.pop(context);
       }
     }
   }
 
-  // 显示错误对话框
   void _showErrorDialog(String errorMessage) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
           ),
+          backgroundColor: Colors.white,
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red),
-              SizedBox(width: 10),
-              Text('操作失败'),
+              Icon(
+                Icons.error_outline,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '操作失败',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
-          content: Text(errorMessage),
+          content: Text(
+            errorMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6201E7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                elevation: 0,
+              ),
+              child: const Text(
                 '确定',
-                style: TextStyle(color: const Color(0xFF6F6BCC)),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -269,281 +276,274 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF121214),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Color(0xFF121214),
+        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text('注册账号', style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, color: Colors.black87, size: 28),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          '注册账号',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 30),
+                  SizedBox(height: 40),
 
                   // 标题
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "创建 ",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextSpan(
-                          text: "Navi",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6F6BCC),
-                          ),
-                        ),
-                        TextSpan(
-                          text: " 账号",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    "创建账号",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
 
-                  SizedBox(height: 10),
+                  SizedBox(height: 8),
 
                   Text(
                     "注册即可开始探索",
                     style: TextStyle(
                       fontSize: 16,
-                      color: const Color.fromARGB(255, 158, 158, 158),
+                      color: Colors.grey[600],
                     ),
                   ),
 
                   SizedBox(height: 40),
 
                   // 手机号输入框
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1A1A1C),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[800]!, width: 1),
-                    ),
-                    child: TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                      decoration: InputDecoration(
-                        hintText: "手机号",
-                        hintStyle: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.phone_android,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: "手机号",
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(11),
-                      ],
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '请输入手机号';
-                        }
-                        if (value.length != 11) {
-                          return '请输入11位手机号';
-                        }
-                        return null;
-                      },
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF6F6BCC), width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: 24),
 
                   // 验证码输入框和获取按钮
                   Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1A1A1C),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.grey[800]!,
-                              width: 1,
+                        child: TextField(
+                          controller: _smsCodeController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(color: Colors.black87, fontSize: 16),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          decoration: InputDecoration(
+                            hintText: "验证码",
+                            hintStyle: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
                             ),
-                          ),
-                          child: TextFormField(
-                            controller: _smsCodeController,
-                            keyboardType: TextInputType.number,
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                            decoration: InputDecoration(
-                              hintText: "验证码",
-                              hintStyle: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 16,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.security,
-                                color: Colors.grey[600],
-                                size: 20,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 16,
-                              ),
+                            border: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey[300]!),
                             ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(6),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return '请输入验证码';
-                              }
-                              return null;
-                            },
+                            enabledBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Color(0xFF6F6BCC), width: 2),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 16),
                           ),
                         ),
                       ),
-                      SizedBox(width: 12),
-                      Container(
-                        height: 52,
+                      SizedBox(width: 16),
+                      SizedBox(
+                        width: 100,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                (_countDown < 60 && _countDown > 0)
-                                    ? Colors.grey[800]
-                                    : Color(0xFF6F6BCC),
+                            backgroundColor: (_countDown < 60 && _countDown > 0)
+                                ? Colors.grey[300]
+                                : Color(0xFF6201E7),
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.symmetric(vertical: 16),
                           ),
-                          onPressed:
-                              (_countDown < 60 && _countDown > 0) ||
-                                      _isSendingSms
-                                  ? null
-                                  : _sendSmsCode,
-                          child:
-                              _isSendingSms
-                                  ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.0,
-                                    ),
-                                  )
-                                  : Text(
-                                    _countDown < 60 ? '$_countDown秒' : '获取验证码',
-                                    style: TextStyle(fontSize: 14),
+                          onPressed: (_countDown < 60 && _countDown > 0) ||
+                                  _isSendingSms
+                              ? null
+                              : _sendSmsCode,
+                          child: _isSendingSms
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.0,
                                   ),
+                                )
+                              : Text(
+                                  _countDown < 60 ? '$_countDown秒' : '获取验证码',
+                                  style: TextStyle(fontSize: 14),
+                                ),
                         ),
                       ),
                     ],
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: 24),
 
                   // 密码输入框
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Color(0xFF1A1A1C),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[800]!, width: 1),
-                    ),
-                    child: TextFormField(
-                      controller: _passwordController,
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                      decoration: InputDecoration(
-                        hintText: "密码（仅限中文）",
-                        hintStyle: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.lock_outline,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
-                        helperText: '请输入纯中文密码',
-                        helperStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                        ),
+                  TextFormField(
+                    controller: _passwordController,
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: "密码（仅限中文）",
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
                       ),
-                      obscureText: false, // 密码不掩盖
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '请输入密码';
-                        }
-                        if (!_isChineseOnly(value)) {
-                          return '密码只能包含中文字符';
-                        }
-                        return null;
-                      },
+                      helperText: '请输入纯中文密码',
+                      helperStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                      ),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF6F6BCC), width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '请输入密码';
+                      }
+                      if (!_isChineseOnly(value)) {
+                        return '密码只能包含中文字符';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // 诗词提示示例
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '示例：',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '春风又绿江南岸明月何时照我还',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '山重水复疑无路柳暗花明又一村',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '落红不是无情物化作春泥更护花',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  SizedBox(height: 40),
+                  SizedBox(height: 24),
 
                   // 注册按钮
                   Container(
                     width: double.infinity,
+                    height: 50,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF6F6BCC),
+                        backgroundColor: Color(0xFF6201E7), // 主题色
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text(
-                                "注册",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
+                            )
+                          : Text(
+                              "注册",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -552,89 +552,82 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
                   // 分隔线
                   Row(
                     children: [
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey[800]),
-                      ),
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 10),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF1A1A1C),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: Colors.grey[800]!,
-                            width: 1,
-                          ),
-                        ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           "已有账号",
                           style: TextStyle(
                             color: Colors.grey[500],
-                            fontSize: 12,
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey[800]),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
                     ],
                   ),
 
-                  SizedBox(height: 20),
+                  SizedBox(height: 24),
 
                   // 返回登录按钮
                   Container(
                     width: double.infinity,
+                    height: 50,
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.transparent,
-                        side: BorderSide(color: Color(0xFF6F6BCC), width: 1),
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey[400]!, width: 1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       child: Text(
                         "返回登录",
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 20),
+                  SizedBox(height: 32),
 
                   // 隐私政策
                   Center(
-                    child: TextButton(
-                      onPressed: () {
-                        // 显示隐私政策
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          RouteUtils.slideFromRight(const UserAgreementPage()),
+                        );
                       },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[500],
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
+                      child: Text.rich(
+                        TextSpan(
+                          text: "点击注册按钮，即表示您同意我们的",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                          children: [
+                            TextSpan(
+                              text: "《隐私政策》",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6F6BCC),
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Text(
-                        "点击注册按钮，即表示您同意我们的隐私政策",
-                        style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 30),
+                  SizedBox(height: 40),
                 ],
               ),
             ),
@@ -644,3 +637,5 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
     );
   }
 }
+
+

@@ -22,6 +22,8 @@ class DialogUtils {
             content: content,
             agreeText: agreeText,
             disagreeText: disagreeText,
+            agreeColor: const Color(0xFF6201E7),
+            disagreeColor: Colors.grey[700]!,
             onAgreePressed: onAgree,
             onDisagreePressed: onDisagree ?? () => Navigator.of(context).pop(),
             widthFactor: widthFactor,

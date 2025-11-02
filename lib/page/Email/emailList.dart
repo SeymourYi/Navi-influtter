@@ -3,6 +3,7 @@ import 'package:Navi/api/emailAPI.dart';
 import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/page/Email/components/emailItem.dart';
 import 'package:Navi/providers/notification_provider.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,6 +25,7 @@ class _EmailListState extends State<EmailList>
 
   List<dynamic> emailList = [];
   Map<String, dynamic> _userInfo = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -53,158 +55,153 @@ class _EmailListState extends State<EmailList>
       });
       Provider.of<NotificationProvider>(context, listen: false).markAsRead();
     }
-
-    // showModalBottomSheet(
-    //   context: context,
-    //   isScrollControlled: true,
-    //   builder: (context) {
-    //     return Container(
-    //       padding: const EdgeInsets.only(
-    //         top: 50, // 增加顶部padding为头像预留空间
-    //         left: 16,
-    //         right: 16,
-    //       ),
-    //       child: Column(
-    //         crossAxisAlignment: CrossAxisAlignment.start,
-    //         children: [
-    //           // 用户名和其他信息
-    //           Text(
-    //             _userInfo['nickname'],
-    //             style: const TextStyle(
-    //               fontSize: 22,
-    //               fontWeight: FontWeight.bold,
-    //             ),
-    //           ),
-    //           const SizedBox(height: 4),
-    //           Text(
-    //             _userInfo['nickname'],
-    //             style: const TextStyle(fontSize: 16, color: Colors.grey),
-    //           ),
-    //           const SizedBox(height: 12),
-
-    //           // 个人简介
-    //           Text(_userInfo['nickname'], style: const TextStyle(fontSize: 16)),
-    //           const SizedBox(height: 12),
-
-    //           // 地点和加入日期
-    //           Row(
-    //             children: [
-    //               Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-    //               const SizedBox(width: 4),
-    //               Text(
-    //                 _userInfo['nickname'],
-    //                 style: TextStyle(color: Colors.grey[600]),
-    //               ),
-    //               const SizedBox(width: 16),
-    //               Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-    //               const SizedBox(width: 4),
-    //               Text(
-    //                 _userInfo['nickname'],
-    //                 style: TextStyle(color: Colors.grey[600]),
-    //               ),
-    //             ],
-    //           ),
-    //           const SizedBox(height: 12),
-
-    //           // 关注和粉丝
-    //           Row(
-    //             children: [
-    //               Text(
-    //                 "542 ",
-    //                 style: TextStyle(
-    //                   fontWeight: FontWeight.bold,
-    //                   color: Colors.grey[800],
-    //                 ),
-    //               ),
-    //               Text("关注", style: TextStyle(color: Colors.grey[600])),
-    //               const SizedBox(width: 16),
-    //               Text(
-    //                 "12.8K ",
-    //                 style: TextStyle(
-    //                   fontWeight: FontWeight.bold,
-    //                   color: Colors.grey[800],
-    //                 ),
-    //               ),
-    //               Text("粉丝", style: TextStyle(color: Colors.grey[600])),
-    //               const Spacer(),
-    //             ],
-    //           ),
-    //         ],
-    //       ),
-    //     );
-    //   },
-    // );
   }
 
   Future<void> getEmailList() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     final userInfo = await SharedPrefsUtils.getUserInfo();
     try {
       var result = await service.getEmailList(int.parse(userInfo!['username']));
 
       setState(() {
         emailList = result['data'];
+        _isLoading = false;
       });
     } catch (e) {
       print(e);
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  Future<void> _handleMarkAllAsRead() async {
+    final userInfo = await SharedPrefsUtils.getUserInfo();
+    if (userInfo == null) return;
+
+    await service.readAllEmail(int.parse(userInfo['username']));
+    setState(() {
+      emailList = List.from(emailList);
+      emailList.forEach((element) {
+        element['isRead'] = true;
+      });
+    });
+    Provider.of<NotificationProvider>(context, listen: false).clearAll();
+    await getEmailList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('邮件列表'),
-        actions: [
-          Row(
-            mainAxisSize: MainAxisSize.min, // 避免占用过多空间
-            children: [
-              InkWell(
-                onTap: () async {
-                  final userInfo = await SharedPrefsUtils.getUserInfo();
-                  service.readAllEmail(int.parse(userInfo!['username']));
-                  setState(() {
-                    emailList = List.from(emailList); // 创建新列表
-                    emailList.forEach((element) {
-                      element['isRead'] = true;
-                    });
-                  });
-                  Provider.of<NotificationProvider>(
-                    context,
-                    listen: false,
-                  ).clearAll();
-
-                  // 获取文章列表
-                  getEmailList();
-                },
-                child: const Padding(
-                  padding: EdgeInsets.only(right: 10),
-                  child: Row(
-                    children: [
-                      Text("全部已读", style: TextStyle(color: Colors.grey)),
-                      Icon(Icons.email, color: Colors.grey),
-                    ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 0,
+      ),
+      body: CustomScrollView(
+        slivers: [
+          // 顶部标题栏
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.shade200,
+                    width: 0.5,
                   ),
                 ),
               ),
-            ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '通知',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (emailList.isNotEmpty)
+                    TextButton(
+                      onPressed: _handleMarkAllAsRead,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: const Text(
+                        '全部已读',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
+          // 通知列表
+          if (_isLoading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (emailList.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.notifications_none,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '暂无通知',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return Column(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          handleRead(index);
+                        },
+                        child: Emailitem(email: emailList[index]),
+                      ),
+                      if (index < emailList.length - 1)
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: Colors.grey.shade200,
+                        ),
+                    ],
+                  );
+                },
+                childCount: emailList.length,
+              ),
+            ),
         ],
-        centerTitle: true,
-      ),
-      body: Container(
-        child: ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          cacheExtent: 2000, // 缓存额外 2000 像素的内容
-          itemCount: emailList.length,
-          itemBuilder: (context, index) {
-            return InkWell(
-              onTap: () {
-                handleRead(index);
-              },
-              child: Emailitem(email: emailList[index]),
-            );
-          },
-        ),
       ),
     );
   }

@@ -240,25 +240,56 @@ class _SmsRegisterPageState extends State<SmsRegisterPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
           ),
+          backgroundColor: Colors.white,
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red),
-              SizedBox(width: 10),
-              Text('操作失败'),
+              Icon(
+                Icons.error_outline,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '操作失败',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
-          content: Text(errorMessage),
+          content: Text(
+            errorMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6201E7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                elevation: 0,
+              ),
+              child: const Text(
                 '确定',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 126, 121, 211),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

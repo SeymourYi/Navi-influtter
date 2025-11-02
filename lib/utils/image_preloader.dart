@@ -28,7 +28,7 @@ class ImagePreloader {
               ? userInfo['bgImg']
               : DEFAULT_BG_IMAGE;
 
-      drawerBackgroundImage = NetworkImage(bgImageUrl);
+      drawerBackgroundImage = CachedNetworkImageProvider(bgImageUrl);
       precacheImage(drawerBackgroundImage!, context);
 
       // 预加载用户头像
@@ -46,7 +46,7 @@ class ImagePreloader {
     } catch (e) {
       print('图片预加载失败: $e');
       // 加载失败时，使用默认图片
-      drawerBackgroundImage = NetworkImage(DEFAULT_BG_IMAGE);
+      drawerBackgroundImage = CachedNetworkImageProvider(DEFAULT_BG_IMAGE);
       userAvatarImage = AssetImage(DEFAULT_AVATAR);
     }
   }
@@ -63,9 +63,9 @@ class ImagePreloader {
           final String bgImageUrl = userInfo['bgImg'];
 
           if (drawerBackgroundImage == null ||
-              (drawerBackgroundImage is NetworkImage &&
-                  (drawerBackgroundImage as NetworkImage).url != bgImageUrl)) {
-            drawerBackgroundImage = NetworkImage(bgImageUrl);
+              (drawerBackgroundImage is CachedNetworkImageProvider &&
+                  (drawerBackgroundImage as CachedNetworkImageProvider).url != bgImageUrl)) {
+            drawerBackgroundImage = CachedNetworkImageProvider(bgImageUrl);
             precacheImage(drawerBackgroundImage!, context);
           }
         }

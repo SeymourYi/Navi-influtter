@@ -121,7 +121,7 @@ class PostService {
               ),
             );
           }
-          formMap['files'] = multipartFiles;
+          formMap['file'] = multipartFiles;
         }
       }
 
@@ -146,7 +146,7 @@ class PostService {
     required int articleId,
     required int categoryId,
     required int becommentarticleId,
-    String? tousername,
+    required String tousername,
     File? imageFile,
     List<File>? imageFiles,
   }) async {
@@ -163,38 +163,27 @@ class PostService {
         'tousername': tousername,
       };
 
-      // 处理单张图片
-      if (imageFile != null) {
+      // 优先处理多张图片，如果没有则处理单张图片
+      if (imageFiles != null && imageFiles.isNotEmpty) {
+        // 多张图片使用数组上传，统一使用file参数名（后端期望file数组）
+        List<MultipartFile> multipartFiles = [];
+        for (int i = 0; i < imageFiles.length; i++) {
+          String fileName = imageFiles[i].path.split('/').last;
+          multipartFiles.add(
+            await MultipartFile.fromFile(
+              imageFiles[i].path,
+              filename: fileName,
+            ),
+          );
+        }
+        formMap['file'] = multipartFiles;
+      } else if (imageFile != null) {
+        // 处理单张图片
         String fileName = imageFile.path.split('/').last;
         formMap['file'] = await MultipartFile.fromFile(
           imageFile.path,
           filename: fileName,
         );
-      }
-
-      // 处理多张图片
-      if (imageFiles != null && imageFiles.isNotEmpty) {
-        // 如果只有一张图片，则使用单文件上传方式
-        if (imageFiles.length == 1) {
-          String fileName = imageFiles[0].path.split('/').last;
-          formMap['file'] = await MultipartFile.fromFile(
-            imageFiles[0].path,
-            filename: fileName,
-          );
-        } else {
-          // 多张图片使用数组上传
-          List<MultipartFile> multipartFiles = [];
-          for (int i = 0; i < imageFiles.length; i++) {
-            String fileName = imageFiles[i].path.split('/').last;
-            multipartFiles.add(
-              await MultipartFile.fromFile(
-                imageFiles[i].path,
-                filename: fileName,
-              ),
-            );
-          }
-          formMap['files'] = multipartFiles;
-        }
       }
 
       FormData formData = FormData.fromMap(formMap);

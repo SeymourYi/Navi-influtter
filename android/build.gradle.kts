@@ -1,5 +1,10 @@
 buildscript {
     repositories {
+        // Aliyun mirrors (helpful for network issues)
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/central") }
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
         google()
         mavenCentral()
         maven { url = uri("https://maven.google.com") }
@@ -15,6 +20,12 @@ buildscript {
 
 allprojects {
     repositories {
+        // Aliyun mirrors (helpful for network issues)
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/central") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        // Flutter download repository
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
         google()
         mavenCentral()
         maven { url = uri("https://maven.google.com") }
@@ -27,7 +38,27 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
+    
+    // Configure tasks immediately (this works before evaluation)
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
+    }
+    
+    // Configure Android options after evaluation
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            extensions.findByType<com.android.build.gradle.BaseExtension>()?.let { android ->
+                android.compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
+                }
+            }
+        }
+    }
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }

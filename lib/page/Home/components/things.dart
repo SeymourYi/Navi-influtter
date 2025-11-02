@@ -3,7 +3,9 @@ import 'package:Navi/page/Home/friendarticlelist.dart';
 import 'package:flutter/material.dart';
 
 class things extends StatefulWidget {
-  const things({super.key});
+  final Function(double)? onScrollChanged; // 添加滚动变化回调
+
+  const things({super.key, this.onScrollChanged});
 
   @override
   State<things> createState() => _thingsState();
@@ -34,12 +36,7 @@ class _thingsState extends State<things> with SingleTickerProviderStateMixin {
             controller: _tabController,
             labelColor: Colors.black, // 选中标签字体颜色改为黑色
             unselectedLabelColor: Colors.grey, // 未选中标签保持灰色
-            indicatorColor: Color.fromRGBO(
-              111,
-              107,
-              204,
-              1,
-            ), // Twitter 蓝色 (#1DA1F2)
+            indicatorColor: Color(0xFF6201E7), // 主题色
             indicatorWeight: 3, // 指示线粗细
             tabs: const [Tab(text: "为你推荐"), Tab(text: "正在关注")],
           ),
@@ -47,11 +44,11 @@ class _thingsState extends State<things> with SingleTickerProviderStateMixin {
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children: const [
+            children: [
               // 为你推荐标签页
-              Articlelist(),
+              Articlelist(onScrollChanged: widget.onScrollChanged),
               // 正在关注标签页
-              FriendArticlelist(),
+              FriendArticlelist(onScrollChanged: widget.onScrollChanged),
             ],
           ),
         ),

@@ -1,52 +1,36 @@
-import 'package:Navi/Store/storeutils.dart';
-import 'package:Navi/api/userAPI.dart';
-import 'package:Navi/components/full_screen_image_view.dart';
-import 'package:Navi/page/UserInfo/components/userpage.dart';
-import 'package:Navi/page/chat/screen/chat_screen.dart';
-import 'package:Navi/page/chat/screen/privtschatcreen.dart';
-import 'package:Navi/utils/route_utils.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/utils/route_utils.dart';
+import 'package:Navi/page/Setting/settings.dart';
+import 'package:Navi/page/friends/friendspage.dart';
+import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/page/post/post.dart';
 
-class UserHome extends StatefulWidget {
-  const UserHome({super.key, required this.userId});
-  final String userId;
+class MePage extends StatefulWidget {
+  const MePage({super.key});
 
   @override
-  State<UserHome> createState() => _UserHomeState();
+  State<MePage> createState() => _MePageState();
 }
 
-class _UserHomeState extends State<UserHome> {
-  dynamic _userinfo = {};
+class _MePageState extends State<MePage> {
+  Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
-  UserService server = UserService();
-  static final Map<String, dynamic> _dataCache = {}; // 静态数据缓存
 
-  /// 从缓存加载用户信息
-  void _loadUserInfoFromCache() {
-    if (_dataCache.containsKey(widget.userId)) {
-      setState(() {
-        _userinfo = _dataCache[widget.userId];
-        _isLoading = false;
-      });
-      // 后台刷新数据
-      _fetchUserInfo();
-      return;
-    }
-    
-    // 缓存中没有数据，正常加载
-    _fetchUserInfo();
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
   }
 
-  Future<void> _fetchUserInfo() async {
+  Future<void> _loadUserInfo() async {
     try {
-    var res = await server.getsomeUserinfo(widget.userId);
-    setState(() {
-      _userinfo = res["data"];
+      final userInfo = await SharedPrefsUtils.getUserInfo();
+      setState(() {
+        _userInfo = userInfo;
         _isLoading = false;
       });
-      // 更新缓存
-      _dataCache[widget.userId] = res["data"];
     } catch (e) {
       print('加载用户信息出错: $e');
       setState(() {
@@ -60,6 +44,7 @@ class _UserHomeState extends State<UserHome> {
       return '未知';
     }
     try {
+      // 假设日期格式为 "2025-10-26" 或其他格式
       DateTime date = DateTime.parse(dateString);
       return '${date.year}年${date.month}月${date.day}日加入';
     } catch (e) {
@@ -67,40 +52,51 @@ class _UserHomeState extends State<UserHome> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserInfoFromCache(); // 先从缓存加载
-  }
+  void _navigateToMyPosts() async {
+    if (_userInfo == null) return;
+    final username = _userInfo!['username'];
+    if (username == null) return;
 
-  void _navigateToPosts() {
     Navigator.push(
       context,
-      RouteUtils.slideFromRight(ProfilePage(username: _userinfo["username"])),
+      RouteUtils.slideFromRight(ProfilePage(username: username)),
     );
   }
 
-  void _navigateToChat() {
+  void _navigateToFollowing() {
     Navigator.push(
       context,
-      RouteUtils.slideFromRight(PrivtsChatScreen(character: _userinfo)),
+      RouteUtils.slideFromRight(const FriendsList()),
     );
   }
 
-  void _navigateToFullScreenImage() {
+  void _navigateToSettings() {
     Navigator.push(
       context,
-      RouteUtils.slideFromRight(FullScreenImageView(
-        imageUrls: [_userinfo["userPic"] ?? ""],
-        initialIndex: 0,
-      )),
+      RouteUtils.slideFromRight(const settings()),
+    );
+  }
+
+  void _navigateToPost() {
+    Navigator.push(
+      context,
+      RouteUtils.slideFromBottom(PostPage(type: "发布", articelData: null)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryColor = const Color.fromRGBO(111, 107, 204, 1.00);
+    final Color pinkColor = const Color(0xFFFFB6C1);
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 0,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
@@ -117,13 +113,14 @@ class _UserHomeState extends State<UserHome> {
                           Container(
                             height: 150,
                             width: double.infinity,
-            decoration: BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.grey[200],
                             ),
-                            child: _userinfo["bgImg"] != null &&
-                                    _userinfo["bgImg"].toString().isNotEmpty
+                            child: _userInfo != null &&
+                                    _userInfo!['bgImg'] != null &&
+                                    _userInfo!['bgImg'].toString().isNotEmpty
                                 ? CachedNetworkImage(
-                                    imageUrl: _userinfo["bgImg"],
+                                    imageUrl: _userInfo!['bgImg'],
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
                                       color: Colors.grey[200],
@@ -160,45 +157,20 @@ class _UserHomeState extends State<UserHome> {
                                     ),
                                   ),
                           ),
-                          // 返回按钮 - 左上角
-                          SafeArea(
-                            child: Positioned(
-                              top: 8,
-                              left: 8,
-                              child: Material(
-                                color: Colors.black.withOpacity(0.5),
-                                shape: const CircleBorder(),
-                                child: InkWell(
-                                  onTap: () => Navigator.pop(context),
-                                  borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.arrow_back,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                           // Profile Picture overlapping banner - 方形圆角
                           Positioned(
                             left: 16,
                             bottom: -40,
                             child: GestureDetector(
-                              onTap: _navigateToFullScreenImage,
+                              onTap: () {
+                                // 可以添加查看大图的功能
+                              },
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Container(
                                   width: 65,
                                   height: 65,
-                        decoration: BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
                                     border: Border.all(
                                       color: Colors.white,
@@ -206,12 +178,13 @@ class _UserHomeState extends State<UserHome> {
                                     ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: _userinfo["userPic"] != null &&
-                                          _userinfo["userPic"]
+                                  child: _userInfo != null &&
+                                          _userInfo!['userPic'] != null &&
+                                          _userInfo!['userPic']
                                               .toString()
                                               .isNotEmpty
                                       ? CachedNetworkImage(
-                                          imageUrl: _userinfo["userPic"],
+                                          imageUrl: _userInfo!['userPic'],
                                           fit: BoxFit.cover,
                                           placeholder: (context, url) =>
                                               const CircularProgressIndicator(),
@@ -247,8 +220,8 @@ class _UserHomeState extends State<UserHome> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    _userinfo["nickname"] ?? '用户',
+        child: Text(
+                                    _userInfo?['nickname'] ?? '用户',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -256,7 +229,8 @@ class _UserHomeState extends State<UserHome> {
                                     ),
                                   ),
                                 ),
-                                if (_userinfo["isVerified"] == true)
+                                if (_userInfo != null &&
+                                    _userInfo!['isVerified'] == true)
                                   Icon(
                                     Icons.verified,
                                     size: 18,
@@ -266,7 +240,9 @@ class _UserHomeState extends State<UserHome> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "@${_userinfo["username"] ?? ''}",
+                              _userInfo != null
+                                  ? "@${_userInfo!['username'] ?? ''}"
+                                  : "@用户",
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
@@ -275,27 +251,30 @@ class _UserHomeState extends State<UserHome> {
                             const SizedBox(height: 12),
 
                             // 个人简介
-                            if (_userinfo["bio"] != null &&
-                                _userinfo["bio"].toString().isNotEmpty)
+                            if (_userInfo != null &&
+                                _userInfo!['bio'] != null &&
+                                _userInfo!['bio'].toString().isNotEmpty)
                               Text(
-                                _userinfo["bio"],
+                                _userInfo!['bio'],
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.black87,
                                   height: 1.4,
                                 ),
                               ),
-                            if (_userinfo["bio"] != null &&
-                                _userinfo["bio"].toString().isNotEmpty)
+                            if (_userInfo != null &&
+                                _userInfo!['bio'] != null &&
+                                _userInfo!['bio'].toString().isNotEmpty)
                               const SizedBox(height: 12),
 
                             // 地点和加入日期
                             Wrap(
                               spacing: 16,
                               runSpacing: 8,
-                                children: [
-                                if (_userinfo["location"] != null &&
-                                    _userinfo["location"].toString().isNotEmpty)
+                              children: [
+                                if (_userInfo != null &&
+                                    _userInfo!['location'] != null &&
+                                    _userInfo!['location'].toString().isNotEmpty)
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -306,7 +285,7 @@ class _UserHomeState extends State<UserHome> {
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        _userinfo["location"],
+                                        _userInfo!['location'],
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.grey[600],
@@ -314,8 +293,9 @@ class _UserHomeState extends State<UserHome> {
                                       ),
                                     ],
                                   ),
-                                if (_userinfo["profession"] != null &&
-                                    _userinfo["profession"].toString().isNotEmpty)
+                                if (_userInfo != null &&
+                                    _userInfo!['profession'] != null &&
+                                    _userInfo!['profession'].toString().isNotEmpty)
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -325,16 +305,17 @@ class _UserHomeState extends State<UserHome> {
                                         color: Colors.grey[600],
                                       ),
                                       const SizedBox(width: 4),
-                                  Text(
-                                        _userinfo["profession"],
-                                    style: TextStyle(
+                                      Text(
+                                        _userInfo!['profession'],
+                                        style: TextStyle(
                                           fontSize: 11,
-                                      color: Colors.grey[600],
+                                          color: Colors.grey[600],
                                         ),
                                       ),
                                     ],
                                   ),
-                                if (_userinfo["createTime"] != null)
+                                if (_userInfo != null &&
+                                    _userInfo!['createTime'] != null)
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -344,9 +325,9 @@ class _UserHomeState extends State<UserHome> {
                                         color: Colors.grey[600],
                                       ),
                                       const SizedBox(width: 4),
-                                  Text(
-                                        _formatDate(_userinfo["createTime"]),
-                                    style: TextStyle(
+                                      Text(
+                                        _formatDate(_userInfo!['createTime']),
+                                        style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.grey[600],
                                         ),
@@ -359,14 +340,19 @@ class _UserHomeState extends State<UserHome> {
 
                             // Menu Options
                             _buildMenuOption(
-                              '贴文',
+                              '我的帖子',
                               Icons.article_outlined,
-                              _navigateToPosts,
+                              _navigateToMyPosts,
                             ),
                             _buildMenuOption(
-                              '发消息',
-                              Icons.chat_bubble_outline,
-                              _navigateToChat,
+                              '关注列表',
+                              Icons.people_outline,
+                              _navigateToFollowing,
+                            ),
+                            _buildMenuOption(
+                              '设置',
+                              Icons.settings_outlined,
+                              _navigateToSettings,
                             ),
                             const SizedBox(height: 20),
                           ],
@@ -387,21 +373,21 @@ class _UserHomeState extends State<UserHome> {
   ) {
     return InkWell(
       onTap: onTap,
-                      child: Container(
+      child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
               color: Colors.grey[200]!,
               width: 0.5,
-                          ),
-                        ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
               icon,
-                                size: 20,
+              size: 20,
               color: Colors.grey[700],
             ),
             const SizedBox(width: 16),
@@ -411,7 +397,7 @@ class _UserHomeState extends State<UserHome> {
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.black,
-                                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -419,7 +405,7 @@ class _UserHomeState extends State<UserHome> {
               Icons.chevron_right,
               size: 20,
               color: Colors.grey[400],
-          ),
+            ),
           ],
         ),
       ),

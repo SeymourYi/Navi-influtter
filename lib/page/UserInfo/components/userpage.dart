@@ -1,4 +1,5 @@
 import 'package:Navi/components/full_screen_image_view.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/components/article.dart';
 import 'package:Navi/api/articleAPI.dart';
@@ -25,13 +26,14 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isCurrentUser = false;
   bool _isFriend = false;
   String? _currentUsername;
+  bool _isFollowingLoading = false; // 关注操作加载状态
+  static final Map<String, Map<String, dynamic>> _dataCache = {}; // 静态数据缓存
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUser();
-    _loadUserInfo();
-    // _fetchArticleList();
+    _loadUserInfoFromCache(); // 先从缓存加载
   }
 
   @override
@@ -51,20 +53,24 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return '未知';
+    }
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return '${date.year}年${date.month}月${date.day}日加入';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
   void _NavigateToChat() async {
     if (widget.username == null || _userInfo == null) return;
 
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder:
-            (context) => ChatScreen(
-              // initialChatUsername: widget.username,
-              // initialChatName: _userInfo!['nickname'] ?? widget.username,
-              // initialChatAvatar: _userInfo!['userPic'] ?? '',
-              // initialChatBio: _userInfo!['bio'] ?? '',
-            ),
-      ),
+      RouteUtils.slideFromRight(ChatScreen()),
     );
   }
 
@@ -90,9 +96,33 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  /// 从缓存加载用户信息
+  Future<void> _loadUserInfoFromCache() async {
+    final cacheKey = widget.username ?? 'current_user';
+    
+    // 如果缓存中有数据，先使用缓存数据
+    if (_dataCache.containsKey(cacheKey)) {
+      final cachedData = _dataCache[cacheKey]!;
+      setState(() {
+        _userInfo = cachedData['userInfo'];
+        _isCurrentUser = cachedData['isCurrentUser'] ?? false;
+        _isFriend = cachedData['isFriend'] ?? false;
+        _articleList = cachedData['articleList'] ?? [];
+        _isLoading = false;
+      });
+      // 后台刷新数据
+      _loadUserInfo();
+      return;
+    }
+    
+    // 缓存中没有数据，正常加载
+    await _loadUserInfo();
+  }
+
   Future<void> _loadUserInfo() async {
     try {
       UserService userService = UserService();
+      final cacheKey = widget.username ?? 'current_user';
 
       if (widget.username == null) {
         final userInfo = await SharedPrefsUtils.getUserInfo();
@@ -102,6 +132,14 @@ class _ProfilePageState extends State<ProfilePage> {
           _isLoading = false;
           _isCurrentUser = true;
         });
+        
+        // 更新缓存（保留已有的文章列表）
+        _dataCache[cacheKey] = {
+          'userInfo': userInfo,
+          'isCurrentUser': true,
+          'isFriend': false,
+          'articleList': _dataCache[cacheKey]?['articleList'] ?? [],
+        };
       } else {
         var result = await userService.getsomeUserinfo(widget.username!);
         if (result['code'] == 0 && result['data'] != null) {
@@ -111,14 +149,24 @@ class _ProfilePageState extends State<ProfilePage> {
           });
 
           final currentUser = await SharedPrefsUtils.getUserInfo();
+          bool isCurrentUserFlag = false;
           if (currentUser != null &&
               currentUser['username'] == widget.username) {
             setState(() {
               _isCurrentUser = true;
             });
+            isCurrentUserFlag = true;
           } else {
             await _checkFriendStatus();
           }
+          
+          // 更新缓存（保留已有的文章列表）
+          _dataCache[cacheKey] = {
+            'userInfo': result['data'],
+            'isCurrentUser': isCurrentUserFlag,
+            'isFriend': _isFriend,
+            'articleList': _dataCache[cacheKey]?['articleList'] ?? [],
+          };
         } else {
           throw Exception('获取用户信息失败');
         }
@@ -134,400 +182,500 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchArticleList() async {
+    if (_userInfo == null) return;
+    
     ArticleService service = ArticleService();
-    print("11111111111");
-    print(_userInfo);
-    print("122222222111");
+    final cacheKey = widget.username ?? 'current_user';
+    
     try {
       // 获取用户ID
       int userId = 1; // 默认ID
 
-      if (_userInfo != null && _userInfo!['id'] != null) {
+      if (_userInfo!['id'] != null) {
         userId = _userInfo!['id'];
-      } else if (widget.username != null) {
-        // 如果有用户名但没有用户信息，先等待用户信息加载
-        await _loadUserInfo();
-        if (_userInfo != null && _userInfo!['id'] != null) {
-          userId = _userInfo!['id'];
-        }
       }
+      
       var result = await service.getsomebodyArticleList(_userInfo!['username']);
       if (result['code'] == 0 && result['data'] != null) {
         setState(() {
           _articleList = result['data'];
         });
+        
+        // 更新缓存中的文章列表
+        if (_dataCache.containsKey(cacheKey)) {
+          _dataCache[cacheKey]!['articleList'] = result['data'];
+        }
       }
     } catch (e) {
       print('获取文章列表失败: $e');
     }
   }
 
+  // 处理关注/取关操作
+  Future<void> _handleFollowAction() async {
+    if (_currentUsername == null || widget.username == null || _isCurrentUser) {
+      return;
+    }
+
+    setState(() {
+      _isFollowingLoading = true;
+    });
+
+    try {
+      UserService userService = UserService();
+      
+      // 如果是已关注状态，显示确认对话框
+      if (_isFriend) {
+        bool? confirm = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text('确认取关'),
+              content: Text('确定要取消关注 ${_userInfo?['nickname'] ?? '该用户'} 吗？'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black87,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm != true) {
+          setState(() {
+            _isFollowingLoading = false;
+          });
+          return;
+        }
+      }
+
+      // 调用关注/取关API
+      var result = await userService.followOrUnfollowUser(
+        currentUsername: _currentUsername!,
+        targetUsername: widget.username!,
+      );
+
+      if (result != null && result['code'] == 0) {
+        // 操作成功，更新朋友状态
+        setState(() {
+          _isFriend = !_isFriend;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFriend ? '已关注' : '已取消关注'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result?['msg'] ?? '操作失败，请稍后重试'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('关注操作失败: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('操作失败: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFollowingLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                controller: _scrollController,
-                padding: EdgeInsets.zero,
-                children: [
-                  // 顶部背景和头像部分
-                  Stack(
-                    clipBehavior: Clip.none,
+      backgroundColor: Colors.white,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                // Profile Header
+                SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 背景图
-                      Container(
-                        height: 160,
-                        width: double.infinity,
-                        decoration: BoxDecoration(color: Colors.grey[200]),
-                        child:
-                            _userInfo != null && _userInfo!['bgImg'].isNotEmpty
+                      // Banner Image
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // 背景图
+                          Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(color: Colors.grey[200]),
+                            child: _userInfo != null &&
+                                    _userInfo!['bgImg'] != null &&
+                                    _userInfo!['bgImg'].toString().isNotEmpty
                                 ? CachedNetworkImage(
-                                  imageUrl: _userInfo!['bgImg'],
-                                  fit: BoxFit.cover,
-                                  placeholder:
-                                      (context, url) => Image.asset(
-                                        "lib/assets/images/4.jpg",
-                                        fit: BoxFit.cover,
+                                    imageUrl: _userInfo!['bgImg'],
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
                                       ),
-                                  errorWidget:
-                                      (context, url, error) => Image.asset(
-                                        "lib/assets/images/4.jpg",
-                                        fit: BoxFit.cover,
-                                      ),
-                                )
-                                : Image.asset(
-                                  "lib/assets/images/4.jpg",
-                                  fit: BoxFit.cover,
-                                ),
-                      ),
-
-                      // 返回按钮 - 左上角
-                      Positioned(
-                        left: 8,
-                        top: 8,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ),
-
-                      // 操作按钮
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.more_horiz,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {},
-                        ),
-                      ),
-
-                      // 头像和编辑资料按钮 - 定位在背景图底部
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: -40, // 向下偏移使其部分显示在背景图外
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // 头像
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => FullScreenImageView(
-                                            // imageUrls: List.from(
-                                            //   _userinfo["userPic"],
-                                            // ),
-                                            imageUrls: [_userInfo!['userPic']],
-                                            initialIndex: 0,
-                                          ),
                                     ),
-                                  );
-                                },
-                                child: Material(
-                                  elevation: 4,
-                                  shape: const CircleBorder(),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: CircleAvatar(
-                                    radius: 40,
-                                    backgroundColor: Colors.white,
-                                    child:
-                                        _userInfo != null &&
-                                                _userInfo!['userPic'].isNotEmpty
-                                            ? CircleAvatar(
-                                              radius: 38,
-                                              backgroundImage:
-                                                  CachedNetworkImageProvider(
-                                                    _userInfo!['userPic'],
-                                                  ),
-                                            )
-                                            : const CircleAvatar(
-                                              radius: 38,
-                                              backgroundImage: AssetImage(
-                                                "lib/assets/images/1.jpg",
-                                              ),
-                                            ),
-                                  ),
-                                ),
-                              ),
-
-                              // Material(
-                              //   elevation: 4,
-                              //   shape: const CircleBorder(),
-                              //   clipBehavior: Clip.antiAlias,
-                              //   child: CircleAvatar(
-                              //     radius: 40,
-                              //     backgroundColor: Colors.white,
-                              //     child:
-                              //         _userInfo != null &&
-                              //                 _userInfo!['userPic'].isNotEmpty
-                              //             ? CircleAvatar(
-                              //               radius: 38,
-                              //               backgroundImage:
-                              //                   CachedNetworkImageProvider(
-                              //                     _userInfo!['userPic'],
-                              //                   ),
-                              //             )
-                              //             : const CircleAvatar(
-                              //               radius: 38,
-                              //               backgroundImage: AssetImage(
-                              //                 "lib/assets/images/1.jpg",
-                              //               ),
-                              //             ),
-                              //   ),
-                              // ),
-
-                              // 编辑资料按钮
-                              _isCurrentUser
-                                  ? Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Colors.blue,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      color: Colors.white, // 添加白色背景确保可见性
-                                    ),
-                                    child: TextButton(
-                                      onPressed: () {},
-                                      child: const Text(
-                                        '编辑资料',
-                                        style: TextStyle(color: Colors.blue),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.image,
+                                        size: 30,
+                                        color: Colors.grey,
                                       ),
                                     ),
                                   )
-                                  : Container(
+                                : Container(
                                     decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color:
-                                            _isFriend
-                                                ? Colors.grey
-                                                : Colors.blue,
-                                        width: 1,
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.green[100]!,
+                                          Colors.orange[100]!,
+                                          Colors.yellow[100]!,
+                                        ],
                                       ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      color:
-                                          _isFriend
-                                              ? Colors.grey[300]
-                                              : Colors.white,
                                     ),
-                                    child: TextButton(
-                                      onPressed: null, // 按照要求不实现关注功能
-                                      child: Text(
-                                        _isFriend ? '已关注' : '关注',
-                                        style: TextStyle(
-                                          color:
-                                              _isFriend
-                                                  ? Colors.black
-                                                  : Colors.blue,
+                                    child: const Icon(
+                                      Icons.landscape,
+                                      size: 30,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+
+                          // 返回按钮 - 左上角（推特风格）
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            left: 8,
+                            child: Material(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                onTap: () => Navigator.pop(context),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 更多操作按钮 - 右上角（确保不重叠）
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            right: 8,
+                            child: Material(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                onTap: () {},
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.more_horiz,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 头像和操作按钮 - 定位在背景图底部
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: -40,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // 头像 - 方形圆角
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        RouteUtils.slideFromRight(
+                                          FullScreenImageView(
+                                            imageUrls: [_userInfo!['userPic']],
+                                            initialIndex: 0,
+                                          ),
                                         ),
+                                      );
+                                    },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Container(
+                                        width: 65,
+                                        height: 65,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
+                                          ),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: _userInfo != null &&
+                                                _userInfo!['userPic'] != null &&
+                                                _userInfo!['userPic']
+                                                    .toString()
+                                                    .isNotEmpty
+                                            ? CachedNetworkImage(
+                                                imageUrl: _userInfo!['userPic'],
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    const CircularProgressIndicator(),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        const Icon(
+                                                  Icons.person,
+                                                  size: 32,
+                                                  color: Colors.grey,
+                                                ),
+                                              )
+                                            : Container(
+                                                color: Colors.grey[300],
+                                                child: const Icon(
+                                                  Icons.person,
+                                                  size: 32,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
                                       ),
                                     ),
                                   ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
 
-                  // 用户信息区域
-                  Container(
-                    padding: const EdgeInsets.only(
-                      top: 50, // 增加顶部padding为头像预留空间
-                      left: 16,
-                      right: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 用户名和其他信息
-                        Text(
-                          _userInfo != null ? _userInfo!['nickname'] : "加载中...",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _userInfo != null
-                              ? "@${_userInfo!['username']}"
-                              : "@加载中...",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // 个人简介
-                        Text(
-                          _userInfo != null ? _userInfo!['bio'] : "加载中...",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // 地点和加入日期
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey[600],
+                                  // 操作按钮 - 推特风格
+                                  _isCurrentUser
+                                      ? SizedBox.shrink() // 如果是自身界面，不显示按钮
+                                      : Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            color: Colors.black87,
+                                          ),
+                                          child: TextButton(
+                                            onPressed: _isFollowingLoading ? null : _handleFollowAction,
+                                            style: TextButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 20, vertical: 8),
+                                            ),
+                                            child: _isFollowingLoading
+                                                ? SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    _isFriend ? '已关注' : '关注',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 4),
+                          ),
+                        ],
+                      ),
+
+                      // 用户信息区域 - 推特风格
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 50, 16, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 用户名和认证
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _userInfo != null
+                                        ? _userInfo!['nickname'] ?? '用户'
+                                        : "加载中...",
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (_userInfo != null &&
+                                    _userInfo!['isVerified'] == true)
+                                  Icon(
+                                    Icons.verified,
+                                    size: 18,
+                                    color: Color(0xFF6201E7),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
                             Text(
                               _userInfo != null
-                                  ? _userInfo!['location']
-                                  : "加载中...",
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(
-                              Icons.calendar_today,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _userInfo != null &&
-                                      _userInfo!['createTime'] != null
-                                  ? "加入于 ${_userInfo!['createTime'].substring(0, 10)}"
-                                  : "加入时间未知",
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // 关注和粉丝
-                        Row(
-                          children: [
-                            Text(
-                              "542 ",
+                                  ? "@${_userInfo!['username']}"
+                                  : "@加载中...",
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                fontSize: 12,
+                                color: Colors.grey[600],
                               ),
                             ),
-                            Text(
-                              "关注",
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              "12.8K ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                            const SizedBox(height: 12),
+
+                            // 个人简介
+                            if (_userInfo != null &&
+                                _userInfo!['bio'] != null &&
+                                _userInfo!['bio'].toString().isNotEmpty)
+                              Text(
+                                _userInfo!['bio'],
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                  height: 1.4,
+                                ),
                               ),
-                            ),
-                            Text(
-                              "粉丝",
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            const Spacer(),
-                            // 添加私聊按钮 - 只为非当前用户显示
-                            //   if (!_isCurrentUser && widget.username != null)
-                            //     Container(
-                            //       decoration: BoxDecoration(
-                            //         color: Colors.blue.withOpacity(0.1),
-                            //         borderRadius: BorderRadius.circular(20),
-                            //         border: Border.all(
-                            //           color: Colors.blue,
-                            //           width: 1,
-                            //         ),
-                            //       ),
-                            //       child: TextButton.icon(
-                            //         icon: const Icon(
-                            //           Icons.chat_bubble_outline,
-                            //           color: Colors.blue,
-                            //           size: 16,
-                            //         ),
-                            //         label: const Text(
-                            //           '私聊',
-                            //           style: TextStyle(
-                            //             color: Colors.blue,
-                            //             fontSize: 14,
-                            //           ),
-                            //         ),
-                            //         onPressed: _NavigateToChat,
-                            //       ),
-                            //     ),
-                            // ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                            if (_userInfo != null &&
+                                _userInfo!['bio'] != null &&
+                                _userInfo!['bio'].toString().isNotEmpty)
+                              const SizedBox(height: 12),
 
-                  // 分割线
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 0),
-                    child: Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Colors.grey[300],
-                    ),
-                  ),
-
-                  // 动态列表
-                  for (
-                    int i = 0;
-                    i < (_articleList.isEmpty ? 1 : _articleList.length);
-                    i++
-                  )
-                    i == 0
-                        ? Padding(
-                          padding: const EdgeInsets.only(top: 4, bottom: 2),
-                          child:
-                              _articleList.isNotEmpty
-                                  ? Article(articleData: _articleList[i])
-                                  : const Center(
-                                    child: CircularProgressIndicator(),
+                            // 地点和加入日期
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 8,
+                              children: [
+                                if (_userInfo != null &&
+                                    _userInfo!['location'] != null &&
+                                    _userInfo!['location'].toString().isNotEmpty)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.location_on_outlined,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _userInfo!['location'],
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                        )
-                        : Padding(
-                          padding: const EdgeInsets.only(top: 2, bottom: 2),
-                          child: Article(articleData: _articleList[i]),
+                                if (_userInfo != null &&
+                                    _userInfo!['createTime'] != null)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_outlined,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatDate(_userInfo!['createTime']),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         ),
-                ],
-              ),
+                      ),
+
+                      // 分割线
+                      Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        color: Colors.grey.shade200,
+                      ),
+
+                      // 动态列表
+                      if (_articleList.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(
+                            child: Text(
+                              '暂无动态',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...(_articleList.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          dynamic articleData = entry.value;
+                          return Column(
+                            children: [
+                              Article(articleData: articleData),
+                              if (index < _articleList.length - 1)
+                                Divider(
+                                  height: 1,
+                                  thickness: 0.5,
+                                  color: Colors.grey.shade200,
+                                ),
+                            ],
+                          );
+                        }).toList()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

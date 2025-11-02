@@ -67,4 +67,49 @@ class ArticleService {
       throw Exception('Failed to load articles: $e');
     }
   }
+
+  // 点赞某个文章
+  Future<Map<String, dynamic>> likeArticle({
+    required String username,
+    required int articleId,
+  }) async {
+    try {
+      var response = await HttpClient.dio.post(
+        "/article/likeSomeArticle?username=${username}&articleid=${articleId}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('点赞文章失败: $e');
+    }
+  }
+
+  // 删除文章
+  Future<Map<String, dynamic>> deleteArticle(int articleId) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/article/deletArticle?articleId=${articleId}",
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('删除文章失败: $e');
+    }
+  }
+
+  // 搜索文章
+  /// [keyword] 搜索关键词
+  Future<Map<String, dynamic>> searchArticles({
+    required String keyword,
+  }) async {
+    try {
+      var response = await HttpClient.dio.get(
+        "/article/search",
+        queryParameters: {
+          'keyword': keyword,
+        },
+      );
+      return response.data;
+    } catch (e) {
+      throw Exception('搜索文章失败: $e');
+    }
+  }
 }

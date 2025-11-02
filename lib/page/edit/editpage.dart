@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/Store/storeutils.dart';
+import 'package:Navi/api/userRegisterAPI.dart';
+import 'package:Navi/page/login/login.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -16,6 +18,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final UserService _userService = UserService();
+  final UserRegisterService _userRegisterService = UserRegisterService();
   final _formKey = GlobalKey<FormState>();
 
   bool _isLoading = true;
@@ -27,24 +30,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
-  final TextEditingController _categoryName1Controller =
-      TextEditingController();
-  final TextEditingController _categoryName2Controller =
-      TextEditingController();
-  final TextEditingController _categoryName3Controller =
-      TextEditingController();
-  final TextEditingController _categoryId1Controller = TextEditingController();
-  final TextEditingController _categoryId2Controller = TextEditingController();
-  final TextEditingController _categoryId3Controller = TextEditingController();
 
   // Image files
   File? _userPicFile;
   File? _bgImgFile;
 
+  // Character limits
+  final int _nicknameMaxLength = 10;
+  final int _bioMaxLength = 100;
+  final int _locationMaxLength = 30;
+  final int _professionMaxLength = 20;
+
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _nicknameController.addListener(() => setState(() {}));
+    _bioController.addListener(() => setState(() {}));
+    _locationController.addListener(() => setState(() {}));
+    _professionController.addListener(() => setState(() {}));
   }
 
   @override
@@ -53,12 +57,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _bioController.dispose();
     _locationController.dispose();
     _professionController.dispose();
-    _categoryName1Controller.dispose();
-    _categoryName2Controller.dispose();
-    _categoryName3Controller.dispose();
-    _categoryId1Controller.dispose();
-    _categoryId2Controller.dispose();
-    _categoryId3Controller.dispose();
     super.dispose();
   }
 
@@ -76,15 +74,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _bioController.text = userInfo['bio'] ?? '';
           _locationController.text = userInfo['location'] ?? '';
           _professionController.text = userInfo['profession'] ?? '';
-          _categoryName1Controller.text = userInfo['categoryName1'] ?? '';
-          _categoryName2Controller.text = userInfo['categoryName2'] ?? '';
-          _categoryName3Controller.text = userInfo['categoryName3'] ?? '';
-          _categoryId1Controller.text =
-              userInfo['categoryId1']?.toString() ?? '';
-          _categoryId2Controller.text =
-              userInfo['categoryId2']?.toString() ?? '';
-          _categoryId3Controller.text =
-              userInfo['categoryId3']?.toString() ?? '';
         });
       }
     } catch (e) {
@@ -123,7 +112,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
 
         // Call API to update user info
-        final result = await _userService.updateUserInfo(
+        await _userService.updateUserInfo(
           id: _userInfo!['id'],
           username: _userInfo!['username'],
           nickname: _nicknameController.text,
@@ -132,12 +121,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
           profession: _professionController.text,
           userPicFile: userPicMultipartFile,
           bgImgFile: bgImgMultipartFile,
-          categoryId1: int.parse(_categoryId1Controller.text),
-          categoryId2: int.parse(_categoryId2Controller.text),
-          categoryId3: int.parse(_categoryId3Controller.text),
-          categoryName1: _categoryName1Controller.text,
-          categoryName2: _categoryName2Controller.text,
-          categoryName3: _categoryName3Controller.text,
+          categoryId1: _userInfo!['categoryId1'] ?? 0,
+          categoryId2: _userInfo!['categoryId2'] ?? 0,
+          categoryId3: _userInfo!['categoryId3'] ?? 0,
+          categoryName1: _userInfo!['categoryName1'] ?? '',
+          categoryName2: _userInfo!['categoryName2'] ?? '',
+          categoryName3: _userInfo!['categoryName3'] ?? '',
         );
 
         // Refresh user info
@@ -146,26 +135,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         if (refreshSuccessful) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('个人信息已更新，数据已刷新')));
+          ).showSnackBar(const SnackBar(content: Text('个人信息已更新')));
         } else {
-          // Fallback if refresh fails
-          final updatedUserInfo = Map<String, dynamic>.from(_userInfo!);
-          updatedUserInfo['nickname'] = _nicknameController.text;
-          updatedUserInfo['bio'] = _bioController.text;
-          updatedUserInfo['location'] = _locationController.text;
-          updatedUserInfo['profession'] = _professionController.text;
-          updatedUserInfo['categoryName1'] = _categoryName1Controller.text;
-          updatedUserInfo['categoryName2'] = _categoryName2Controller.text;
-          updatedUserInfo['categoryName3'] = _categoryName3Controller.text;
-
-          if (result.containsKey('userPic') && result['userPic'] != null) {
-            updatedUserInfo['userPic'] = result['userPic'];
-          }
-          if (result.containsKey('bgImg') && result['bgImg'] != null) {
-            updatedUserInfo['bgImg'] = result['bgImg'];
-          }
-
-          await SharedPrefsUtils.saveUserInfo(updatedUserInfo);
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('个人信息已更新')));
@@ -235,232 +206,553 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('编辑个人资料'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return '未设置';
+    }
+    try {
+      DateTime date = DateTime.parse(dateString);
+      return '${date.year}年${date.month}月${date.day}日加入';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  Future<void> _deregisterAccount() async {
+    if (_userInfo == null || _userInfo!['username'] == null) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _userRegisterService.register(_userInfo!['username']);
+      await SharedPrefsUtils.clearUserInfo();
+      await SharedPrefsUtils.clearToken();
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('注销账号失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _confirmDeregister() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.red[600],
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                '确认注销账号',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          '您确定要注销账号吗？此操作不可逆转，将永久删除您的账号及所有数据。',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.5,
+          ),
         ),
         actions: [
-          _isSaving
-              ? const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deregisterAccount();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              elevation: 0,
+            ),
+            child: const Text(
+              '确认注销',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF2196F3);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.chevron_left,
+            color: Colors.black87,
+            size: 28,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          '账号信息',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: _isSaving ? null : _saveUserInfo,
+            child: _isSaving
+                ? const SizedBox(
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-              )
-              : TextButton(
-                onPressed: _saveUserInfo,
+                      color: Colors.grey,
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primaryBlue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                 child: const Text(
                   '保存',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                      ),
                   ),
                 ),
               ),
         ],
       ),
-      body:
-          _isLoading
+      body: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
+          : Form(
                   key: _formKey,
+              child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildProfilePicture(),
-                      const SizedBox(height: 24),
-                      _buildBgImageSection(),
-                      const SizedBox(height: 24),
-                      _buildTextField('昵称', _nicknameController, true),
-                      const SizedBox(height: 16),
-                      _buildTextField('个人简介', _bioController, false),
-                      const SizedBox(height: 16),
-                      _buildTextField('职业', _professionController, false),
-                      const SizedBox(height: 16),
-                      _buildTextField('地点', _locationController, false),
-                      const SizedBox(height: 24),
-                      _buildTextField('标签1', _categoryName1Controller, false),
-                      const SizedBox(height: 24),
-                      _buildTextField('标签2', _categoryName2Controller, false),
-                      const SizedBox(height: 24),
-                      _buildTextField('标签3', _categoryName3Controller, false),
-                      const SizedBox(height: 24),
-                      _buildSaveButton(),
-                    ],
-                  ),
-                ),
-              ),
-    );
-  }
-
-  Widget _buildProfilePicture() {
-    return Center(
-      child: Column(
-        children: [
-          const Text('头像', style: TextStyle(color: Colors.grey, fontSize: 14)),
-          const SizedBox(height: 8),
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundImage:
-                    _userPicFile != null
-                        ? FileImage(_userPicFile!) as ImageProvider
-                        : (_userInfo != null && _userInfo!['userPic'].isNotEmpty
-                            ? CachedNetworkImageProvider(_userInfo!['userPic'])
-                            : const AssetImage(
-                              "lib/assets/images/userpic.jpg",
-                            )),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.zero,
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.purple.shade400,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 20,
+                    // Banner Image with Profile Picture
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // 背景图片 - 整个区域可点击
+                        GestureDetector(
+                          onTap: () => _showImagePickerModal(false),
+                          child: Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                            ),
+                            child: _bgImgFile != null
+                                ? Image.file(
+                                    _bgImgFile!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : (_userInfo != null &&
+                                        _userInfo!['bgImg'] != null &&
+                                        _userInfo!['bgImg'].toString().isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: _userInfo!['bgImg'],
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.image,
+                                              size: 30,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.green[100]!,
+                                              Colors.orange[100]!,
+                                              Colors.yellow[100]!,
+                                            ],
+                                          ),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.landscape,
+                                            size: 30,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      )),
+                          ),
+                        ),
+                        // Profile Picture overlapping banner - 方形圆角，与ME界面一致
+                        Positioned(
+                          left: 16,
+                          bottom: -40,
+                          child: GestureDetector(
+                            onTap: () => _showImagePickerModal(true),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                width: 65,
+                                height: 65,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: _userPicFile != null
+                                    ? Image.file(
+                                        _userPicFile!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : (_userInfo != null &&
+                                            _userInfo!['userPic'] != null &&
+                                            _userInfo!['userPic']
+                                                .toString()
+                                                .isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: _userInfo!['userPic'],
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                const CircularProgressIndicator(),
+                                            errorWidget: (context, url, error) =>
+                                                Container(
+                                              color: Colors.grey[300],
+                                              child: const Icon(
+                                                Icons.person,
+                                                size: 32,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          )
+                                        : Container(
+                                            color: Colors.grey[300],
+                                            child: const Icon(
+                                              Icons.person,
+                                              size: 32,
+                                              color: Colors.grey,
+                                            ),
+                                          )),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: () => _showImagePickerModal(true),
+
+                    const SizedBox(height: 50),
+
+                    // Form Fields
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 昵称
+                          _buildInputField(
+                            label: '昵称',
+                            controller: _nicknameController,
+                            maxLength: _nicknameMaxLength,
+                            hintText: '请输入昵称',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 个人签名
+                          _buildInputField(
+                            label: '个人签名',
+                            controller: _bioController,
+                            maxLength: _bioMaxLength,
+                            hintText: '介绍一下自己吧...',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 位置
+                          _buildInputField(
+                            label: '位置',
+                            controller: _locationController,
+                            maxLength: _locationMaxLength,
+                            hintText: '你在哪里?',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 职业
+                          _buildInputField(
+                            label: '职业',
+                            controller: _professionController,
+                            maxLength: _professionMaxLength,
+                            hintText: '请输入职业',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 用户名 (只读)
+                          _buildReadOnlyField(
+                            label: '用户名',
+                            value: _userInfo?['username'] ?? '',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 生日 (只读)
+                          _buildReadOnlyField(
+                            label: '生日',
+                            value: '未设置',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 注册时间 (只读)
+                          _buildReadOnlyField(
+                            label: '注册时间',
+                            value: _formatDate(_userInfo?['createTime']),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 用户ID (只读)
+                          _buildReadOnlyField(
+                            label: '用户ID',
+                            value: _userInfo?['id']?.toString() ?? '',
+                          ),
+                          const SizedBox(height: 32),
+
+                          // 危险操作部分
+                          const Text(
+                            '危险操作',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFEBEE),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red[700],
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  '注销账号',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '注销后,您的所有数据将被永久删除,无法恢复',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.red[300],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _isSaving
+                                        ? null
+                                        : _confirmDeregister,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      '注销账号',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                   ),
                 ),
               ),
             ],
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
           ),
         ],
+                ),
+              ),
       ),
     );
   }
 
-  Widget _buildBgImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('背景图', style: TextStyle(color: Colors.grey, fontSize: 14)),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () => _showImagePickerModal(false),
-          child: Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(10),
-              image:
-                  _bgImgFile != null
-                      ? DecorationImage(
-                        image: FileImage(_bgImgFile!),
-                        fit: BoxFit.cover,
-                      )
-                      : (_userInfo != null && _userInfo!['bgImg'].isNotEmpty
-                          ? DecorationImage(
-                            image: CachedNetworkImageProvider(
-                              _userInfo!['bgImg'],
-                            ),
-                            fit: BoxFit.cover,
-                          )
-                          : null),
-            ),
-            child:
-                _bgImgFile == null &&
-                        (_userInfo == null || _userInfo!['bgImg'].isEmpty)
-                    ? const Center(
-                      child: Icon(
-                        Icons.add_photo_alternate,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    )
-                    : null,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller,
-    bool isRequired,
-  ) {
+  Widget _buildInputField({
+    required String label,
+    required TextEditingController controller,
+    required int maxLength,
+    String? hintText,
+    int maxLines = 1,
+  }) {
+    final int currentLength = controller.text.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isRequired ? '$label *' : label,
-          style: const TextStyle(color: Colors.grey, fontSize: 14),
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
+          ),
         ),
+        const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          maxLines: label == '个人简介' ? 3 : 1,
-          decoration: const InputDecoration(
-            isDense: true,
-            border: UnderlineInputBorder(),
+          maxLength: maxLength,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hintText,
+            filled: true,
+            fillColor: Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            counterText: '$currentLength/$maxLength',
+            counterStyle: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
           ),
-          validator:
-              isRequired
-                  ? (value) {
-                    if (value == null || value.isEmpty) {
-                      return '$label不能为空';
-                    }
-                    return null;
-                  }
-                  : null,
         ),
       ],
     );
   }
 
-  Widget _buildSaveButton() {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      child: ElevatedButton(
-        onPressed: _isSaving ? null : _saveUserInfo,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.purple.shade400,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+  Widget _buildReadOnlyField({
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        child:
-            _isSaving
-                ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-                : const Text(
-                  '保存修改',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
                 ),
-      ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 32),
+      ],
     );
   }
 }

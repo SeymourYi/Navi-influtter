@@ -5,17 +5,20 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'dart:math' as math;
+import 'package:cached_network_image/cached_network_image.dart';
 // 安全地导入振动包，但使用条件导入避免编译错误
 // import 'package:vibration/vibration.dart' if (false) 'vibration_stub.dart';
 
 class FullScreenImageView extends StatefulWidget {
   final List<String> imageUrls;
   final int initialIndex;
+  final List<String>? heroTags;
 
   const FullScreenImageView({
     super.key,
     required this.imageUrls,
     required this.initialIndex,
+    this.heroTags,
   });
 
   @override
@@ -464,46 +467,48 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
             });
           },
           itemBuilder: (context, index) {
-            return Hero(
-              tag: 'article_image_$index',
-              child: Transform.scale(
-                scale: _currentScale,
-                child: Center(
-                  child: Image.network(
-                    widget.imageUrls[index],
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
+            final heroTag = widget.heroTags != null && index < widget.heroTags!.length
+                ? widget.heroTags![index]
+                : 'article_image_${widget.imageUrls[index].hashCode}_$index';
+            
+            return Transform.scale(
+              scale: _currentScale,
+              child: Center(
+                child: Hero(
+                  tag: heroTag,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.imageUrls[index],
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
                         child: CircularProgressIndicator(
-                          value:
-                              loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
+                          color: Colors.white,
+                          strokeWidth: 2,
                         ),
-                      );
-                    },
-                    errorBuilder:
-                        (context, error, stackTrace) => Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error,
-                                color: Colors.white,
-                                size: 50,
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              '图片加载失败',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                '图片加载失败',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                      ),
+                      memCacheWidth: null, // 全屏查看使用完整分辨率
+                      maxWidthDiskCache: null, // 全屏查看使用完整分辨率
+                    ),
                   ),
                 ),
               ),

@@ -113,21 +113,70 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Text('需要相册权限'),
-            content: const Text('此功能需要访问您的相册。请在设置中打开相册权限。'),
+            backgroundColor: Colors.white,
+            title: Row(
+              children: [
+                Icon(
+                  Icons.photo_library_outlined,
+                  color: Color(0xFF6201E7),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '需要相册权限',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              '此功能需要访问您的相册。请在设置中打开相册权限。',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                height: 1.5,
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                ),
+                child: Text(
+                  '取消',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-              TextButton(
+              ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                   PhotoManager.openSetting();
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6201E7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  elevation: 0,
+                ),
                 child: const Text(
                   '打开设置',
-                  style: TextStyle(color: Color(0xFF07C160)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -323,19 +372,10 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black, Colors.transparent],
-            ),
-          ),
-        ),
         title: GestureDetector(
           onTap: _toggleAlbumSelector,
           child: AnimatedContainer(
@@ -343,22 +383,30 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              color: _showAlbumSelector ? Colors.grey[800] : Colors.transparent,
+              color: _showAlbumSelector ? Colors.grey[100] : Colors.transparent,
+              border: Border.all(
+                color: _showAlbumSelector ? Colors.grey.shade300 : Colors.transparent,
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   _currentAlbum?.name ?? '相册',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 AnimatedRotation(
                   turns: _showAlbumSelector ? 0.5 : 0,
                   duration: const Duration(milliseconds: 300),
-                  child: const Icon(
-                    Icons.arrow_drop_down,
-                    color: Colors.white,
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.grey[700],
                     size: 20,
                   ),
                 ),
@@ -368,7 +416,7 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.close, color: Colors.black87),
           onPressed: () {
             Navigator.pop(context, _selectedImages);
           },
@@ -385,26 +433,27 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
               style: TextButton.styleFrom(
                 backgroundColor:
                     _selectedImages.isNotEmpty
-                        ? const Color(0xFF07C160).withOpacity(0.2)
-                        : Colors.transparent,
+                        ? const Color(0xFF6201E7)
+                        : Colors.grey[200],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               ),
               child: Text(
                 '完成',
                 style: TextStyle(
                   color:
                       _selectedImages.isNotEmpty
-                          ? const Color(0xFF07C160)
+                          ? Colors.white
                           : Colors.grey,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
             ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -418,34 +467,53 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                     vertical: 8,
                     horizontal: 16,
                   ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6201E7).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF6201E7).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // 预览按钮
-                      TextButton.icon(
-                        onPressed: () => _previewSelectedImages(0),
-                        icon: const Icon(
-                          Icons.remove_red_eye,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        label: const Text(
-                          '预览',
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(
-                            0xFF07C160,
-                          ).withOpacity(0.2),
+                      InkWell(
+                        onTap: () => _previewSelectedImages(0),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(
-                              color: const Color(0xFF07C160).withOpacity(0.3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 1,
                             ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.remove_red_eye,
+                                color: const Color(0xFF6201E7),
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                '预览',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -457,25 +525,23 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF07C160).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFF07C160).withOpacity(0.3),
-                          ),
+                          color: const Color(0xFF6201E7),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.photo_library,
-                              color: Color(0xFF07C160),
+                              color: Colors.white,
                               size: 16,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
                               '${_selectedAssets.length}/${widget.maxImages}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -494,14 +560,14 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const CircularProgressIndicator(
-                                color: Color(0xFF07C160),
+                                color: Color(0xFF6201E7),
                                 strokeWidth: 3,
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 '正在加载相册...',
                                 style: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: Colors.grey[600],
                                   fontSize: 14,
                                 ),
                               ),
@@ -512,41 +578,38 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
               ),
 
               // 底部操作栏
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.9)],
-                  ),
-                  border: Border(
-                    top: BorderSide(color: Colors.grey.shade900, width: 0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // 预览按钮
-                    _buildActionButton(
-                      icon: Icons.remove_red_eye,
-                      label: '预览',
-                      onTap:
-                          _selectedAssets.isNotEmpty
-                              ? () => _previewSelectedImages(0)
-                              : null,
+              if (_selectedAssets.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200, width: 0.5),
                     ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 预览按钮
+                      _buildActionButton(
+                        icon: Icons.remove_red_eye,
+                        label: '预览',
+                        onTap:
+                            _selectedAssets.isNotEmpty
+                                ? () => _previewSelectedImages(0)
+                                : null,
+                      ),
 
-                    // 清空按钮
-                    _buildActionButton(
-                      icon: Icons.delete_outline,
-                      label: '清空',
-                      onTap:
-                          _selectedAssets.isNotEmpty ? _clearSelection : null,
-                    ),
-                  ],
+                      // 清空按钮
+                      _buildActionButton(
+                        icon: Icons.delete_outline,
+                        label: '清空',
+                        onTap:
+                            _selectedAssets.isNotEmpty ? _clearSelection : null,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
 
@@ -565,90 +628,103 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                             _albumAnimation.value
                         : 0,
                 child: ClipRRect(
-                  child: BackdropFilter(
-                    filter:
-                        _showAlbumSelector
-                            ? ImageFilter.blur(
-                              sigmaX: 10 * _albumAnimation.value,
-                              sigmaY: 10 * _albumAnimation.value,
-                            )
-                            : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.9),
-                            Colors.black.withOpacity(0.7),
-                          ],
+                    child: BackdropFilter(
+                      filter:
+                          _showAlbumSelector
+                              ? ImageFilter.blur(
+                                sigmaX: 5 * _albumAnimation.value,
+                                sigmaY: 5 * _albumAnimation.value,
+                              )
+                              : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          border: Border(
+                            bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+                          ),
+                        ),
+                        child: ListView.builder(
+                          itemCount: _albums.length,
+                          itemBuilder: (context, index) {
+                            final album = _albums[index];
+                            final isSelected = _currentAlbum?.id == album.id;
+                            return InkWell(
+                              onTap: () => _selectAlbum(album),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF6201E7).withOpacity(0.1)
+                                      : Colors.white,
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: const Color(0xFF6201E7),
+                                        size: 20,
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.folder_outlined,
+                                        color: Colors.grey[600],
+                                        size: 20,
+                                      ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        album.name,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? const Color(0xFF6201E7)
+                                              : Colors.black87,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
+                                    FutureBuilder<int>(
+                                      future: album.assetCountAsync,
+                                      builder: (context, snapshot) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? const Color(0xFF6201E7).withOpacity(0.2)
+                                                : Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            snapshot.data != null
+                                                ? '${snapshot.data}'
+                                                : '...',
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? const Color(0xFF6201E7)
+                                                  : Colors.grey[600],
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      child: ListView.builder(
-                        itemCount: _albums.length,
-                        itemBuilder: (context, index) {
-                          final album = _albums[index];
-                          return ListTile(
-                            title: Text(
-                              album.name,
-                              style: TextStyle(
-                                color:
-                                    _currentAlbum?.id == album.id
-                                        ? const Color(0xFF07C160)
-                                        : Colors.white,
-                                fontWeight:
-                                    _currentAlbum?.id == album.id
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                            trailing: FutureBuilder<int>(
-                              future: album.assetCountAsync,
-                              builder: (context, snapshot) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        _currentAlbum?.id == album.id
-                                            ? const Color(
-                                              0xFF07C160,
-                                            ).withOpacity(0.2)
-                                            : Colors.grey.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    snapshot.data != null
-                                        ? '${snapshot.data}'
-                                        : '...',
-                                    style: TextStyle(
-                                      color:
-                                          _currentAlbum?.id == album.id
-                                              ? const Color(0xFF07C160)
-                                              : Colors.grey[400],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            onTap: () => _selectAlbum(album),
-                            leading:
-                                _currentAlbum?.id == album.id
-                                    ? const Icon(
-                                      Icons.check,
-                                      color: Color(0xFF07C160),
-                                    )
-                                    : null,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
                   ),
                 ),
               );
@@ -687,7 +763,7 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF07C160),
+                  color: Color(0xFF6201E7),
                 ),
               ),
             );
@@ -724,17 +800,17 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Colors.grey.shade900,
-                        child: const Icon(Icons.error, color: Colors.white),
+                        color: Colors.grey[200],
+                        child: Icon(Icons.error, color: Colors.grey[600]),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Container(
-                        color: Colors.grey.shade900,
+                        color: Colors.grey[100],
                         child: const Center(
                           child: CircularProgressIndicator(
-                            color: Color(0xFF07C160),
+                            color: Color(0xFF6201E7),
                             strokeWidth: 2,
                           ),
                         ),
@@ -747,10 +823,10 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: const Color(0xFF07C160),
-                          width: 2,
+                          color: const Color(0xFF6201E7),
+                          width: 3,
                         ),
-                        color: Colors.black.withOpacity(0.3),
+                        color: const Color(0xFF6201E7).withOpacity(0.2),
                       ),
                     ),
                 ],
@@ -773,23 +849,29 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
                 shape: BoxShape.circle,
                 color:
                     isSelected
-                        ? const Color(0xFF07C160)
-                        : Colors.black.withOpacity(0.5),
+                        ? const Color(0xFF6201E7)
+                        : Colors.white.withOpacity(0.7),
                 border: Border.all(
                   color:
-                      isSelected ? Colors.white : Colors.white.withOpacity(0.7),
-                  width: 1.5,
+                      isSelected ? Colors.white : Colors.grey.shade400,
+                  width: 2,
                 ),
                 boxShadow:
                     isSelected
                         ? [
                           BoxShadow(
-                            color: const Color(0xFF07C160).withOpacity(0.5),
-                            blurRadius: 4,
+                            color: const Color(0xFF6201E7).withOpacity(0.4),
+                            blurRadius: 6,
                             spreadRadius: 1,
                           ),
                         ]
-                        : null,
+                        : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 2,
+                            spreadRadius: 0,
+                          ),
+                        ],
               ),
               child:
                   isSelected
@@ -850,31 +932,39 @@ class _ImagePickerScreenState extends State<ImagePickerScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Opacity(
-        opacity: onTap != null ? 1.0 : 0.5,
+        opacity: onTap != null ? 1.0 : 0.4,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(
             color:
                 onTap != null
-                    ? Colors.grey.withOpacity(0.2)
+                    ? Colors.grey[50]
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border:
                 onTap != null
                     ? Border.all(
-                      color: const Color(0xFF07C160).withOpacity(0.3),
-                      width: 0.5,
+                      color: Colors.grey.shade300,
+                      width: 1,
                     )
                     : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.white, size: 24),
+              Icon(
+                icon,
+                color: onTap != null ? const Color(0xFF6201E7) : Colors.grey,
+                size: 22,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(
+                  color: onTap != null ? Colors.black87 : Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -961,22 +1051,54 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer>
         context: context,
         builder:
             (context) => AlertDialog(
-              backgroundColor: Colors.black.withOpacity(0.8),
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade800),
               ),
-              title: const Text('删除图片', style: TextStyle(color: Colors.white)),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.delete_outline,
+                    color: Colors.red[600],
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      '删除图片',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               content: const Text(
                 '确定要删除这张图片吗？',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  height: 1.5,
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     widget.onDelete!(_currentIndex);
@@ -993,13 +1115,22 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer>
                       });
                     }
                   },
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.2),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    '删除',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('删除', style: TextStyle(color: Colors.red)),
                 ),
               ],
             ),

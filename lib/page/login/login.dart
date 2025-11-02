@@ -33,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   final SmsLoginService smsLoginService = SmsLoginService();
   bool _isLoading = false;
   bool _agreementAccepted = false;
+  bool _obscurePassword = true;
   List<dynamic> articleList = [];
 
   @override
@@ -45,8 +46,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-
-    // 检查是否已经接受过协议
+    // 设置默认的手机号和密码
+    _emailController.text = '19137056165';
+    _passwordController.text = '多少楼台烟雨中';
     _checkAgreementStatus();
   }
 
@@ -56,28 +58,23 @@ class _LoginPageState extends State<LoginPage> {
       appKey: "8b8a7faafb8dbceffabf0bdb",
       channel: "devloper-default",
     );
-    jverify.setDebugMode(true); // 打开调试模式
+    jverify.setDebugMode(true);
 
-    // 检查是否支持认证
     jverify.checkVerifyEnable().then((map) {
       bool result = map["result"];
       if (result) {
-        // 当前网络环境支持认证
         print("当前网络环境支持认证");
 
-        // 获取token，用于获取手机号
         jverify.getToken().then((map) {
-          int code = map["code"]; // 返回码，2000代表获取成功
-          String token = map["content"] ?? ""; // 成功时为token
-          String operator = map["operator"] ?? ""; // 运营商信息
+          int code = map["code"];
+          String token = map["content"] ?? "";
+          String operator = map["operator"] ?? "";
 
           print("获取token结果: code=$code, operator=$operator");
 
           if (code == 2000) {
-            // token获取成功，可以自动填充手机号
             print("成功获取token: $token");
 
-            // 设置自定义UI
             JVUIConfig uiConfig = JVUIConfig();
             uiConfig.navColor = Color(0xFF6F6BCC).value;
             uiConfig.navText = "一键登录";
@@ -95,43 +92,35 @@ class _LoginPageState extends State<LoginPage> {
             uiConfig.logBtnTextColor = Colors.white.value;
             uiConfig.logBtnTextSize = 16;
 
-            uiConfig.privacyState = true; // 设置默认勾选
+            uiConfig.privacyState = true;
             uiConfig.privacyCheckboxSize = 20;
 
             uiConfig.privacyText = ["登录即同意", "《隐私政策》", "和", "《用户协议》"];
             uiConfig.privacyTextSize = 13;
             uiConfig.clauseColor = Color(0xFF6F6BCC).value;
 
-            // 设置协议1
             uiConfig.clauseName = "隐私政策";
             uiConfig.clauseUrl = "https://privacy.policy.url";
 
-            // 设置协议2
             uiConfig.clauseNameTwo = "用户协议";
             uiConfig.clauseUrlTwo = "https://user.agreement.url";
 
-            // 添加事件监听
             jverify.addLoginAuthCallBackListener((event) {
               print(
                 "登录回调: code=${event.code}, message=${event.message}, operator=${event.operator}",
               );
 
               if (event.code == 6000) {
-                // 登录成功，获取到的token可用于服务端换取手机号
                 print("一键登录成功: ${event.message}");
                 final loginToken = event.message.toString();
                 void _loginWithJverifyToken() async {
                   try {
-                    // 调用服务端接口验证极光token
                     final loginService = LoginService();
                     final response = await loginService.verifyJVerifyToken(
                       loginToken,
                     );
-                    print("2222222222222222222222233333333333333");
                     print(response);
-                    print("2222222222222222222222233333333333333");
                     if (response['code'] == 8000) {
-                      print("1111111111111111111111111111111111111");
                       print(response['phone']);
                       var number = await loginService.decryptToken(
                         response['phone'],
@@ -140,36 +129,26 @@ class _LoginPageState extends State<LoginPage> {
                       var smslogin = await smsLoginService.smsLogin(
                         number['data'],
                       );
-                      // 服务端验证成功并返回了JWT token
                       print(smslogin);
-                      print(
-                        "ddddddddddddddddddd33333333333333333333333333dddddddddddddddddddddd",
-                      );
                       final Token = smslogin['data'].toString();
 
-                      // 保存JWT token
                       await SharedPrefsUtils.saveToken(Token);
 
-                      // 重新初始化 HttpClient 以使用新token
                       await HttpClient.init();
 
-                      // 获取用户信息
                       final userService = UserService();
                       final userInfoResponse = await userService.getUserinfo();
 
                       if (userInfoResponse['code'] == 0 &&
                           userInfoResponse['data'] != null) {
-                        // 保存用户信息
                         await SharedPrefsUtils.saveUserInfo(
                           userInfoResponse['data'],
                         );
 
-                        // 设置登录状态
                         await SharedPrefsUtils.setBool('is_logged_in', true);
 
                         if (!mounted) return;
 
-                        // 显示成功提示
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('登录成功'),
@@ -177,7 +156,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
 
-                        // 导航到主页
                         if (mounted) {
                           Navigator.pushReplacement(
                             context,
@@ -187,14 +165,14 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         }
                       } else {
-                        throw Exception(userInfoResponse['msg'] ?? '获取用户信息失败');
+                        throw Exception(
+                            userInfoResponse['msg'] ?? '获取用户信息失败');
                       }
                     } else {
                       throw Exception(response['msg'] ?? '极光认证失败');
                     }
                   } catch (e) {
-                    print('极光一键登录错误: $e'); // 调试日志
-                    // 清理可能保存的token
+                    print('极光一键登录错误: $e');
                     await SharedPrefsUtils.clearToken();
                     if (mounted) {
                       _showErrorDialog(
@@ -209,18 +187,14 @@ class _LoginPageState extends State<LoginPage> {
                 _loginWithJverifyToken();
                 jverify.dismissLoginAuthView();
               } else {
-                // 登录失败
                 print("一键登录失败: ${event.message}");
-                // 显示错误提示
                 if (mounted) {}
               }
             });
 
-            // 显示一键登录页面
             jverify.setCustomAuthorizationView(true, uiConfig);
             jverify.loginAuthSyncApi(autoDismiss: true);
           } else {
-            // token获取失败
             print("获取token失败: ${map["content"]}");
             if (mounted) {
               _showErrorDialog("无法获取手机号，请手动输入");
@@ -228,7 +202,6 @@ class _LoginPageState extends State<LoginPage> {
           }
         });
       } else {
-        // 当前网络环境不支持认证
         print("当前网络环境不支持认证");
         if (mounted) {
           _showErrorDialog("当前网络环境不支持一键获取手机号，请手动输入");
@@ -237,15 +210,8 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  // 检查协议状态并显示对话框
   Future<void> _checkAgreementStatus() async {
-    // 可以添加本地存储检查逻辑，这里简化为首次进入都显示
-    // bool hasAccepted =
-    //     await SharedPrefsUtils.getBool('agreement_accepted') ?? false;
-
-    // if (!hasAccepted && mounted) {
     if (mounted) {
-      // 延迟显示对话框，确保界面已完全加载
       Future.delayed(const Duration(milliseconds: 500), () {
         _showAgreementDialog();
       });
@@ -256,7 +222,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // 显示用户协议对话框
   void _showAgreementDialog() {
     DialogUtils.showPrivacyDialog(
       context: context,
@@ -275,33 +240,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 报纸风格的条目
-  Widget _buildNewspaperItem({required String title, required String content}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'serif',
-          ),
-        ),
-        SizedBox(height: 5.h),
-        // 内容
-        Text(
-          content,
-          style: TextStyle(fontSize: 12.sp, height: 1.5, fontFamily: 'serif'),
-          textAlign: TextAlign.justify,
-        ),
-      ],
-    );
-  }
-
   Future<void> _login() async {
-    // 确保用户已同意协议
     if (!_agreementAccepted) {
       _showAgreementDialog();
       return;
@@ -321,7 +260,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // 1. 登录获取token
       final loginService = LoginService();
       final response = await loginService.Login(
         _emailController.text,
@@ -329,27 +267,21 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response['code'] == 0 && response['data'] != null) {
-        // 2. 保存token
         final token = response['data'].toString();
         await SharedPrefsUtils.saveToken(token);
 
-        // 3. 重新初始化 HttpClient 以使用新token
         await HttpClient.init();
 
-        // 4. 获取用户信息
         final userService = UserService();
         final userInfoResponse = await userService.getUserinfo();
 
         if (userInfoResponse['code'] == 0 && userInfoResponse['data'] != null) {
-          // 5. 保存用户信息
           await SharedPrefsUtils.saveUserInfo(userInfoResponse['data']);
 
-          // 6. 显示成功提示并设置登录状态
           await SharedPrefsUtils.setBool('is_logged_in', true);
 
           if (!mounted) return;
 
-          // 7. 显示成功提示
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('登录成功'),
@@ -357,7 +289,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
-          // 8. 使用替换路由而不是移除所有路由
           if (mounted) {
             Navigator.pushReplacement(
               context,
@@ -371,8 +302,7 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception(response['msg'] ?? '登录失败');
       }
     } catch (e) {
-      print('登录错误: $e'); // 调试日志
-      // 清理可能保存的token
+      print('登录错误: $e');
       await SharedPrefsUtils.clearToken();
       if (mounted) {
         _showErrorDialog(
@@ -390,74 +320,62 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // 显示登录成功对话框
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        // 1.2秒后自动关闭对话框
-        Future.delayed(Duration(milliseconds: 1200), () {
-          Navigator.of(context).pop();
-        });
-
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 60),
-                SizedBox(height: 15),
-                Text(
-                  '登录成功',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  '欢迎回来',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // 显示错误对话框
   void _showErrorDialog(String errorMessage) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(16),
           ),
+          backgroundColor: Colors.white,
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red),
-              SizedBox(width: 10),
-              Text('登录失败'),
+              Icon(
+                Icons.error_outline,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '登录失败',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
             ],
           ),
-          content: Text(errorMessage),
+          content: Text(
+            errorMessage,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6201E7),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                elevation: 0,
+              ),
+              child: const Text(
                 '确定',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 126, 121, 211),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -474,19 +392,19 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 60),
+                  SizedBox(height: 40),
 
-                  // 自定义Logo
+                  // Logo
                   Center(
                     child: Container(
-                      height: 50,
-                      width: 50,
+                      height: 60,
+                      width: 60,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
@@ -500,7 +418,7 @@ class _LoginPageState extends State<LoginPage> {
                           "N",
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 28,
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -508,209 +426,151 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  SizedBox(height: 40),
+                  SizedBox(height: 48),
 
                   // 标题
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "欢迎回到 ",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        TextSpan(
-                          text: "Navi",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6F6BCC),
-                          ),
-                        ),
-                      ],
+                  Text(
+                    "欢迎回来",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
 
-                  SizedBox(height: 10),
+                  SizedBox(height: 8),
 
                   Text(
-                    "登录以继续",
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    "登录以继续使用",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
                   ),
 
                   SizedBox(height: 40),
 
                   // 手机号输入框
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!, width: 1),
-                    ),
-                    child: TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.black87, fontSize: 16),
-                      decoration: InputDecoration(
-                        hintText: "手机号",
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.phone_android,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: "手机号",
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
                       ),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF6F6BCC), width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: 24),
 
                   // 密码输入框
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!, width: 1),
-                    ),
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText: false,
-                      keyboardType: TextInputType.text,
-                      style: TextStyle(color: Colors.black87, fontSize: 16),
-                      decoration: InputDecoration(
-                        hintText: "密码",
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.lock_outline,
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    keyboardType: TextInputType.text,
+                    style: TextStyle(color: Colors.black87, fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: "密码",
+                      hintStyle: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 16,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: Colors.grey[600],
-                          size: 20,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF6F6BCC), width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
 
-                  SizedBox(height: 40),
-
-                  // 一键登录按钮
-                  Container(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.phone_android, size: 18),
-                      label: Text(
-                        "本机号码一键登录",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: _isLoading ? null : _myjver,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF5254e5),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 16),
+                  SizedBox(height: 48),
 
                   // 登录按钮
                   Container(
                     width: double.infinity,
+                    height: 50,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF6F6BCC),
+                        backgroundColor: Color(0xFF6201E7), // 主题色
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text(
-                                "登录",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
+                            )
+                          : Text(
+                              "登录",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
 
-                  SizedBox(height: 16),
+                  SizedBox(height: 24),
 
-                  // 忘记密码/短信登录
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          // 忘记密码功能
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey[700],
-                          minimumSize: Size.zero,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 5,
+                  // 短信验证码登录链接
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SmsLoginPage(),
                           ),
-                        ),
-                        child: Text("忘记密码?"),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Color(0xFF6F6BCC),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SmsLoginPage(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Color(0xFF6F6BCC),
-                          minimumSize: Size.zero,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 5,
-                          ),
-                        ),
-                        child: Text("短信验证码登录 →"),
+                      child: Text(
+                        "短信验证码登录 →",
+                        style: TextStyle(fontSize: 15),
                       ),
-                    ],
+                    ),
                   ),
 
                   SizedBox(height: 40),
@@ -718,42 +578,27 @@ class _LoginPageState extends State<LoginPage> {
                   // 分隔线
                   Row(
                     children: [
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey[300]),
-                      ),
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 10),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                            width: 1,
-                          ),
-                        ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           "新用户",
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.grey[300]),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
                     ],
                   ),
 
-                  SizedBox(height: 20),
+                  SizedBox(height: 24),
 
                   // 注册按钮
                   Container(
                     width: double.infinity,
+                    height: 50,
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.push(
@@ -764,25 +609,23 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Color(0xFF6F6BCC),
-                        backgroundColor: Colors.transparent,
-                        side: BorderSide(color: Color(0xFF6F6BCC), width: 1),
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey[400]!, width: 1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       child: Text(
                         "创建账号",
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 30),
+                  SizedBox(height: 32),
 
                   // 隐私政策
                   Center(
@@ -796,18 +639,17 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[600],
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
+                        foregroundColor: Colors.grey[500],
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
-                      child: Text("《隐私政策》", style: TextStyle(fontSize: 12)),
+                      child: Text(
+                        "《隐私政策》",
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ),
 
-                  SizedBox(height: 30),
+                  SizedBox(height: 40),
                 ],
               ),
             ),
@@ -817,3 +659,5 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+

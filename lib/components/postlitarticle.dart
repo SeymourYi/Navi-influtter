@@ -1,5 +1,6 @@
 import 'package:Navi/components/articleimage.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
+import 'package:Navi/utils/route_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -16,151 +17,158 @@ class _PostLitArticleState extends State<PostLitArticle> {
     return Container(
       margin: const EdgeInsets.symmetric(
         vertical: 4,
-      ), // Moved margin to Container
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
-        borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.all(8),
-      child: Column(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left avatar - clickable area
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder:
-                          (context, animation, secondaryAnimation) =>
-                              ProfilePage(
-                                username: widget.articleData['username'],
-                              ),
-                      transitionsBuilder: (
-                        context,
-                        animation,
-                        secondaryAnimation,
-                        child,
-                      ) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.ease;
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 4, right: 6),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundImage: CachedNetworkImageProvider(
-                      widget.articleData['userPic'],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Right content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Username row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          "${widget.articleData['nickname']}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Inter-Regular",
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          "@${widget.articleData['username']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Inter",
-                            color: Color.fromRGBO(104, 118, 132, 1.00),
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Text(
-                          "·",
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: "Inter-Regular",
-                            color: Color.fromRGBO(104, 118, 132, 1.00),
-                          ),
-                        ),
-                        Text(
-                          "${widget.articleData['uptonowTime']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: "Inter-Regular",
-                            color: Color.fromRGBO(111, 107, 204, 1.00),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "${widget.articleData['categoryName']}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: "Inter",
-                            fontWeight: FontWeight.w500,
-                            color: Color.fromRGBO(111, 107, 204, 1.00),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
-                    // Content text
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2, right: 6),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        child: Text(
-                          "${widget.articleData['content']}",
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 14,
-                            height: 1.2,
-                            fontFamily: "Inter",
-                          ),
+          // Left avatar - clickable area (方形圆角)
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                RouteUtils.slideFromRight(ProfilePage(
+                  username: widget.articleData['username'],
+                )),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: widget.articleData['userPic'] != null &&
+                      widget.articleData['userPic'].toString().isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: widget.articleData['userPic'],
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 32,
+                        height: 32,
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                          size: 18,
                         ),
                       ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 32,
+                        height: 32,
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 32,
+                      height: 32,
+                      color: Colors.grey[300],
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
                     ),
+            ),
+          ),
+          const SizedBox(width: 10),
 
-                    // Article image
-                    //最大高度设置
-                    widget.articleData['coverImg'] != ""
-                        ? ArticleImage(
-                          imageUrls: ["${widget.articleData['coverImg']}"],
-                        )
-                        : Container(),
+          // Right content - 使用 Expanded 和 Flexible 防止溢出
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Username row - 优化布局防止溢出（不显示标签）
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "${widget.articleData['nickname'] ?? ''}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        "@${widget.articleData['username'] ?? ''}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      "·",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        "${widget.articleData['uptonowTime'] ?? ''}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                // Content text - 确保文本正确换行
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    "${widget.articleData['content'] ?? ''}",
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                    maxLines: null,
+                  ),
+                ),
+
+                // Article image - 支持多张图片
+                if (widget.articleData['coverImg'] != null &&
+                    widget.articleData['coverImg'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: ArticleImage(
+                        imageUrls: widget.articleData['coverImgList'] != null &&
+                                widget.articleData['coverImgList'] is List &&
+                                (widget.articleData['coverImgList'] as List).isNotEmpty
+                            ? List<String>.from(widget.articleData['coverImgList'])
+                            : [widget.articleData['coverImg'].toString()],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

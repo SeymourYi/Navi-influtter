@@ -130,38 +130,63 @@ class _PostPageState extends State<PostPage> {
       context: context,
       builder:
           (context) =>
-          // _showAgreementDialog();
           AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: Colors.white,
             title: Row(
               children: [
-                Icon(Icons.info_outline, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 10),
-                const Text('图片选择器使用提示'),
+                Icon(
+                  Icons.info_outline,
+                  color: Color(0xFF6201E7),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    '图片选择器使用提示',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('📸 点击相机图标打开图片选择器'),
-                SizedBox(height: 8),
-                Text('✅ 可以同时选择多张图片（最多9张）'),
-                SizedBox(height: 8),
-                Text('🔄 长按图片可以进行编辑、预览等操作'),
-                SizedBox(height: 8),
-                Text('⬆️ 上滑关闭图片选择器'),
-                SizedBox(height: 8),
-                Text('📋 点击"排序"可以调整图片顺序'),
-                SizedBox(height: 8),
-                Text('👆 点击图片可以查看大图'),
+              children: [
+                _buildTipItem('📸', '点击相机图标打开图片选择器'),
+                const SizedBox(height: 8),
+                _buildTipItem('✅', '可以同时选择多张图片（最多9张）'),
+                const SizedBox(height: 8),
+                _buildTipItem('🔄', '长按图片可以进行编辑、预览等操作'),
+                const SizedBox(height: 8),
+                _buildTipItem('⬆️', '上滑关闭图片选择器'),
+                const SizedBox(height: 8),
+                _buildTipItem('📋', '点击"排序"可以调整图片顺序'),
+                const SizedBox(height: 8),
+                _buildTipItem('👆', '点击图片可以查看大图'),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('知道了'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                child: Text(
+                  '知道了',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
               ),
-              TextButton(
+              ElevatedButton(
                 onPressed: () async {
                   // 标记为不再显示
                   final prefs = await SharedPreferences.getInstance();
@@ -170,10 +195,48 @@ class _PostPageState extends State<PostPage> {
                     Navigator.pop(context);
                   }
                 },
-                child: const Text('不再提示'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF6201E7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  '不再提示',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
+    );
+  }
+
+  Widget _buildTipItem(String emoji, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          emoji,
+          style: const TextStyle(fontSize: 16),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -262,62 +325,96 @@ class _PostPageState extends State<PostPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 转发时，即使内容为空也可以发布（因为转发可能只是转发原内容）
+    final bool canPublish = widget.type == "转发"
+        ? (!_isLoading) // 转发时只要不在加载中就可以发布
+        : ((_characterCount > 0 || _selectedImages.isNotEmpty) && !_isLoading);
+    
+    // 根据类型获取标题和按钮文案
+    String getAppBarTitle() {
+      switch (widget.type) {
+        case '评论':
+          return '评论';
+        case '回复':
+          return '回复';
+        case '转发':
+          return '转发';
+        default:
+          return '发布文章';
+      }
+    }
+    
+    String getButtonText() {
+      switch (widget.type) {
+        case '评论':
+          return '评论';
+        case '回复':
+          return '回复';
+        case '转发':
+          return '转发';
+        default:
+          return '发表';
+      }
+    }
+    
     return Scaffold(
       appBar: AppBar(
-        // 左侧关闭按钮
+        backgroundColor: Colors.white,
+        elevation: 0,
+        // 左侧关闭按钮 - 朝下箭头
         leading: IconButton(
-          icon: const Icon(Icons.close, size: 24, color: Colors.grey),
+          icon: const Icon(Icons.keyboard_arrow_down, size: 24, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        // 页面标题
-        // title: Text(
-        //   widget.type.toString(),
-        //   style: TextStyle(fontWeight: FontWeight.bold),
-        // ),
-        // 右侧操作按钮
+        // 中间标题 - 根据类型显示不同标题
+        title: Text(
+          getAppBarTitle(),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        // 右侧发表按钮 - 使用主题色
         actions: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ElevatedButton(
-              // 当有内容时才能点击发布
-              onPressed:
-                  (_characterCount > 0 || _selectedImages.isNotEmpty) &&
-                          !_isLoading
-                      ? _handlePost
-                      : null,
-              style: ElevatedButton.styleFrom(
-                // 根据是否有内容设置不同的按钮颜色
-                backgroundColor:
-                    (_characterCount > 0 || _selectedImages.isNotEmpty)
-                        ? Colors.blue
-                        : Colors.grey.shade400,
+            padding: const EdgeInsets.only(right: 16.0, top: 8.0, bottom: 8.0),
+            child: TextButton(
+              onPressed: canPublish ? _handlePost : null,
+              style: TextButton.styleFrom(
+                backgroundColor: canPublish 
+                    ? Color(0xFF6201E7) 
+                    : Colors.grey.shade300,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                elevation: 0,
               ),
-              child:
-                  _isLoading
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                      : Text(
-                        widget.type.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
                       ),
+                    )
+                  : Text(
+                      getButtonText(),
+                      style: TextStyle(
+                        color: canPublish ? Colors.white : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
             ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Container(height: 0.5, color: Colors.grey.shade200),
+        ),
       ),
       // 主体内容区域
       body: GestureDetector(
@@ -325,116 +422,202 @@ class _PostPageState extends State<PostPage> {
         onTap: () {
           FocusScope.of(context).unfocus();
         },
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 1.8,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCharCounter(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 被评论的文章预览 - 移到最上面
+              if (widget.type != "发布") ...[
+                // 提示文字
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: TextField(
-                    // 输入框初始高度
-                    minLines: 4,
-                    controller: _postController,
-                    focusNode: _focusNode,
-                    autofocus: true,
-                    maxLines: null, // 允许多行输入
-                    maxLength: _maxCharacters, // 最大字符限制
-                    decoration: const InputDecoration(
-                      hintText: '想记下点什么？',
-                      hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                      border: InputBorder.none,
-                      counterText: '', // 隐藏默认的字符计数器
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    style: const TextStyle(fontSize: 16),
-                    // 监听文本变化，更新字符计数
-                    onChanged: (text) {
-                      setState(() => _characterCount = text.length);
-                    },
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.type == "评论" 
+                            ? Icons.chat_bubble_outline 
+                            : widget.type == "回复"
+                                ? Icons.reply
+                                : Icons.repeat,
+                        size: 16,
+                        color: Color(0xFF6201E7),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        widget.type == "评论" 
+                            ? "正在评论这条内容"
+                            : widget.type == "回复"
+                                ? "正在回复这条评论"
+                                : "正在转发这条内容",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF6201E7),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (_selectedImages.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildImagesGrid(),
-                ],
-                const SizedBox(height: 16),
-                _buildActionButtons(),
+                PostLitArticle(articleData: widget.articelData),
                 const SizedBox(height: 20),
-                _buildTagSelector(),
-
-                // 添加足够的底部空间，防止内容被遮挡
-                if (widget.type != "发布")
-                  PostLitArticle(articleData: widget.articelData),
-
-                // SizedBox(height: MediaQuery.of(context).size.height * 0.4),
+                Divider(height: 1, color: Colors.grey.shade200),
+                const SizedBox(height: 16),
               ],
-            ),
+
+              // 用户信息区域：头像 + 用户名 - 推特风格
+              if (_userInfo != null) ...[
+                Row(
+                  children: [
+                    // 用户头像 - 方形圆角（减小圆角）
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: _userInfo!['userPic'] != null &&
+                              _userInfo!['userPic'].toString().isNotEmpty
+                          ? Image.network(
+                              _userInfo!['userPic'],
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 40,
+                                  height: 40,
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: Colors.grey,
+                                    size: 24,
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              width: 40,
+                              height: 40,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.grey,
+                                size: 24,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 用户名
+                    Text(
+                      _userInfo!['nickname'] ?? '用户',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+              
+              // 内容输入框 - 推特风格（增加高度）
+              TextField(
+                controller: _postController,
+                focusNode: _focusNode,
+                autofocus: true,
+                maxLines: null, // 允许多行输入
+                minLines: 4, // 设置最小行数，增加初始高度
+                maxLength: _maxCharacters, // 最大字符限制
+                decoration: InputDecoration(
+                  hintText: widget.type == "评论" 
+                      ? '写下你的评论...'
+                      : widget.type == "回复"
+                          ? '写下你的回复...'
+                          : widget.type == "转发"
+                              ? '添加评论（可选）...'
+                              : '这一刻的想法...',
+                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 15),
+                  border: InputBorder.none,
+                  counterText: '', // 隐藏默认的字符计数器
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  height: 1.5,
+                  letterSpacing: 0.2,
+                ),
+                // 监听文本变化，更新字符计数
+                onChanged: (text) {
+                  setState(() => _characterCount = text.length);
+                },
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // 媒体附件区域
+              _buildMediaAttachmentArea(),
+              
+              const SizedBox(height: 16),
+              
+              // 标签管理区域
+              _buildTagSelector(),
+              
+              // 底部空白区域 - 确保有足够空间，特别是转发/评论时
+              SizedBox(height: widget.type != "发布" ? 100 : 40),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// 构建标签选择器触发按钮
+  /// 构建标签选择器触发按钮 - 推特风格
   Widget _buildTagSelector() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      child: InkWell(
-        onTap: () {
-          // 点击时隐藏键盘
-          FocusScope.of(context).unfocus();
-          // 显示标签选择页面
-          _showTagSelectionPage();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade200),
-              bottom: BorderSide(color: Colors.grey.shade200),
+    return InkWell(
+      onTap: () {
+        // 点击时隐藏键盘
+        FocusScope.of(context).unfocus();
+        // 显示标签选择页面
+        _showTagSelectionPage();
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // 左侧：添加标签文字
+            const Text(
+              '添加标签',
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              _selectedTag != null
-                  ? Icon(
-                    Icons.local_offer,
-                    size: 20,
-                    color: const Color.fromRGBO(111, 107, 204, 1),
-                  )
-                  : const Icon(
-                    Icons.local_offer_outlined,
-                    size: 20,
-                    color: Colors.black,
-                  ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _selectedTag ?? '添加标签',
+            // 右侧：标签名称或无 + 右箭头
+            Row(
+              children: [
+                Text(
+                  _selectedTag ?? '无',
                   style: TextStyle(
-                    color:
-                        _selectedTag != null
-                            ? const Color.fromRGBO(111, 107, 204, 1)
-                            : Colors.black87,
-                    fontSize: 16,
-                    fontWeight:
-                        _selectedTag != null
-                            ? FontWeight.w500
-                            : FontWeight.w500,
+                    color: _selectedTag != null 
+                        ? Color(0xFF6201E7) 
+                        : Colors.grey[600],
+                    fontSize: 15,
+                    fontWeight: _selectedTag != null 
+                        ? FontWeight.w500 
+                        : FontWeight.normal,
                   ),
                 ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade500, size: 22),
-            ],
-          ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -480,156 +663,110 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
-  /// 构建操作按钮
-  Widget _buildActionButtons() {
-    return Container(
-      margin: EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.02),
-      child: Row(
-        children: [
-          Container(
-            width: MediaQuery.of(context).size.width * 0.16,
-            height: MediaQuery.of(context).size.width * 0.16,
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(103, 38, 196, 133),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Color(0xFF26C485), width: 3),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.camera_alt_outlined,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  onPressed: _selectedImages.length < 9 ? _pickImage : null,
-                  tooltip: '添加图片 (${_selectedImages.length}/9)',
-                ),
-                if (_selectedImages.isNotEmpty)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '${_selectedImages.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                // 添加新手引导提示
-                if (_isFirstTimeUsingImagePicker)
-                  Positioned(
-                    top: -24,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(
-                            Icons.arrow_downward,
-                            size: 12,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '点击这里选择图片',
-                            style: TextStyle(color: Colors.white, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建图片网格显示
-  Widget _buildImagesGrid() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
+  /// 构建媒体附件区域
+  Widget _buildMediaAttachmentArea() {
+    // 如果有图片，显示图片网格
+    if (_selectedImages.isNotEmpty) {
+      return _buildImagesGrid();
+    }
+    
+    // 如果没有图片，显示占位符 - 推特风格
+    return GestureDetector(
+      onTap: _selectedImages.length < 9 ? _pickImage : null,
+      child: Container(
+        height: 100,
+        width: 100,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200, width: 1),
         ),
-        itemCount: _selectedImages.length,
-        itemBuilder: (context, index) {
-          return _buildImageTile(_selectedImages[index], index);
-        },
+        child: Center(
+          child: Icon(
+            Icons.add_photo_alternate_outlined,
+            size: 32,
+            color: Colors.grey.shade400,
+          ),
+        ),
       ),
     );
   }
 
-  /// 构建单个图片瓦片
+  /// 构建图片网格显示 - 支持拖拽排序和拖动到垃圾桶
+  Widget _buildImagesGrid() {
+    return _DraggableImageGrid(
+      images: _selectedImages,
+      maxImages: 9,
+      onImageReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          final item = _selectedImages.removeAt(oldIndex);
+          _selectedImages.insert(newIndex, item);
+        });
+      },
+      onImageDelete: (index) {
+        setState(() {
+          _selectedImages.removeAt(index);
+        });
+      },
+      onImageTap: (index) => _showFullScreenImage(index),
+      onAddImageTap: _pickImage,
+    );
+  }
+
+  /// 构建单个图片瓦片 - 已移至_DraggableImageGrid内部
   Widget _buildImageTile(File image, int index) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        image: DecorationImage(image: FileImage(image), fit: BoxFit.cover),
-      ),
-      child: Stack(
-        children: [
-          // 整个区域可点击预览大图
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _showFullScreenImage(index),
-              borderRadius: BorderRadius.circular(8),
-              child: Hero(
-                tag: 'preview_image_$index',
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(image: FileImage(image), fit: BoxFit.cover),
+        ),
+        child: Stack(
+          children: [
+            // 整个区域可点击预览大图
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showFullScreenImage(index),
+                borderRadius: BorderRadius.circular(8),
+                child: Hero(
+                  tag: 'preview_image_$index',
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+            ),
+            // 右上角删除按钮 - 优化样式
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedImages.removeAt(index);
+                  });
+                },
                 child: Container(
-                  width: double.infinity,
-                  height: double.infinity,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
             ),
-          ),
-          // 右上角删除按钮
-          Positioned(
-            top: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedImages.removeAt(index);
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.all(4),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.close, color: Colors.white, size: 14),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -745,6 +882,8 @@ class _PostPageState extends State<PostPage> {
             widget.articelData['id'] is int
                 ? widget.articelData['id']
                 : int.parse(widget.articelData['id'].toString());
+        // 获取被评论文章的作者用户名
+        final tousername = widget.articelData['username'] ?? '';
         await _postService.postComment(
           content: content,
           userId: _userInfo!['id'],
@@ -752,6 +891,7 @@ class _PostPageState extends State<PostPage> {
           articleId: articleId,
           categoryId: categoryId,
           becommentarticleId: articleId,
+          tousername: tousername,
           imageFiles: _selectedImages, // 传递选择的图片文件列表
         );
       } else if (widget.type == '转发') {
@@ -777,7 +917,8 @@ class _PostPageState extends State<PostPage> {
                 ? widget.articelData['id']
                 : int.parse(widget.articelData['id'].toString());
 
-        final tousername = widget.articelData['username'];
+        // 获取被回复评论的作者用户名（必填）
+        final tousername = widget.articelData['username'] ?? '';
 
         final uparticleId = int.parse(widget.uparticledata["id"]);
         await _postService.postComment(
@@ -787,8 +928,8 @@ class _PostPageState extends State<PostPage> {
           articleId: articleId,
           categoryId: categoryId,
           becommentarticleId: uparticleId,
-          imageFiles: _selectedImages, // 传递选择的图片文件列表
           tousername: tousername,
+          imageFiles: _selectedImages, // 传递选择的图片文件列表
         );
       } else {
         // print("发布文章");
@@ -814,7 +955,17 @@ class _PostPageState extends State<PostPage> {
         // 显示发布成功提示
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('发布成功！')));
+        ).showSnackBar(SnackBar(
+          content: Text(
+            widget.type == '评论' 
+                ? '评论成功！'
+                : widget.type == '回复'
+                    ? '回复成功！'
+                    : widget.type == '转发'
+                        ? '转发成功！'
+                        : '发布成功！'
+          ),
+        ));
       }
     } catch (e) {
       // 处理错误
@@ -900,5 +1051,299 @@ class _PostPageState extends State<PostPage> {
   /// 构建图片预览 (弃用)
   Widget _buildImagePreview() {
     return const SizedBox.shrink();
+  }
+}
+
+/// 可拖拽的图片网格组件 - 类似微信的实现
+class _DraggableImageGrid extends StatefulWidget {
+  final List<File> images;
+  final int maxImages;
+  final Function(int oldIndex, int newIndex) onImageReorder;
+  final Function(int index) onImageDelete;
+  final Function(int index) onImageTap;
+  final VoidCallback onAddImageTap;
+
+  const _DraggableImageGrid({
+    required this.images,
+    required this.maxImages,
+    required this.onImageReorder,
+    required this.onImageDelete,
+    required this.onImageTap,
+    required this.onAddImageTap,
+  });
+
+  @override
+  State<_DraggableImageGrid> createState() => _DraggableImageGridState();
+}
+
+class _DraggableImageGridState extends State<_DraggableImageGrid> {
+  int? _draggedIndex;
+  int? _targetIndex;
+  bool _isDragging = false;
+  bool _isOverTrash = false;
+  final GlobalKey _gridKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = 16.0;
+    final spacing = 8.0;
+    final itemSize = (screenWidth - padding * 2 - spacing * 2) / 3;
+
+    return Stack(
+      children: [
+        // 图片网格
+        Wrap(
+          key: _gridKey,
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            ...widget.images.asMap().entries.map((entry) {
+              final index = entry.key;
+              final image = entry.value;
+              return _buildDraggableImageItem(
+                image: image,
+                index: index,
+                itemSize: itemSize,
+              );
+            }),
+            // 添加图片按钮
+            if (widget.images.length < widget.maxImages)
+              _buildAddImageButton(itemSize),
+          ],
+        ),
+        // 垃圾桶（仅在拖动时显示）
+        if (_isDragging)
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: _isOverTrash
+                      ? Colors.red.withOpacity(0.9)
+                      : Colors.black.withOpacity(0.7),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isOverTrash
+                          ? Colors.red.withOpacity(0.5)
+                          : Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDraggableImageItem({
+    required File image,
+    required int index,
+    required double itemSize,
+  }) {
+    final isDragging = _draggedIndex == index;
+    final isTarget = _targetIndex == index && _draggedIndex != index;
+
+    return LongPressDraggable<File>(
+      data: image,
+      feedback: Material(
+        color: Colors.transparent,
+        child: Transform.scale(
+          scale: 1.1,
+          child: Opacity(
+            opacity: 0.8,
+            child: _buildImageTile(image: image, index: index, itemSize: itemSize),
+          ),
+        ),
+      ),
+      onDragStarted: () {
+        setState(() {
+          _draggedIndex = index;
+          _isDragging = true;
+        });
+      },
+      onDragEnd: (details) {
+        // 检查是否拖动到垃圾桶区域（使用之前设置的_isOverTrash状态）
+        if (_isOverTrash) {
+          // 拖动到垃圾桶，删除图片
+          widget.onImageDelete(index);
+        } else if (_targetIndex != null && _draggedIndex != null && _targetIndex != _draggedIndex) {
+          // 如果移动到了新位置，执行排序
+          widget.onImageReorder(_draggedIndex!, _targetIndex!);
+        }
+
+        setState(() {
+          _draggedIndex = null;
+          _targetIndex = null;
+          _isDragging = false;
+          _isOverTrash = false;
+        });
+      },
+      onDragUpdate: (details) {
+        // 检查是否在垃圾桶区域
+        final screenHeight = MediaQuery.of(context).size.height;
+        final trashAreaBottom = screenHeight - 60;
+        final trashAreaTop = trashAreaBottom - 80;
+        final isInTrashArea = details.globalPosition.dy >= trashAreaTop;
+
+        setState(() {
+          _isOverTrash = isInTrashArea;
+        });
+
+        // 如果不在垃圾桶区域，计算目标位置进行排序
+        if (!isInTrashArea) {
+          final RenderBox? gridRenderBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
+          if (gridRenderBox != null) {
+            final gridPosition = gridRenderBox.localToGlobal(Offset.zero);
+            final localPosition = details.globalPosition - gridPosition;
+            
+            final screenWidth = MediaQuery.of(context).size.width;
+            final padding = 16.0;
+            final spacing = 8.0;
+            final itemWidth = (screenWidth - padding * 2 - spacing * 2) / 3;
+
+            // 计算列和行（考虑Wrap的实际布局）
+            final column = ((localPosition.dx) / (itemWidth + spacing)).floor().clamp(0, 2);
+            final row = ((localPosition.dy) / (itemWidth + spacing)).floor().clamp(0, 2);
+            
+            final newIndex = (row * 3 + column).clamp(0, widget.images.length - 1);
+
+            if (newIndex != _targetIndex && newIndex != index && newIndex >= 0) {
+              setState(() {
+                _targetIndex = newIndex;
+              });
+            }
+          }
+        }
+      },
+      childWhenDragging: Container(
+        width: itemSize,
+        height: itemSize,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300, width: 1, style: BorderStyle.solid),
+        ),
+      ),
+      child: DragTarget<File>(
+        onAccept: (data) {
+          // 排序逻辑已在onDragUpdate中处理，这里主要是为了UI反馈
+        },
+        onWillAccept: (data) {
+          // 提供视觉反馈
+          return true;
+        },
+        builder: (context, candidateData, rejectedData) {
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: itemSize,
+            height: itemSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: isTarget
+                  ? Border.all(color: const Color(0xFF6201E7), width: 2)
+                  : null,
+            ),
+            child: _buildImageTile(
+              image: image,
+              index: index,
+              itemSize: itemSize,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildImageTile({
+    required File image,
+    required int index,
+    required double itemSize,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: itemSize,
+        height: itemSize,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: FileImage(image),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Stack(
+          children: [
+            // 点击预览
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => widget.onImageTap(index),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+            ),
+            // 删除按钮
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () => widget.onImageDelete(index),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddImageButton(double itemSize) {
+    return GestureDetector(
+      onTap: widget.onAddImageTap,
+      child: Container(
+        width: itemSize,
+        height: itemSize,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200, width: 1),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.add_photo_alternate_outlined,
+            size: 24,
+            color: Colors.grey.shade400,
+          ),
+        ),
+      ),
+    );
   }
 }

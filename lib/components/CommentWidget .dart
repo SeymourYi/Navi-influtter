@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../api/getarticleinfoAPI.dart'; // 导入点赞API服务
 import '../Store/storeutils.dart'; // 导入用户信息存储工具
 import '../page/UserInfo/userhome.dart'; // 导入用户主页
+import 'articleimage.dart'; // 导入图片组件
 
 class CommentWidget extends StatefulWidget {
   final List<dynamic> comments;
@@ -364,6 +365,22 @@ class _CommentWidgetState extends State<CommentWidget> {
                       comment['content'],
                       style: const TextStyle(fontSize: 14),
                     ),
+                    // Comment images - 支持多张图片
+                    if (comment['coverImg'] != null &&
+                        comment['coverImg'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: ArticleImage(
+                            imageUrls: comment['coverImgList'] != null &&
+                                    comment['coverImgList'] is List &&
+                                    (comment['coverImgList'] as List).isNotEmpty
+                                ? List<String>.from(comment['coverImgList'])
+                                : [comment['coverImg'].toString()],
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     // Action Buttons
                     _buildActionButtons(comment),
