@@ -1,7 +1,5 @@
 package com.Navi
 
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
 import cn.jpush.android.api.JPushInterface
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
@@ -22,6 +20,7 @@ import com.xiaomi.mipush.sdk.Logger
 import com.xiaomi.mipush.sdk.MiPushClient
 
 // 移除workmanager相关配置
+// For v2 embedding, Application should extend standard Android Application class (not FlutterApplication)
 class NaviApplication : Application() {
     
     companion object {

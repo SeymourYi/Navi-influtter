@@ -349,7 +349,8 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
               onTap: () {
                 Navigator.push(
                   context,
-                  RouteUtils.slideFromRight(UserHome(userId: widget.articleData['username'])),
+                  RouteUtils.slideFromRight(ProfilePage(username: widget.articleData['username'])),
+                  // RouteUtils.slideFromRight(UserHome(userId: widget.articleData['username'])),
                 );
               },
               child: CircleAvatar(

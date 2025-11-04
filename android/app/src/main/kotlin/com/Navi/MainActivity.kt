@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.util.Log
 import org.json.JSONObject
 import androidx.core.view.WindowCompat
-import android.view.View
 import android.view.WindowManager
 
 class MainActivity : FlutterActivity() {
@@ -130,7 +129,8 @@ class MainActivity : FlutterActivity() {
     
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        // 适配Flutter插件注册
+        // Register plugins with Flutter Engine (v2 embedding)
+        // This is the v2 way - using FlutterEngine parameter
         GeneratedPluginRegistrant.registerWith(flutterEngine)
         
         // 额外打印通知数据的日志

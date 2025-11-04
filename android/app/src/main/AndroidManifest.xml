@@ -72,6 +72,10 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Explicitly declare v2 embedding in activity -->
+            <meta-data
+              android:name="flutterEmbedding"
+              android:value="2" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -97,7 +101,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-            
+        
         <!-- 添加小米推送AppID和AppKey的元数据 -->
         <meta-data
             android:name="MIPUSH_APPID"
