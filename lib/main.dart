@@ -99,23 +99,47 @@ class _MyAppState extends State<MyApp> {
     // 使用isLoggedIn方法检查登录状态
     var isLoggedIn = await SharedPrefsUtils.isLoggedIn();
 
-    setState(() {
-      if (token == null || token.isEmpty || !isLoggedIn) {
+    if (!mounted) {
+      return;
+    }
+
+    if (token == null || token.isEmpty || !isLoggedIn) {
+      setState(() {
         // 未登录
         loginstate = 2; // 到登录页面
-      } else {
-        // 已登录
-        loginstate = 1; // 到主页
+      });
+      return;
+    }
 
-        // 获取用户名，用于JPush别名设置
-        SharedPrefsUtils.getUsername().then((username) {
-          if (username != null && username.isNotEmpty) {
-            // 初始化JPush并设置别名
-            myJPush.initPlatformState(username);
-          }
-        });
-      }
+    setState(() {
+      // 已登录
+      loginstate = 1; // 到主页
     });
+
+    final username = await SharedPrefsUtils.getUsername();
+    if (username != null && username.isNotEmpty) {
+      await _initializePushIfAllowed(username);
+    }
+  }
+
+  Future<void> _initializePushIfAllowed(String username) async {
+    final consentGranted = await SharedPrefsUtils.hasPrivacyConsent();
+    if (!consentGranted) {
+      debugPrint('跳过推送初始化：用户尚未同意隐私政策');
+      return;
+    }
+
+    if (kIsWeb || !Platform.isAndroid) {
+      return;
+    }
+
+    try {
+      myJPush.initPlatformState(username);
+      const MethodChannel channel = MethodChannel('com.Navi/push_notification');
+      await channel.invokeMethod('initializePushIfNeeded');
+    } catch (error) {
+      debugPrint('初始化原生推送失败: $error');
+    }
   }
 
   // 设置通知检测，用于捕获从JNotifyActivity启动的情况

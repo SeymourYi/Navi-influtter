@@ -15,11 +15,10 @@ import android.os.Looper
 import android.os.Process
 import android.util.Log
 import cn.jpush.android.api.BasicPushNotificationBuilder
-import cn.jpush.android.api.CustomPushNotificationBuilder
-import cn.jpush.android.api.JPushMessage
 import com.xiaomi.channel.commonutils.logger.LoggerInterface
 import com.xiaomi.mipush.sdk.Logger
 import com.xiaomi.mipush.sdk.MiPushClient
+import java.util.concurrent.atomic.AtomicBoolean
 
 // 移除workmanager相关配置
 class NaviApplication : Application() {
@@ -27,6 +26,8 @@ class NaviApplication : Application() {
     companion object {
         private const val TAG = "NaviApplication"
         const val CHANNEL_ID = "navi_push_channel"
+        private const val PRIVACY_CONSENT_KEY = "flutter.privacy_consent_granted"
+        private val isPushInitialized = AtomicBoolean(false)
         
         // 小米推送的AppID和AppKey（从开发者控制台获取）
         private const val MI_APP_ID = "2882303761520372137"
@@ -48,6 +49,15 @@ class NaviApplication : Application() {
                 Log.e(TAG, "【小米推送】设置别名失败: ${e.message}", e)
             }
         }
+
+        fun requestPushInitialization(context: Context, triggerSource: String = "flutter_request") {
+            val application = context.applicationContext as? NaviApplication
+            if (application == null) {
+                Log.e(TAG, "无法获取NaviApplication实例，推送初始化请求被忽略")
+                return
+            }
+            application.initializePushIfPermitted(triggerSource)
+        }
     }
     
     override fun onCreate() {
@@ -58,11 +68,47 @@ class NaviApplication : Application() {
         
         // 创建通知渠道（Android 8.0+要求）
         createNotificationChannel()
-        
+        initializePushIfPermitted("app_start")
+    }
+
+    fun initializePushIfPermitted(triggerSource: String = "manual"): Boolean {
+        if (!hasUserConsented()) {
+            Log.w(TAG, "用户未同意隐私政策，跳过推送初始化 (trigger=$triggerSource)")
+            return false
+        }
+
+        if (!isPushInitialized.compareAndSet(false, true)) {
+            Log.d(TAG, "推送已初始化，忽略重复请求 (trigger=$triggerSource)")
+            return true
+        }
+
+        Log.i(TAG, "满足隐私合规要求，开始初始化推送服务 (trigger=$triggerSource)")
+        // 再次确保通知渠道存在
+        createNotificationChannel()
+        setupJPush()
+        setupMiPush()
+        return true
+    }
+
+    private fun hasUserConsented(): Boolean {
+        return try {
+            val sharedPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val consent = sharedPrefs.getBoolean(PRIVACY_CONSENT_KEY, false)
+            Log.d(TAG, "读取隐私同意状态: $consent")
+            consent
+        } catch (e: Exception) {
+            Log.e(TAG, "读取隐私同意状态失败: ${e.message}", e)
+            false
+        }
+    }
+
+    private fun setupJPush() {
+        Log.i(TAG, "开始初始化极光推送")
+
         // 初始化JPush
         JPushInterface.setDebugMode(true) // 设置Debug模式，发布时请关闭
         JPushInterface.init(this)
-        
+
         // 在Android 8.0+上手动关联极光推送与我们创建的通知渠道
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
@@ -73,50 +119,52 @@ class NaviApplication : Application() {
                 Log.e(TAG, "关联通知渠道失败: ${e.message}")
             }
         }
-        
+
         // 配置JPush为允许保持长连接，提高推送到达率
         JPushInterface.setPowerSaveMode(this, true)
-        
+
         // 启用自定义消息 - 这里不再调用setPushNotificationBuilder，改用setDefaultPushNotificationBuilder
         // JPushInterface.setPushNotificationBuilder(1, getCustomNotificationBuilder())
-        
+
         // 使用基本通知构建器
         val basicBuilder = BasicPushNotificationBuilder(this)
         basicBuilder.statusBarDrawable = android.R.drawable.ic_dialog_info
         basicBuilder.notificationFlags = android.app.Notification.FLAG_AUTO_CANCEL
         // 设置通知提示音、振动和LED灯
-        basicBuilder.notificationDefaults = android.app.Notification.DEFAULT_SOUND or 
-                                          android.app.Notification.DEFAULT_VIBRATE or 
-                                          android.app.Notification.DEFAULT_LIGHTS
+        basicBuilder.notificationDefaults = android.app.Notification.DEFAULT_SOUND or
+                android.app.Notification.DEFAULT_VIBRATE or
+                android.app.Notification.DEFAULT_LIGHTS
         JPushInterface.setDefaultPushNotificationBuilder(basicBuilder)
-        
+    }
+
+    private fun setupMiPush() {
         // 初始化小米推送，仅在主进程中初始化
         printSeparator("开始初始化小米推送")
         if (shouldInit()) {
             try {
                 // 使用硬编码的正确AppID和AppKey
                 Log.e(TAG, "【小米推送】准备初始化 - AppID: $MI_APP_ID, AppKey: $MI_APP_KEY")
-                
+
                 // 初始化小米推送
                 MiPushClient.registerPush(this, MI_APP_ID, MI_APP_KEY)
                 Log.e(TAG, "【小米推送】初始化API调用完成，等待结果...")
-                
+
                 // 定时查询RegID
                 scheduleRegIdCheck()
-                
+
                 // 立即检查一次RegID
                 printCurrentRegId()
-                
+
                 // 监听极光设置的别名并同步到小米推送
                 monitorJPushAlias()
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "【小米推送】初始化失败: ${e.message}", e)
             }
         } else {
             Log.e(TAG, "【小米推送】不是主进程，跳过初始化")
         }
-        
+
         // 设置小米推送日志记录器，提高日志级别以便调试
         setupMiPushLogger()
     }

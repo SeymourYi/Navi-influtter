@@ -1,6 +1,7 @@
 ﻿import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:Navi/api/emailAPI.dart';
 import 'package:Navi/components/full_screen_image_view.dart';
 import 'package:Navi/page/About/aboutNavi.dart';
@@ -1039,8 +1040,13 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
   Future<void> _loadUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
+      final consentGranted = await SharedPrefsUtils.hasPrivacyConsent();
+      final isAndroidPlatform = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-      Myjpush().initPlatformState(userInfo!['username']);
+      if (userInfo != null && consentGranted && isAndroidPlatform) {
+        Myjpush().initPlatformState(userInfo['username']);
+      }
+
       setState(() {
         _userInfo = userInfo;
         _isLoading = false;
@@ -1056,7 +1062,13 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
   Future<void> _refreshUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
-      Myjpush().initPlatformState(userInfo!['username']);
+      final consentGranted = await SharedPrefsUtils.hasPrivacyConsent();
+      final isAndroidPlatform = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+      if (userInfo != null && consentGranted && isAndroidPlatform) {
+        Myjpush().initPlatformState(userInfo['username']);
+      }
+
       if (mounted) {
         setState(() {
           _userInfo = userInfo;

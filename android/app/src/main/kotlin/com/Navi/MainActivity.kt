@@ -154,6 +154,16 @@ class MainActivity : FlutterActivity() {
                             notificationData = null
                         }
                     }
+                    "initializePushIfNeeded" -> {
+                        try {
+                            val initialized = (application as? NaviApplication)?.initializePushIfPermitted("flutter_channel")
+                            Log.d("MainActivity", "收到Flutter推送初始化请求，结果: $initialized")
+                            result.success(initialized)
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "推送初始化请求失败: ${e.message}", e)
+                            result.error("INIT_ERROR", e.message, null)
+                        }
+                    }
                     else -> {
                         Log.d("MainActivity", "未实现的方法: ${call.method}")
                         result.notImplemented()

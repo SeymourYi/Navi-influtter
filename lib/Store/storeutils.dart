@@ -22,6 +22,7 @@ class SharedPrefsUtils {
   static const String _categoryId1 = 'category_id1';
   static const String _categoryId2 = 'category_id2';
   static const String _categoryId3 = 'category_id3';
+  static const String _privacyConsentKey = 'privacy_consent_granted';
   // 存储任意字符串值
   static Future<void> setString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -68,6 +69,20 @@ class SharedPrefsUtils {
   static Future<double?> getDouble(String key) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getDouble(key);
+  }
+
+  // 隐私同意相关
+  static Future<void> setPrivacyConsent(bool granted) async {
+    await setBool(_privacyConsentKey, granted);
+  }
+
+  static Future<bool> hasPrivacyConsent() async {
+    final consent = await getBool(_privacyConsentKey);
+    return consent ?? false;
+  }
+
+  static Future<void> clearPrivacyConsent() async {
+    await remove(_privacyConsentKey);
   }
 
   // 清除指定键的值

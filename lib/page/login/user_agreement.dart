@@ -131,6 +131,52 @@ class UserAgreementPage extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '设备标识符',
+                    style: TextStyle(
+                      color: const Color(0xFF6F6BCC),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '为了提供消息推送服务，我们可能会通过第三方SDK收集您的设备标识符信息，包括但不限于：',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '• OAID（开放匿名设备标识符）：用于在Android设备上识别设备，用于消息推送服务的设备识别和消息精准送达。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• AndroidID：用于在Android设备上识别设备，用于消息推送服务的设备识别和消息精准送达。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '上述设备标识符仅用于提供消息推送服务，不会用于其他目的。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -219,6 +265,44 @@ class UserAgreementPage extends StatelessWidget {
                       fontSize: 14,
                       color: Colors.black87,
                       height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '收集的个人信息类型：',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '• OAID（开放匿名设备标识符）：用于在Android设备上识别设备，实现消息推送服务的设备识别和消息精准送达。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• AndroidID：用于在Android设备上识别设备，实现消息推送服务的设备识别和消息精准送达。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '上述信息仅用于提供消息推送服务，不会用于其他目的。',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                   const SizedBox(height: 5),
