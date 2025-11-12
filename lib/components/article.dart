@@ -15,6 +15,7 @@ import '../Store/storeutils.dart'; // 导入用户信息存储工具
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:Navi/utils/image_utils.dart';
 
 class Article extends StatefulWidget {
   const Article({super.key, required this.articleData});
@@ -355,7 +356,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
               child: CircleAvatar(
                 radius: 24,
                 backgroundImage: CachedNetworkImageProvider(
-                  widget.articleData['userPic'],
+                  ImageUrlUtils.optimize(widget.articleData['userPic']),
                 ),
               ),
             ),
@@ -367,60 +368,65 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 用户信息行
+                    // 用户信息行（左侧用户名/认证/@账号，右侧时间）
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // 用户名
-                        Flexible(
-                          child: Text(
-                            "${widget.articleData['nickname'] ?? '用户'}",
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        // 左侧：昵称、认证、账号
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  "${widget.articleData['nickname'] ?? '用户'}",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              if (widget.articleData['isVerified'] == true ||
+                                  widget.articleData['verified'] == true)
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF6201E7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.check,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              SizedBox(width: 6),
+                              if (widget.articleData['username'] != null)
+                                Flexible(
+                                  flex: 1,
+                                  child: Text(
+                                    "@${widget.articleData['username']}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        SizedBox(width: 4),
-                        // 认证标志
-                        if (widget.articleData['isVerified'] == true ||
-                            widget.articleData['verified'] == true)
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Color(0xFF6201E7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.check,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                          ),
-                        SizedBox(width: 6),
-                        // 账号句柄
-                        if (widget.articleData['username'] != null)
-                          Flexible(
-                            flex: 1,
-                            child: Text(
-                              "@${widget.articleData['username']}",
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[600],
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        SizedBox(width: 8),
-                        // 时间戳
+                        // 右侧：时间戳（靠右显示）
                         Text(
                           widget.articleData["uptonowTime"] ?? "",
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             color: Colors.grey[600],
                           ),
                         ),
@@ -429,17 +435,23 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
 
                     SizedBox(height: 4),
 
-                    // 文章内容
+                    // 文章内容（占满一整行宽度，与右侧时间对齐）
                     Padding(
                       padding: const EdgeInsets.only(top: 0, bottom: 6),
-                      child: Text(
-                        "${widget.articleData['content'] ?? ''}",
-                        style: TextStyle(
-                          fontSize: 15,
-                          height: 1.5,
-                          color: Colors.black87,
-                        ),
-                        maxLines: null,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "${widget.articleData['content'] ?? ''}",
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.5,
+                                color: Colors.black87,
+                              ),
+                              maxLines: null,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -472,47 +484,57 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                         child: LitArticle(articleData: widget.articleData),
                       ),
 
-                    // 推特风格的操作栏
+                    // 操作栏：三等分布局（左/中/右）
                     Padding(
                       padding: EdgeInsets.only(top: 8, right: 4),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          // 评论按钮
-                          _buildTwitterActionButton(
-                            icon: Icons.mode_comment_outlined,
-                            count: widget.articleData['commentcount'] ?? 0,
-                            color: Colors.grey[600]!, // 灰色
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                RouteUtils.slideFromBottom(PostPage(
-                                  type: '评论',
-                                  articelData: widget.articleData,
-                                )),
-                              );
-                            },
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: _buildTwitterActionButton(
+                                icon: Icons.mode_comment_outlined,
+                                count: widget.articleData['commentcount'] ?? 0,
+                                color: Colors.grey[600]!,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    RouteUtils.slideFromBottom(
+                                      PostPage(type: '评论', articelData: widget.articleData),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                          // 转发按钮
-                          _buildTwitterActionButton(
-                            icon: Icons.repeat_outlined,
-                            count: widget.articleData['repeatcount'] ?? 0,
-                            color: Colors.grey[600]!, // 灰色
-                            onTap: () {
-                              _handleRepost();
-                            },
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _buildTwitterActionButton(
+                                icon: Icons.repeat_outlined,
+                                count: widget.articleData['repeatcount'] ?? 0,
+                                color: Colors.grey[600]!,
+                                onTap: () {
+                                  _handleRepost();
+                                },
+                              ),
+                            ),
                           ),
-                          // 点赞按钮
-                          _buildTwitterActionButton(
-                            icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                            count: likeCount,
-                            color: isLiked
-                                ? Color.fromRGBO(224, 36, 94, 1.0) // 已点赞时红色
-                                : Colors.grey[600]!, // 未点赞时灰色
-                            onTap: () {
-                              _handleLike();
-                            },
-                            isLoading: isLikeLoading,
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: _buildTwitterActionButton(
+                                icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                                count: likeCount,
+                                color: isLiked
+                                    ? Color.fromRGBO(224, 36, 94, 1.0)
+                                    : Colors.grey[600]!,
+                                onTap: () {
+                                  _handleLike();
+                                },
+                                isLoading: isLikeLoading,
+                              ),
+                            ),
                           ),
                         ],
                       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../Store/storeutils.dart';
+import 'image_utils.dart';
 
 class ImagePreloader {
   // 存储预加载的图片
@@ -28,14 +29,14 @@ class ImagePreloader {
               ? userInfo['bgImg']
               : DEFAULT_BG_IMAGE;
 
-      drawerBackgroundImage = CachedNetworkImageProvider(bgImageUrl);
+      drawerBackgroundImage = CachedNetworkImageProvider(ImageUrlUtils.optimize(bgImageUrl));
       precacheImage(drawerBackgroundImage!, context);
 
       // 预加载用户头像
       if (userInfo != null &&
           userInfo['userPic'] != null &&
           userInfo['userPic'].isNotEmpty) {
-        userAvatarImage = CachedNetworkImageProvider(userInfo['userPic']);
+        userAvatarImage = CachedNetworkImageProvider(ImageUrlUtils.optimize(userInfo['userPic']));
         precacheImage(userAvatarImage!, context);
       } else {
         userAvatarImage = AssetImage(DEFAULT_AVATAR);

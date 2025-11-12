@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'image_utils.dart';
 
 /// 优化的图片组件，结合 ListView 的 cacheExtent 实现视口优先加载
 /// 
@@ -33,7 +34,7 @@ class ViewportAwareImage extends StatelessWidget {
   /// 这个方法可以在滚动时调用，提前加载即将进入视口的图片
   static Future<void> precacheNetworkImage(String imageUrl, BuildContext context) async {
     await precacheImage(
-      CachedNetworkImageProvider(imageUrl),
+      CachedNetworkImageProvider(ImageUrlUtils.optimize(imageUrl)),
       context,
     );
   }
@@ -41,7 +42,7 @@ class ViewportAwareImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: ImageUrlUtils.optimize(imageUrl),
       fit: fit,
       alignment: alignment,
       placeholder: (context, url) => placeholder ??

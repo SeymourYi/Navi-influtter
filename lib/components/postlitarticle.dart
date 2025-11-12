@@ -3,6 +3,7 @@ import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:Navi/utils/route_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:Navi/utils/image_utils.dart';
 
 class PostLitArticle extends StatefulWidget {
   const PostLitArticle({super.key, required this.articleData});
@@ -42,7 +43,7 @@ class _PostLitArticleState extends State<PostLitArticle> {
               child: widget.articleData['userPic'] != null &&
                       widget.articleData['userPic'].toString().isNotEmpty
                   ? CachedNetworkImage(
-                      imageUrl: widget.articleData['userPic'],
+                      imageUrl: ImageUrlUtils.optimize(widget.articleData['userPic']),
                       width: 32,
                       height: 32,
                       fit: BoxFit.cover,

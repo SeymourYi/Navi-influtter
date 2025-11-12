@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:Navi/api/userAPI.dart';
 import 'package:Navi/page/chat/screen/chat_screen.dart';
 import 'package:Navi/page/chat/screen/role_selection_screen.dart';
+import 'package:Navi/utils/image_utils.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? username;
@@ -325,7 +326,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     _userInfo!['bgImg'] != null &&
                                     _userInfo!['bgImg'].toString().isNotEmpty
                                 ? CachedNetworkImage(
-                                    imageUrl: _userInfo!['bgImg'],
+                                    imageUrl: ImageUrlUtils.optimize(_userInfo!['bgImg']),
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
                                       color: Colors.grey[200],
@@ -457,7 +458,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                     .toString()
                                                     .isNotEmpty
                                             ? CachedNetworkImage(
-                                                imageUrl: _userInfo!['userPic'],
+                                                imageUrl: ImageUrlUtils.optimize(_userInfo!['userPic']),
                                                 fit: BoxFit.cover,
                                                 placeholder: (context, url) =>
                                                     const CircularProgressIndicator(),

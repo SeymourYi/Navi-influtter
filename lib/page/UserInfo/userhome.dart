@@ -7,6 +7,7 @@ import 'package:Navi/page/chat/screen/privtschatcreen.dart';
 import 'package:Navi/utils/route_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:Navi/utils/image_utils.dart';
 
 class UserHome extends StatefulWidget {
   const UserHome({super.key, required this.userId});
@@ -123,7 +124,7 @@ class _UserHomeState extends State<UserHome> {
                             child: _userinfo["bgImg"] != null &&
                                     _userinfo["bgImg"].toString().isNotEmpty
                                 ? CachedNetworkImage(
-                                    imageUrl: _userinfo["bgImg"],
+                                    imageUrl: ImageUrlUtils.optimize(_userinfo["bgImg"]),
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
                                       color: Colors.grey[200],
@@ -211,7 +212,7 @@ class _UserHomeState extends State<UserHome> {
                                               .toString()
                                               .isNotEmpty
                                       ? CachedNetworkImage(
-                                          imageUrl: _userinfo["userPic"],
+                                          imageUrl: ImageUrlUtils.optimize(_userinfo["userPic"]),
                                           fit: BoxFit.cover,
                                           placeholder: (context, url) =>
                                               const CircularProgressIndicator(),
