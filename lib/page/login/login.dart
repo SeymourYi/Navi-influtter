@@ -499,27 +499,13 @@ class _LoginPageState extends State<LoginPage> {
                   // 密码输入框
                   TextField(
                     controller: _passwordController,
-                    obscureText: _obscurePassword,
                     keyboardType: TextInputType.text,
                     style: TextStyle(color: Colors.black87, fontSize: 16),
                     decoration: InputDecoration(
-                      hintText: "密码",
+                      hintText: "密码（仅限中文）",
                       hintStyle: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 16,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: Colors.grey[600],
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
                       ),
                       border: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey[300]!),
@@ -553,23 +539,22 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      child:
-                          _isLoading
-                              ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text(
-                                "登录",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
+                            )
+                          : Text(
+                              "登录",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
 

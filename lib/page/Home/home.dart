@@ -323,7 +323,6 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                     );
                   },
                 ),
-
                 Divider(
                   height: 1,
                   thickness: 0.5,
@@ -402,7 +401,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
   double _lastScrollOffset = 0.0;
   late AnimationController _hideAnimationController;
   late Animation<double> _hideAnimation;
-  
+
   // 滚动方向检测
   bool _isScrollingUp = false;
   DateTime _lastScrollTime = DateTime.now();
@@ -415,12 +414,12 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _hideAnimation = CurvedAnimation(
       parent: _hideAnimationController,
       curve: Curves.easeOutCubic,
     );
-    
+
     _hideAnimation.addListener(() {
       // 确保每次动画值变化都更新UI
       if (mounted) {
@@ -434,7 +433,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         }
       }
     });
-    
+
     // 初始化时设置状态栏
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateSystemUI();
@@ -468,23 +467,23 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
 
     // 计算滚动方向：offset 增加 = 向上滚动（内容向下），offset 减少 = 向下滚动（内容向上）
     final double scrollDelta = offset - _lastScrollOffset;
-    
+
     // 如果滚动变化太小，忽略但更新位置
     if (scrollDelta.abs() < 0.1) {
       _lastScrollOffset = offset;
       return;
     }
-    
+
     // 更新最后滚动时间
     _lastScrollTime = DateTime.now();
-    
+
     // 判断滚动方向
     final bool scrollingUp = scrollDelta > 0;
     _isScrollingUp = scrollingUp;
-    
+
     // 计算目标动画值
     double targetValue = _hideAnimationController.value;
-    
+
     if (scrollingUp) {
       // 向上滚动：隐藏导航栏（增加动画值）
       double increment = (scrollDelta.abs() / 20.0).clamp(0.05, 0.25);
@@ -505,15 +504,15 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
         targetValue = (targetValue - decrement).clamp(0.0, 1.0);
       }
     }
-    
+
     // 如果滚动到顶部，强制显示
     if (offset <= 0) {
       targetValue = 0.0;
     }
-    
+
     // 确保边界值
     targetValue = targetValue.clamp(0.0, 1.0);
-    
+
     // 立即更新动画值（直接设置值，动画监听器会自动触发 setState）
     if ((targetValue - _hideAnimationController.value).abs() > 0.001) {
       _hideAnimationController.value = targetValue;
@@ -530,13 +529,14 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       SystemUiMode.edgeToEdge,
       overlays: SystemUiOverlay.values, // 始终保持所有系统UI可交互
     );
-    
+
     // 根据动画值设置状态栏样式
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         // 当隐藏时，状态栏图标变浅（但保持可见以确保可交互）
-        statusBarIconBrightness: _animationValue > 0.7 ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness:
+            _animationValue > 0.7 ? Brightness.light : Brightness.dark,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
@@ -549,138 +549,140 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       value: SystemUiOverlayStyle(
         // 根据可见性设置状态栏样式
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _animationValue > 0.8 ? Brightness.light : Brightness.dark,
+        statusBarIconBrightness:
+            _animationValue > 0.8 ? Brightness.light : Brightness.dark,
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
         appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight * (1 - _animationValue)),
-        child: ClipRect(
-          child: Align(
-            alignment: Alignment.topCenter,
-            heightFactor: 1.0 - _animationValue,
+          preferredSize:
+              Size.fromHeight(kToolbarHeight * (1 - _animationValue)),
+          child: ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: 1.0 - _animationValue,
+              child: Opacity(
+                opacity: 1.0 - _animationValue,
+                child: AppBar(
+                  centerTitle: true,
+                  title: Text(
+                    "Navi",
+                    style: TextStyle(
+                      fontSize: 23,
+                      fontFamily: "Inter-Regular",
+                      color: const Color.fromARGB(71, 116, 55, 202),
+                    ),
+                  ),
+                  leading: null,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    PopupMenuButton<String>(
+                      icon: SvgPicture.asset(
+                        "lib/assets/icons/adduser.svg",
+                        height: 20,
+                        width: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: Colors.white,
+                      elevation: 8,
+                      offset: const Offset(0, 50), // 菜单往下偏移
+                      onSelected: (value) {
+                        if (value == 'add_friend') {
+                          Navigator.push(
+                            context,
+                            RouteUtils.slideFromBottom(AddFriendPage()),
+                          );
+                        } else if (value == 'search_posts') {
+                          Navigator.push(
+                            context,
+                            RouteUtils.slideFromBottom(SearchPostsPage()),
+                          );
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'add_friend',
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.person_add_outlined,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                '添加朋友',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'search_posts',
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                '搜索帖子',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  bottom: PreferredSize(
+                    preferredSize: Size.fromHeight(0),
+                    child: Container(color: Colors.transparent, height: 0),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        body: things(onScrollChanged: _handleScroll),
+        floatingActionButton: Transform.translate(
+          offset: Offset(0, 100 * _animationValue),
+          child: Transform.scale(
+            scale: 1.0 - 0.3 * _animationValue,
             child: Opacity(
               opacity: 1.0 - _animationValue,
-              child: AppBar(
-                centerTitle: true,
-                title: Text(
-                  "Navi",
-                  style: TextStyle(
-                    fontSize: 23,
-                    fontFamily: "Inter-Regular",
-                    color: const Color.fromARGB(71, 116, 55, 202),
+              child: FloatingActionButton(
+                onPressed: widget.onAddPostPressed,
+                backgroundColor: Color.fromRGBO(98, 1, 231, 1.00),
+                shape: CircleBorder(),
+                child: SvgPicture.asset(
+                  "lib/assets/icons/PostButtonIcon.svg",
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
                   ),
-                ),
-                leading: null,
-                automaticallyImplyLeading: false,
-                actions: [
-                  PopupMenuButton<String>(
-                    icon: SvgPicture.asset(
-                      "lib/assets/icons/adduser.svg",
-                      height: 20,
-                      width: 20,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: Colors.white,
-                    elevation: 8,
-                    offset: const Offset(0, 50), // 菜单往下偏移
-                    onSelected: (value) {
-                      if (value == 'add_friend') {
-                        Navigator.push(
-                          context,
-                          RouteUtils.slideFromBottom(AddFriendPage()),
-                        );
-                      } else if (value == 'search_posts') {
-                        Navigator.push(
-                          context,
-                          RouteUtils.slideFromBottom(SearchPostsPage()),
-                        );
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => [
-                      PopupMenuItem<String>(
-                        value: 'add_friend',
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.person_add_outlined,
-                              size: 20,
-                              color: Colors.black87,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              '添加朋友',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'search_posts',
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              size: 20,
-                              color: Colors.black87,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              '搜索帖子',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: Size.fromHeight(0),
-                  child: Container(color: Colors.transparent, height: 0),
                 ),
               ),
             ),
           ),
         ),
-      ),
-      body: things(onScrollChanged: _handleScroll),
-      floatingActionButton: Transform.translate(
-        offset: Offset(0, 100 * _animationValue),
-        child: Transform.scale(
-          scale: 1.0 - 0.3 * _animationValue,
-          child: Opacity(
-            opacity: 1.0 - _animationValue,
-            child: FloatingActionButton(
-              onPressed: widget.onAddPostPressed,
-              backgroundColor: Color.fromRGBO(98, 1, 231, 1.00),
-              shape: CircleBorder(),
-              child: SvgPicture.asset(
-                "lib/assets/icons/PostButtonIcon.svg",
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(
-                  Colors.white,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
       ),
     );
   }
@@ -725,12 +727,12 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _bottomBarAnimation = CurvedAnimation(
       parent: _bottomBarAnimationController,
       curve: Curves.easeOutCubic,
     );
-    
+
     _bottomBarAnimation.addListener(() {
       // 确保每次动画值变化都更新UI
       if (mounted) {
@@ -756,19 +758,19 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
       // 只在主页标签时控制底部导航栏
       // 计算滚动方向
       final double scrollDelta = offset - _lastScrollOffset;
-      
+
       // 如果滚动变化太小，忽略但更新位置
       if (scrollDelta.abs() < 0.1) {
         _lastScrollOffset = offset;
         return;
       }
-      
+
       // 判断滚动方向
       final bool scrollingUp = scrollDelta > 0;
-      
+
       // 计算目标动画值
       double targetValue = _bottomBarAnimationController.value;
-      
+
       if (scrollingUp) {
         // 向上滚动：隐藏底部导航栏（增加动画值）
         double increment = (scrollDelta.abs() / 20.0).clamp(0.05, 0.25);
@@ -789,15 +791,15 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
           targetValue = (targetValue - decrement).clamp(0.0, 1.0);
         }
       }
-      
+
       // 如果滚动到顶部，强制显示
       if (offset <= 0) {
         targetValue = 0.0;
       }
-      
+
       // 确保边界值
       targetValue = targetValue.clamp(0.0, 1.0);
-      
+
       // 立即更新动画值（直接设置值，动画监听器会自动触发 setState）
       if ((targetValue - _bottomBarAnimationController.value).abs() > 0.001) {
         _bottomBarAnimationController.value = targetValue;
@@ -823,90 +825,90 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
 
       if (status.isDenied || status.isPermanentlyDenied) {
         // 如果权限被拒绝，显示对话框提示用户
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                backgroundColor: Colors.white,
-                title: Row(
-                  children: [
-                    Icon(
-                      Icons.notifications_active_outlined,
-                      color: Color(0xFF6201E7),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        '开启通知权限',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                content: const Text(
-                  '为了及时接收私信消息，请允许Navi发送通知',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                    ),
-                    child: Text(
-                      '稍后再说',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6201E7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      elevation: 0,
-                    ),
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      // 打开应用设置页面，让用户手动开启权限
-                      await openAppSettings();
-                    },
-                    child: const Text(
-                      '去设置',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        }
+        // if (mounted) {
+        //   showDialog(
+        //     context: context,
+        //     builder: (BuildContext context) {
+        //       return AlertDialog(
+        //         shape: RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.circular(16),
+        //         ),
+        //         backgroundColor: Colors.white,
+        //         title: Row(
+        //           children: [
+        //             Icon(
+        //               Icons.notifications_active_outlined,
+        //               color: Color(0xFF6201E7),
+        //               size: 24,
+        //             ),
+        //             const SizedBox(width: 12),
+        //             const Expanded(
+        //               child: Text(
+        //                 '开启通知权限',
+        //                 style: TextStyle(
+        //                   fontSize: 18,
+        //                   fontWeight: FontWeight.bold,
+        //                   color: Colors.black87,
+        //                 ),
+        //               ),
+        //             ),
+        //           ],
+        //         ),
+        //         content: const Text(
+        //           '为了及时接收私信消息，请允许Navi发送通知',
+        //           style: TextStyle(
+        //             fontSize: 14,
+        //             color: Colors.black87,
+        //             height: 1.5,
+        //           ),
+        //         ),
+        //         actions: [
+        //           TextButton(
+        //             onPressed: () {
+        //               Navigator.of(context).pop();
+        //             },
+        //             style: TextButton.styleFrom(
+        //               padding: const EdgeInsets.symmetric(
+        //                   horizontal: 20, vertical: 10),
+        //             ),
+        //             child: Text(
+        //               '稍后再说',
+        //               style: TextStyle(
+        //                 color: Colors.grey[600],
+        //                 fontSize: 14,
+        //                 fontWeight: FontWeight.w500,
+        //               ),
+        //             ),
+        //           ),
+        //           ElevatedButton(
+        //             style: ElevatedButton.styleFrom(
+        //               backgroundColor: const Color(0xFF6201E7),
+        //               foregroundColor: Colors.white,
+        //               shape: RoundedRectangleBorder(
+        //                 borderRadius: BorderRadius.circular(20),
+        //               ),
+        //               padding: const EdgeInsets.symmetric(
+        //                   horizontal: 20, vertical: 10),
+        //               elevation: 0,
+        //             ),
+        //             onPressed: () async {
+        //               Navigator.of(context).pop();
+        //               // 打开应用设置页面，让用户手动开启权限
+        //               await openAppSettings();
+        //             },
+        //             child: const Text(
+        //               '去设置',
+        //               style: TextStyle(
+        //                 fontSize: 14,
+        //                 fontWeight: FontWeight.w600,
+        //               ),
+        //             ),
+        //           ),
+        //         ],
+        //       );
+        //     },
+        //   );
+        // }
       } else if (status.isLimited) {
         // 权限有限，可能需要进一步处理
         print('通知权限受限');
@@ -939,8 +941,7 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
         // 创建用户角色
         _selectedCharacter = CharacterRole(
           id: _userInfo!['username'],
-          name:
-              _userInfo!['nickname'] ?? _userInfo!['username'] ?? '我自己',
+          name: _userInfo!['nickname'] ?? _userInfo!['username'] ?? '我自己',
           description: '以自己的身份进行聊天',
           imageAsset: _userInfo!['userPic'] ?? '',
           color: Colors.purple.shade700,
@@ -1041,7 +1042,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
       final consentGranted = await SharedPrefsUtils.hasPrivacyConsent();
-      final isAndroidPlatform = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final isAndroidPlatform =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
       if (userInfo != null && consentGranted && isAndroidPlatform) {
         Myjpush().initPlatformState(userInfo['username']);
@@ -1063,7 +1065,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
       final consentGranted = await SharedPrefsUtils.hasPrivacyConsent();
-      final isAndroidPlatform = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final isAndroidPlatform =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
       if (userInfo != null && consentGranted && isAndroidPlatform) {
         Myjpush().initPlatformState(userInfo['username']);
@@ -1134,8 +1137,7 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                       dividerColor: Colors.transparent,
                       indicator: const BoxDecoration(
                         border: Border(
-                          top:
-                              BorderSide(color: Colors.transparent, width: 0),
+                          top: BorderSide(color: Colors.transparent, width: 0),
                         ),
                       ),
                       tabs: [
@@ -1219,8 +1221,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 child: Consumer<NotificationProvider>(
                                   builder:
                                       (context, notificationProvider, child) {
-                                    final count =
-                                        notificationProvider.getnotificationcount();
+                                    final count = notificationProvider
+                                        .getnotificationcount();
                                     return count > 0
                                         ? Container(
                                             padding: EdgeInsets.all(2),
@@ -1296,7 +1298,6 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
           ),
         ),
       ),
-
       body: TabBarView(
         controller: _tabController,
         children: [
