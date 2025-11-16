@@ -200,7 +200,6 @@ A:
 
 根据您的项目配置，需要注意以下插件可能需要适配：
 
-- `jpush_flutter` - 极光推送，需要确认鸿蒙版本
 - `jverify` - 极光认证，需要确认鸿蒙版本
 - `photo_manager` - 照片管理，可能需要适配
 - `permission_handler` - 权限处理，需要适配鸿蒙权限系统

@@ -28,8 +28,6 @@ import 'package:Navi/page/search/search_posts_page.dart';
 import 'package:Navi/page/login/login.dart';
 import 'package:Navi/Store/storeutils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:jpush_flutter/jpush_flutter.dart';
-import '../../utils/myjpush.dart';
 import '../../utils/route_utils.dart';
 import 'package:Navi/page/Setting/settings.dart';
 import 'package:provider/provider.dart';
@@ -1040,7 +1038,6 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
 
-      Myjpush().initPlatformState(userInfo!['username']);
       setState(() {
         _userInfo = userInfo;
         _isLoading = false;
@@ -1056,7 +1053,6 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
   Future<void> _refreshUserInfo() async {
     try {
       final userInfo = await SharedPrefsUtils.getUserInfo();
-      Myjpush().initPlatformState(userInfo!['username']);
       if (mounted) {
         setState(() {
           _userInfo = userInfo;

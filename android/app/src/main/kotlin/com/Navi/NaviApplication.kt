@@ -1,8 +1,6 @@
 package com.Navi
 
-import cn.jpush.android.api.JPushInterface
 import android.app.ActivityManager
-import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,9 +10,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.util.Log
-import cn.jpush.android.api.BasicPushNotificationBuilder
-import cn.jpush.android.api.CustomPushNotificationBuilder
-import cn.jpush.android.api.JPushMessage
 import com.xiaomi.channel.commonutils.logger.LoggerInterface
 import com.xiaomi.mipush.sdk.Logger
 import com.xiaomi.mipush.sdk.MiPushClient
@@ -58,37 +53,6 @@ class NaviApplication : Application() {
         // 创建通知渠道（Android 8.0+要求）
         createNotificationChannel()
         
-        // 初始化JPush
-        JPushInterface.setDebugMode(true) // 设置Debug模式，发布时请关闭
-        JPushInterface.init(this)
-        
-        // 在Android 8.0+上手动关联极光推送与我们创建的通知渠道
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                // 设置极光推送使用我们创建的通知渠道
-                JPushInterface.setChannel(this, CHANNEL_ID)
-                Log.d(TAG, "关联极光推送与通知渠道: $CHANNEL_ID")
-            } catch (e: Exception) {
-                Log.e(TAG, "关联通知渠道失败: ${e.message}")
-            }
-        }
-        
-        // 配置JPush为允许保持长连接，提高推送到达率
-        JPushInterface.setPowerSaveMode(this, true)
-        
-        // 启用自定义消息 - 这里不再调用setPushNotificationBuilder，改用setDefaultPushNotificationBuilder
-        // JPushInterface.setPushNotificationBuilder(1, getCustomNotificationBuilder())
-        
-        // 使用基本通知构建器
-        val basicBuilder = BasicPushNotificationBuilder(this)
-        basicBuilder.statusBarDrawable = android.R.drawable.ic_dialog_info
-        basicBuilder.notificationFlags = android.app.Notification.FLAG_AUTO_CANCEL
-        // 设置通知提示音、振动和LED灯
-        basicBuilder.notificationDefaults = android.app.Notification.DEFAULT_SOUND or 
-                                          android.app.Notification.DEFAULT_VIBRATE or 
-                                          android.app.Notification.DEFAULT_LIGHTS
-        JPushInterface.setDefaultPushNotificationBuilder(basicBuilder)
-        
         // 初始化小米推送，仅在主进程中初始化
         printSeparator("开始初始化小米推送")
         if (shouldInit()) {
@@ -106,9 +70,6 @@ class NaviApplication : Application() {
                 // 立即检查一次RegID
                 printCurrentRegId()
                 
-                // 监听极光设置的别名并同步到小米推送
-                monitorJPushAlias()
-                
             } catch (e: Exception) {
                 Log.e(TAG, "【小米推送】初始化失败: ${e.message}", e)
             }
@@ -118,45 +79,6 @@ class NaviApplication : Application() {
         
         // 设置小米推送日志记录器，提高日志级别以便调试
         setupMiPushLogger()
-    }
-    
-    // 监听极光设置的别名并同步到小米推送
-    private fun monitorJPushAlias() {
-        val handler = Handler(Looper.getMainLooper())
-        handler.postDelayed({
-            try {
-                // 从SharedPreferences获取极光别名
-                val sharedPrefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-                val jpushAlias = sharedPrefs.getString("flutter.alias", "")
-                
-                // 如果获取到极光别名，并且不为空，则设置给小米推送
-                if (!jpushAlias.isNullOrEmpty()) {
-                    // 先清除旧别名
-                    MiPushClient.unsetAlias(this, null, null)
-                    // 延迟1秒后设置新别名，确保清除操作完成
-                    handler.postDelayed({
-                        setMiPushAlias(this, jpushAlias)
-                        Log.e(TAG, "【推送同步】已将极光别名 '$jpushAlias' 同步设置到小米推送")
-                    }, 1000)
-                } else {
-                    // 尝试获取极光默认别名（这里假设极光别名可能是用户ID）
-                    val userId = "2222" // 替换为实际获取用户ID的逻辑
-                    if (!userId.isNullOrEmpty()) {
-                        // 先清除旧别名
-                        MiPushClient.unsetAlias(this, null, null)
-                        // 延迟1秒后设置新别名
-                        handler.postDelayed({
-                            setMiPushAlias(this, userId)
-                            Log.e(TAG, "【推送同步】未找到极光别名，已将用户ID '$userId' 设置为小米推送别名")
-                        }, 1000)
-                    } else {
-                        Log.e(TAG, "【推送同步】无法获取极光别名或用户ID")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "【推送同步】同步别名时发生错误: ${e.message}", e)
-            }
-        }, 5000) // 5秒后执行，确保极光推送别名已设置
     }
     
     // 定时查询RegID

@@ -46,15 +46,6 @@
             </intent-filter>
         </receiver>
         
-        <service android:name=".XService"
-              android:enabled="true"
-              android:exported="false"
-              android:process=":pushcore">
-              <intent-filter>
-                  <action android:name="cn.jiguang.user.service.action" />
-              </intent-filter>
-        </service>
-        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -85,15 +76,6 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="${applicationId}.MESSAGE" />
-            </intent-filter>
-            <!-- 添加处理极光推送通知点击的intent-filter -->
-            <intent-filter>
-                <action android:name="cn.jpush.android.intent.NOTIFICATION_OPENED" />
-                <category android:name="${applicationId}" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="cn.jpush.android.intent.NOTIFICATION_CLICK_ACTION" />
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

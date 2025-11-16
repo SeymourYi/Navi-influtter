@@ -17,12 +17,6 @@
 -keepnames class com.unicom.online.account.kernel.** { *; }
 -dontwarn com.unicom.online.account.kernel.**
 
-# 极光推送相关
--keep class cn.jiguang.** { *; }
--keep class cn.jpush.** { *; }
--dontwarn cn.jiguang.**
--dontwarn cn.jpush.**
-
 # Google Play Core相关
 -keep class com.google.android.play.core.** { *; }
 -keepnames class com.google.android.play.core.** { *; }

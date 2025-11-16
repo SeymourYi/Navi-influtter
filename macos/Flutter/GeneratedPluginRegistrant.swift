@@ -13,7 +13,7 @@ import path_provider_foundation
 import photo_manager
 import rive_common
 import shared_preferences_foundation
-import sqflite_darwin
+import sqflite
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AppSettingsPlugin.register(with: registry.registrar(forPlugin: "AppSettingsPlugin"))
