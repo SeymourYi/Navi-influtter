@@ -126,23 +126,25 @@ class _PersistentDrawerState extends State<PersistentDrawer> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => FullScreenImageView(
-                              // imageUrls: List.from(
-                              //   _userinfo["userPic"],
-                              // ),
-                              imageUrls: [widget.userInfo!['userPic']],
-                              initialIndex: 0,
-                            ),
+                            builder:
+                                (context) => FullScreenImageView(
+                                  // imageUrls: List.from(
+                                  //   _userinfo["userPic"],
+                                  // ),
+                                  imageUrls: [widget.userInfo!['userPic']],
+                                  initialIndex: 0,
+                                ),
                           ),
                         );
                       },
                       child: CircleAvatar(
                         radius: 20,
-                        backgroundImage: widget.userInfo != null &&
-                                widget.userInfo!['userPic'].isNotEmpty
-                            ? _avatarImageProvider
-                            : AssetImage("lib/assets/images/userpic.jpg")
-                                as ImageProvider,
+                        backgroundImage:
+                            widget.userInfo != null &&
+                                    widget.userInfo!['userPic'].isNotEmpty
+                                ? _avatarImageProvider
+                                : AssetImage("lib/assets/images/userpic.jpg")
+                                    as ImageProvider,
                       ),
                     ),
 
@@ -556,8 +558,9 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
       ),
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize:
-              Size.fromHeight(kToolbarHeight * (1 - _animationValue)),
+          preferredSize: Size.fromHeight(
+            kToolbarHeight * (1 - _animationValue),
+          ),
           child: ClipRect(
             child: Align(
               alignment: Alignment.topCenter,
@@ -602,52 +605,57 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                           );
                         }
                       },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'add_friend',
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.person_add_outlined,
-                                size: 20,
-                                color: Colors.black87,
+                      itemBuilder:
+                          (BuildContext context) => [
+                            PopupMenuItem<String>(
+                              value: 'add_friend',
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                '添加朋友',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_add_outlined,
+                                    size: 20,
+                                    color: Colors.black87,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    '添加朋友',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'search_posts',
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                size: 20,
-                                color: Colors.black87,
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'search_posts',
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                '搜索帖子',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.search,
+                                    size: 20,
+                                    color: Colors.black87,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    '搜索帖子',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                          ],
                     ),
                   ],
                   bottom: PreferredSize(
@@ -674,10 +682,7 @@ class _HomeTabState extends State<HomeTab> with SingleTickerProviderStateMixin {
                   "lib/assets/icons/PostButtonIcon.svg",
                   width: 24,
                   height: 24,
-                  colorFilter: ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
+                  colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
               ),
             ),
@@ -981,9 +986,10 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          initialChatCharacter: character, // 传递选中的角色作为初始聊天角色
-        ),
+        builder:
+            (context) => ChatScreen(
+              initialChatCharacter: character, // 传递选中的角色作为初始聊天角色
+            ),
       ),
     );
   }
@@ -1083,10 +1089,7 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
   }
 
   void _navigateToSearch() {
-    Navigator.push(
-      context,
-      RouteUtils.slideFromRight(SearchPage()),
-    );
+    Navigator.push(context, RouteUtils.slideFromRight(SearchPage()));
   }
 
   void _navigateToPost() {
@@ -1119,13 +1122,11 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                 ),
               ),
               child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                ),
+                decoration: BoxDecoration(color: Colors.white),
                 child: SafeArea(
                   top: false,
-                  child: SizedBox(
-                    height: 50,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 56),
                     child: TabBar(
                       controller: _tabController,
                       onTap: (index) {
@@ -1149,8 +1150,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 opacity: 1.0 - _homePosition,
                                 child: SvgPicture.asset(
                                   "lib/assets/icons/home-outline.svg",
-                                  height: 25,
-                                  width: 25,
+                                  height: 28,
+                                  width: 28,
                                   colorFilter: ColorFilter.mode(
                                     inactiveColor,
                                     BlendMode.srcIn,
@@ -1162,8 +1163,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 opacity: _homePosition,
                                 child: SvgPicture.asset(
                                   "lib/assets/icons/home.svg",
-                                  height: 25,
-                                  width: 25,
+                                  height: 28,
+                                  width: 28,
                                   colorFilter: ColorFilter.mode(
                                     activeColor,
                                     BlendMode.srcIn,
@@ -1183,12 +1184,14 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                   Opacity(
                                     opacity: 1.0 - _notificationPosition,
                                     child: Container(
-                                      padding:
-                                          EdgeInsets.only(right: 10, top: 4),
+                                      padding: EdgeInsets.only(
+                                        right: 10,
+                                        top: 4,
+                                      ),
                                       child: SvgPicture.asset(
                                         "lib/assets/icons/notifications-outline.svg",
-                                        height: 25,
-                                        width: 25,
+                                        height: 28,
+                                        width: 28,
                                         colorFilter: ColorFilter.mode(
                                           inactiveColor,
                                           BlendMode.srcIn,
@@ -1200,12 +1203,14 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                   Opacity(
                                     opacity: _notificationPosition,
                                     child: Container(
-                                      padding:
-                                          EdgeInsets.only(right: 10, top: 4),
+                                      padding: EdgeInsets.only(
+                                        right: 10,
+                                        top: 4,
+                                      ),
                                       child: SvgPicture.asset(
                                         "lib/assets/icons/notifications.svg",
-                                        height: 25,
-                                        width: 25,
+                                        height: 28,
+                                        width: 28,
                                         colorFilter: ColorFilter.mode(
                                           activeColor,
                                           BlendMode.srcIn,
@@ -1219,31 +1224,36 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 right: 0,
                                 top: 0,
                                 child: Consumer<NotificationProvider>(
-                                  builder:
-                                      (context, notificationProvider, child) {
-                                    final count = notificationProvider
-                                        .getnotificationcount();
+                                  builder: (
+                                    context,
+                                    notificationProvider,
+                                    child,
+                                  ) {
+                                    final count =
+                                        notificationProvider
+                                            .getnotificationcount();
                                     return count > 0
                                         ? Container(
-                                            padding: EdgeInsets.all(2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                          padding: EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
                                             ),
-                                            constraints: BoxConstraints(
-                                              minWidth: 16,
-                                              minHeight: 16,
+                                          ),
+                                          constraints: BoxConstraints(
+                                            minWidth: 16,
+                                            minHeight: 16,
+                                          ),
+                                          child: Text(
+                                            count.toString(),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
                                             ),
-                                            child: Text(
-                                              count.toString(),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          )
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        )
                                         : SizedBox.shrink();
                                   },
                                 ),
@@ -1259,8 +1269,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 opacity: 1.0 - _personPosition,
                                 child: SvgPicture.asset(
                                   "lib/assets/icons/person-outline.svg",
-                                  height: 25,
-                                  width: 25,
+                                  height: 28,
+                                  width: 28,
                                   colorFilter: ColorFilter.mode(
                                     inactiveColor,
                                     BlendMode.srcIn,
@@ -1272,8 +1282,8 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                                 opacity: _personPosition,
                                 child: SvgPicture.asset(
                                   "lib/assets/icons/person.svg",
-                                  height: 25,
-                                  width: 25,
+                                  height: 28,
+                                  width: 28,
                                   colorFilter: ColorFilter.mode(
                                     activeColor,
                                     BlendMode.srcIn,
@@ -1285,8 +1295,9 @@ class _MyHomeState extends State<MyHome> with TickerProviderStateMixin {
                         ),
                       ],
                       unselectedLabelColor: Colors.grey,
-                      overlayColor:
-                          MaterialStateProperty.all(Colors.transparent),
+                      overlayColor: MaterialStateProperty.all(
+                        Colors.transparent,
+                      ),
                       unselectedLabelStyle: TextStyle(fontSize: 12),
                       labelStyle: TextStyle(fontSize: 12),
                       labelColor: Color.fromRGBO(111, 107, 204, 1.00),

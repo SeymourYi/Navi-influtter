@@ -35,14 +35,12 @@ class _GestureWrapperState extends State<_GestureWrapper>
   @override
   void initState() {
     super.initState();
+    // 缩短回弹动画时长，使手势反馈更灵敏
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 220),
     );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
   }
 
   @override
@@ -55,15 +53,16 @@ class _GestureWrapperState extends State<_GestureWrapper>
     final screenWidth = MediaQuery.of(context).size.width;
     final dragProgress = _dragOffset / screenWidth;
 
-    // 如果拖动超过屏幕宽度的30%或速度足够，则触发返回
-    if (dragProgress > 0.3 || velocity > 500) {
+    // 如果拖动超过屏幕宽度的12%或速度足够，则触发返回
+    // 降低比例和速度阈值以提高滑动灵敏度
+    if (dragProgress > 0.12 || velocity > 200) {
       Navigator.pop(context);
     } else {
       // 否则回弹到原位置
       final startOffset = _dragOffset;
       _controller.reset();
       _controller.forward();
-      
+
       void listener() {
         if (mounted) {
           setState(() {
@@ -71,7 +70,7 @@ class _GestureWrapperState extends State<_GestureWrapper>
           });
         }
       }
-      
+
       void statusListener(AnimationStatus status) {
         if (status == AnimationStatus.completed && mounted) {
           _controller.removeListener(listener);
@@ -83,7 +82,7 @@ class _GestureWrapperState extends State<_GestureWrapper>
           _controller.reset();
         }
       }
-      
+
       _controller.addListener(listener);
       _controller.addStatusListener(statusListener);
     }
@@ -92,11 +91,11 @@ class _GestureWrapperState extends State<_GestureWrapper>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return GestureDetector(
       onHorizontalDragStart: (details) {
-        // 只允许从左侧边缘（前30像素）开始拖动
-        if (details.globalPosition.dx <= 30) {
+        // 只允许从左侧边缘开始拖动。扩大起始区域以提高灵敏度（30 -> 80像素）。
+        if (details.globalPosition.dx <= 80) {
           _dragStartX = details.globalPosition.dx;
           _isDragging = true;
           _controller.reset();
@@ -104,10 +103,10 @@ class _GestureWrapperState extends State<_GestureWrapper>
       },
       onHorizontalDragUpdate: (details) {
         if (!_isDragging) return;
-        
+
         final currentX = details.globalPosition.dx;
         final deltaX = currentX - _dragStartX;
-        
+
         // 只允许向右拖动
         if (deltaX > 0) {
           setState(() {
@@ -306,7 +305,9 @@ class _ArticledetailState extends State<Articledetail> {
     // 使用PostPage页面进行转发，与article.dart中完全一致
     Navigator.push(
       context,
-      RouteUtils.slideFromBottom(PostPage(type: '转发', articelData: widget.articleData)),
+      RouteUtils.slideFromBottom(
+        PostPage(type: '转发', articelData: widget.articleData),
+      ),
     );
   }
 
@@ -431,372 +432,392 @@ class _ArticledetailState extends State<Articledetail> {
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-        title:
-            widget.articleData['categoryName'] != null &&
-                    widget.articleData['categoryName'].isNotEmpty
-                ? Text(
-                  widget.articleData['categoryName'],
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-                : null,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.0),
-          child: Container(height: 0.5, color: Colors.grey.shade200),
-        ),
-      ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // 用户信息和文章内容容器
-          Container(
-            padding: EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 用户信息行 - 推特风格
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          RouteUtils.slideFromRight(ProfilePage(
-                            username: widget.articleData['username'],
-                          )),
-                        );
-                      },
-                      child:
-                          widget.articleData['userPic'] != null &&
-                                  widget.articleData['userPic'].isNotEmpty
-                              ? CircleAvatar(
-                                radius: 20,
-                                backgroundImage: NetworkImage(
-                                  widget.articleData['userPic'],
-                                ),
-                              )
-                              : CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.grey[300],
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
+          title:
+              widget.articleData['categoryName'] != null &&
+                      widget.articleData['categoryName'].isNotEmpty
+                  ? Text(
+                    widget.articleData['categoryName'],
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                widget.articleData['nickname'] ?? '用户',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                  )
+                  : null,
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(1.0),
+            child: Container(height: 0.5, color: Colors.grey.shade200),
+          ),
+        ),
+        body: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // 用户信息和文章内容容器
+            Container(
+              padding: EdgeInsets.only(
+                top: 12,
+                left: 16,
+                right: 16,
+                bottom: 12,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 用户信息行 - 推特风格
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            RouteUtils.slideFromRight(
+                              ProfilePage(
+                                username: widget.articleData['username'],
                               ),
-                              SizedBox(width: 4),
-                              if (widget.articleData['isVerified'] == true)
-                                Icon(
-                                  Icons.verified,
-                                  size: 16,
-                                  color: Color(0xFF6201E7),
+                            ),
+                          );
+                        },
+                        child:
+                            widget.articleData['userPic'] != null &&
+                                    widget.articleData['userPic'].isNotEmpty
+                                ? CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage: NetworkImage(
+                                    widget.articleData['userPic'],
+                                  ),
+                                )
+                                : CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.grey[300],
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                            ],
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  widget.articleData['nickname'] ?? '用户',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                if (widget.articleData['isVerified'] == true)
+                                  Icon(
+                                    Icons.verified,
+                                    size: 16,
+                                    color: Color(0xFF6201E7),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  "@${widget.articleData['username'] ?? ''}",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Text(
+                                  " · ${widget.articleData['uptonowTime'] ?? ''}",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                        icon: Icon(
+                          Icons.more_horiz,
+                          size: 20,
+                          color: Colors.grey[700],
+                        ),
+                        onPressed: () {
+                          _showArticleMenu();
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // 文章内容区域 - 推特风格
+                  Padding(
+                    padding: EdgeInsets.only(top: 12, bottom: 12),
+                    child: Text(
+                      widget.articleData['content'] ?? '',
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: Colors.black87,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+
+                  // 分类标签（如果有）
+                  if (widget.articleData['categoryName'] != null)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        "#${widget.articleData['categoryName']}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6201E7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                  // 图片 - 推特风格
+                  if (widget.articleData['imageUrls'] != null &&
+                      widget.articleData['imageUrls'].isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: ArticleImage(
+                          imageUrls: widget.articleData['imageUrls'],
+                        ),
+                      ),
+                    ),
+
+                  if (widget.articleData['coverImg'] != "")
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: ArticleImage(
+                          imageUrls: List<String>.from(
+                            widget.articleData['coverImgList'],
                           ),
-                          SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Text(
-                                "@${widget.articleData['username'] ?? ''}",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              Text(
-                                " · ${widget.articleData['uptonowTime'] ?? ''}",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
+                        ),
+                      ),
+                    ),
+
+                  // 转发内容 - 推特风格
+                  if (widget.articleData['userShare'] == true)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.grey[200]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: LitArticle(articleData: widget.articleData),
+                      ),
+                    ),
+
+                  // 发布时间 - 推特风格
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      "${widget.articleData['createTime'].substring(0, 4)}年${widget.articleData['createTime'].substring(5, 7)}月${widget.articleData['createTime'].substring(8, 10)}日 ${widget.articleData['createTime'].substring(11, 13)}:${widget.articleData['createTime'].substring(14, 16)}",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(height: 0.5, color: Colors.grey.shade200),
+
+            // 互动统计 - 推特风格
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Text(
+                    "${widget.articleData['commentcount'] ?? '0'}",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    " 评论",
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 24),
+                  Text(
+                    "${widget.articleData['repeatcount'] ?? '0'}",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    " 转发",
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 24),
+                  Text(
+                    "${likeCount}",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    " 喜欢",
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(height: 0.5, color: Colors.grey.shade200),
+
+            // 交互按钮 - 推特风格
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  // 评论按钮
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        RouteUtils.slideFromBottom(
+                          PostPage(type: '评论', articelData: widget.articleData),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            'lib/assets/icons/chatbubble-ellipses-outline.svg',
+                            width: 18,
+                            height: 18,
+                            color: Colors.grey[700],
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(),
-                      icon: Icon(
-                        Icons.more_horiz,
-                        size: 20,
-                        color: Colors.grey[700],
-                      ),
-                      onPressed: () {
-                        _showArticleMenu();
-                      },
-                    ),
-                  ],
-                ),
-
-                // 文章内容区域 - 推特风格
-                Padding(
-                  padding: EdgeInsets.only(top: 12, bottom: 12),
-                  child: Text(
-                    widget.articleData['content'] ?? '',
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.5,
-                      color: Colors.black87,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-
-                // 分类标签（如果有）
-                if (widget.articleData['categoryName'] != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      "#${widget.articleData['categoryName']}",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6201E7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
 
-                // 图片 - 推特风格
-                if (widget.articleData['imageUrls'] != null &&
-                    widget.articleData['imageUrls'].isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: ArticleImage(
-                        imageUrls: widget.articleData['imageUrls'],
-                      ),
-                    ),
-                  ),
-
-                if (widget.articleData['coverImg'] != "")
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: ArticleImage(
-                        imageUrls: List<String>.from(
-                          widget.articleData['coverImgList'],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // 转发内容 - 推特风格
-                if (widget.articleData['userShare'] == true)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 12),
+                  // 转发按钮
+                  InkWell(
+                    onTap: _handleRepost,
+                    borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!, width: 1),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
                       ),
-                      child: LitArticle(articleData: widget.articleData),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SvgPicture.asset(
+                            'lib/assets/icons/repeat-outline.svg',
+                            width: 18,
+                            height: 18,
+                            color: Colors.grey[700],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                // 发布时间 - 推特风格
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    "${widget.articleData['createTime'].substring(0, 4)}年${widget.articleData['createTime'].substring(5, 7)}月${widget.articleData['createTime'].substring(8, 10)}日 ${widget.articleData['createTime'].substring(11, 13)}:${widget.articleData['createTime'].substring(14, 16)}",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Divider(height: 0.5, color: Colors.grey.shade200),
-
-          // 互动统计 - 推特风格
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Text(
-                  "${widget.articleData['commentcount'] ?? '0'}",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  " 评论",
-                  style: TextStyle(fontSize: 15, color: Colors.grey[600]),
-                ),
-                const SizedBox(width: 24),
-                Text(
-                  "${widget.articleData['repeatcount'] ?? '0'}",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  " 转发",
-                  style: TextStyle(fontSize: 15, color: Colors.grey[600]),
-                ),
-                const SizedBox(width: 24),
-                Text(
-                  "${likeCount}",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  " 喜欢",
-                  style: TextStyle(fontSize: 15, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-
-          Divider(height: 0.5, color: Colors.grey.shade200),
-
-          // 交互按钮 - 推特风格
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // 评论按钮
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      RouteUtils.slideFromBottom(PostPage(
-                        type: '评论',
-                        articelData: widget.articleData,
-                      )),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          'lib/assets/icons/chatbubble-ellipses-outline.svg',
-                          width: 18,
-                          height: 18,
-                          color: Colors.grey[700],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 转发按钮
-                InkWell(
-                  onTap: _handleRepost,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          'lib/assets/icons/repeat-outline.svg',
-                          width: 18,
-                          height: 18,
-                          color: Colors.grey[700],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // 喜欢按钮
-                InkWell(
-                  onTap: _handleLike,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        isLikeLoading
-                            ? SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  const Color.fromRGBO(224, 36, 94, 1.0),
+                  // 喜欢按钮
+                  InkWell(
+                    onTap: _handleLike,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          isLikeLoading
+                              ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    const Color.fromRGBO(224, 36, 94, 1.0),
+                                  ),
                                 ),
+                              )
+                              : Icon(
+                                isLiked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                size: 18,
+                                color:
+                                    isLiked
+                                        ? const Color.fromRGBO(224, 36, 94, 1.0)
+                                        : Colors.grey[700],
                               ),
-                            )
-                            : Icon(
-                              isLiked ? Icons.favorite : Icons.favorite_border,
-                              size: 18,
-                              color:
-                                  isLiked
-                                      ? const Color.fromRGBO(224, 36, 94, 1.0)
-                                      : Colors.grey[700],
-                            ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(height: 0.5, color: Colors.grey.shade200),
+
+            // 评论区域 - 推特风格
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(left: 16, top: 16, bottom: 12),
+                  child: Text(
+                    articleComments.isNotEmpty ? "评论" : "暂无评论",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
+                if (articleComments.isNotEmpty)
+                  CommentWidget(
+                    comments: articleComments,
+                    uparticledata: widget.articleData,
+                  ),
               ],
             ),
-          ),
-
-          Divider(height: 0.5, color: Colors.grey.shade200),
-
-          // 评论区域 - 推特风格
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: 16, top: 16, bottom: 12),
-                child: Text(
-                  articleComments.isNotEmpty ? "评论" : "暂无评论",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              if (articleComments.isNotEmpty)
-                CommentWidget(
-                  comments: articleComments,
-                  uparticledata: widget.articleData,
-                ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -828,10 +849,7 @@ class _ArticledetailState extends State<Articledetail> {
               if (_isCurrentUserArticle) ...[
                 ListTile(
                   leading: Icon(Icons.delete_outline, color: Colors.red),
-                  title: Text(
-                    '删除文章',
-                    style: TextStyle(color: Colors.red),
-                  ),
+                  title: Text('删除文章', style: TextStyle(color: Colors.red)),
                   onTap: () {
                     Navigator.pop(context);
                     _confirmDeleteArticle();
@@ -845,9 +863,9 @@ class _ArticledetailState extends State<Articledetail> {
                   title: Text('举报'),
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('举报功能开发中...')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('举报功能开发中...')));
                   },
                 ),
                 Divider(height: 1),
@@ -914,21 +932,19 @@ class _ArticledetailState extends State<Articledetail> {
 
       if (result != null && result['code'] == 0) {
         // 删除成功，返回上一页
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('文章已删除')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('文章已删除')));
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result?['msg'] ?? '删除失败，请稍后重试'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result?['msg'] ?? '删除失败，请稍后重试')));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('删除失败: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('删除失败: ${e.toString()}')));
     } finally {
       if (mounted) {
         setState(() {

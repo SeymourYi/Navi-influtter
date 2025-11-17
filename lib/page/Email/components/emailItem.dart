@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Navi/utils/viewport_image.dart';
 
 class Emailitem extends StatefulWidget {
   const Emailitem({super.key, required this.email});
@@ -148,14 +149,15 @@ class _EmailitemState extends State<Emailitem>
     try {
       // 根据通知类型确定要跳转的文章ID
       String? articleId;
-      if (widget.email['type'] == 'like' || widget.email['type'] == 'reArticle') {
+      if (widget.email['type'] == 'like' ||
+          widget.email['type'] == 'reArticle') {
         // 点赞和转发通知：跳转到被操作的原文章
         articleId = widget.email['oldArticleId']?.toString();
       } else if (widget.email['type'] == 'comment') {
         // 评论通知：跳转到原文章（被评论的文章）
         articleId = widget.email['oldArticleId']?.toString();
       }
-      
+
       if (articleId == null || articleId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -167,9 +169,35 @@ class _EmailitemState extends State<Emailitem>
       }
 
       // 获取文章详情
-      final articleResult = await _articleInfoService.getArticleInfo(int.parse(articleId));
-      
-      if (articleResult != null && articleResult['code'] == 0 && articleResult['data'] != null) {
+      final articleResult = await _articleInfoService.getArticleInfo(
+        int.parse(articleId),
+      );
+
+      if (articleResult != null &&
+          articleResult['code'] == 0 &&
+          articleResult['data'] != null) {
+        // 预加载文章中的图片，限制等待时间
+        try {
+          final articleData = articleResult['data'];
+          List<String> imageUrls = [];
+          if (articleData['coverImgList'] != null &&
+              articleData['coverImgList'] is List &&
+              (articleData['coverImgList'] as List).isNotEmpty) {
+            imageUrls = List<String>.from(articleData['coverImgList']);
+          } else if (articleData['coverImg'] != null &&
+              articleData['coverImg'].toString().isNotEmpty) {
+            imageUrls = [articleData['coverImg'].toString()];
+          }
+
+          if (imageUrls.isNotEmpty) {
+            await Future.wait(
+              imageUrls.map(
+                (url) => ViewportAwareImage.precacheNetworkImage(url, context),
+              ),
+            ).timeout(const Duration(milliseconds: 600), onTimeout: () => []);
+          }
+        } catch (e) {}
+
         // 导航到文章详情页
         Navigator.push(
           context,
@@ -231,9 +259,7 @@ class _EmailitemState extends State<Emailitem>
           PostPage(
             type: '回复',
             articelData: commentData,
-            uparticledata: {
-              'id': widget.email['oldArticleId']?.toString(),
-            },
+            uparticledata: {'id': widget.email['oldArticleId']?.toString()},
           ),
         ),
       );
@@ -274,7 +300,7 @@ class _EmailitemState extends State<Emailitem>
 
     try {
       String? articleId;
-      
+
       // 根据通知类型确定要点赞的ID
       if (widget.email['type'] == 'like') {
         // 点赞通知：点赞原文章（可以再次点赞或取消点赞）
@@ -363,26 +389,28 @@ class _EmailitemState extends State<Emailitem>
                   width: 40,
                   height: 40,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: 40,
-                    height: 40,
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.person,
-                      size: 20,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: 40,
-                    height: 40,
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.person,
-                      size: 20,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  placeholder:
+                      (context, url) => Container(
+                        width: 40,
+                        height: 40,
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.person,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                      ),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        width: 40,
+                        height: 40,
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.person,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                      ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -439,10 +467,7 @@ class _EmailitemState extends State<Emailitem>
                     // 时间
                     Text(
                       widget.email['uptonow'] ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 8),
                     // 被操作的文章内容预览 - 可点击跳转
@@ -530,8 +555,8 @@ class _EmailitemState extends State<Emailitem>
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                            Color(0xFF6201E7),
-                                          ),
+                                                Color(0xFF6201E7),
+                                              ),
                                         ),
                                       )
                                     else
@@ -583,8 +608,8 @@ class _EmailitemState extends State<Emailitem>
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                            Colors.red,
-                                          ),
+                                                Colors.red,
+                                              ),
                                         ),
                                       )
                                     else
@@ -595,8 +620,8 @@ class _EmailitemState extends State<Emailitem>
                                       ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      widget.email['type'] == 'reArticle' 
-                                          ? '点赞' 
+                                      widget.email['type'] == 'reArticle'
+                                          ? '点赞'
                                           : '喜欢',
                                       style: const TextStyle(
                                         fontSize: 13,
@@ -623,11 +648,7 @@ class _EmailitemState extends State<Emailitem>
                   color: _getTypeColor().withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  _getTypeIcon(),
-                  size: 20,
-                  color: _getTypeColor(),
-                ),
+                child: Icon(_getTypeIcon(), size: 20, color: _getTypeColor()),
               ),
             ],
           ),

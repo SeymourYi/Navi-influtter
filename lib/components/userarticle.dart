@@ -6,6 +6,7 @@ import '../components/articledetail.dart';
 import '../components/userinfo.dart';
 import '../api/articleAPI.dart';
 import '../api/getarticleinfoAPI.dart'; // 导入包含点赞API的服务
+import 'package:Navi/utils/viewport_image.dart';
 import '../Store/storeutils.dart'; // 导入用户信息存储工具
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -154,13 +155,35 @@ class _ArticleState extends State<Article> {
     }
   }
 
-  void _NavigateToArticleDetail({bool focusOnComment = false}) {
+  Future<void> _NavigateToArticleDetail({bool focusOnComment = false}) async {
     // 检查文章ID是否存在
     if (widget.articleData == null || widget.articleData['id'] == null) {
       return;
     }
 
     String articleId = "${widget.articleData['id']}";
+
+    try {
+      List<String> imageUrls = [];
+      if (widget.articleData != null) {
+        if (widget.articleData['coverImgList'] != null &&
+            widget.articleData['coverImgList'] is List &&
+            (widget.articleData['coverImgList'] as List).isNotEmpty) {
+          imageUrls = List<String>.from(widget.articleData['coverImgList']);
+        } else if (widget.articleData['coverImg'] != null &&
+            widget.articleData['coverImg'].toString().isNotEmpty) {
+          imageUrls = [widget.articleData['coverImg'].toString()];
+        }
+      }
+
+      if (imageUrls.isNotEmpty) {
+        await Future.wait(
+          imageUrls.map(
+            (url) => ViewportAwareImage.precacheNetworkImage(url, context),
+          ),
+        ).timeout(const Duration(milliseconds: 600), onTimeout: () => []);
+      }
+    } catch (e) {}
 
     Navigator.push(
       context,
@@ -483,9 +506,11 @@ class _ArticleState extends State<Article> {
                           onTap: () {
                             Navigator.push(
                               context,
-                              RouteUtils.slideFromRight(ProfilePage(
-                                username: widget.articleData['username'],
-                              )),
+                              RouteUtils.slideFromRight(
+                                ProfilePage(
+                                  username: widget.articleData['username'],
+                                ),
+                              ),
                             );
                           },
                           child: Padding(

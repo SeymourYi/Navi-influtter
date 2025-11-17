@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:provider/provider.dart';
 import 'package:Navi/utils/route_utils.dart';
+import 'package:Navi/utils/viewport_image.dart';
 import 'articleimage.dart';
 import '../components/articledetail.dart';
 import '../components/userinfo.dart';
@@ -36,7 +37,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
   final ImagePicker _picker = ImagePicker(); // 图片选择器实例
   String? _selectedImagePath; // 选择的图片路径
   ArticleService articleService = ArticleService();
-  
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +52,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
       } else {
         isLiked = false;
       }
-      
+
       // 处理点赞数量
       final likecontValue = widget.articleData['likecont'];
       if (likecontValue is int) {
@@ -186,13 +187,38 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     return RouteUtils.slideFromRight(page);
   }
 
-  void _NavigateToArticleDetail({bool focusOnComment = false}) {
+  Future<void> _NavigateToArticleDetail({bool focusOnComment = false}) async {
     // 检查文章ID是否存在
     if (widget.articleData == null || widget.articleData['id'] == null) {
       return;
     }
 
     String articleId = "${widget.articleData['id']}";
+
+    try {
+      // 尝试预加载文章图片
+      List<String> imageUrls = [];
+      if (widget.articleData != null) {
+        if (widget.articleData['coverImgList'] != null &&
+            widget.articleData['coverImgList'] is List &&
+            (widget.articleData['coverImgList'] as List).isNotEmpty) {
+          imageUrls = List<String>.from(widget.articleData['coverImgList']);
+        } else if (widget.articleData['coverImg'] != null &&
+            widget.articleData['coverImg'].toString().isNotEmpty) {
+          imageUrls = [widget.articleData['coverImg'].toString()];
+        }
+      }
+
+      if (imageUrls.isNotEmpty) {
+        await Future.wait(
+          imageUrls.map(
+            (url) => ViewportAwareImage.precacheNetworkImage(url, context),
+          ),
+        ).timeout(const Duration(milliseconds: 600), onTimeout: () => []);
+      }
+    } catch (e) {
+      // ignore
+    }
 
     Navigator.push(
       context,
@@ -210,7 +236,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
           } else {
             isLiked = false;
           }
-          
+
           // 重新读取点赞数量
           final likecontValue = widget.articleData['likecont'];
           if (likecontValue is int) {
@@ -237,7 +263,9 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
     // 使用PostPage页面进行转发
     Navigator.push(
       context,
-      RouteUtils.slideFromBottom(PostPage(type: '转发', articelData: widget.articleData)),
+      RouteUtils.slideFromBottom(
+        PostPage(type: '转发', articelData: widget.articleData),
+      ),
     );
   }
 
@@ -350,7 +378,9 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
               onTap: () {
                 Navigator.push(
                   context,
-                  RouteUtils.slideFromRight(UserHome(userId: widget.articleData['username'])),
+                  RouteUtils.slideFromRight(
+                    UserHome(userId: widget.articleData['username']),
+                  ),
                 );
               },
               child: CircleAvatar(
@@ -463,11 +493,19 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: ArticleImage(
-                            imageUrls: widget.articleData['coverImgList'] != null &&
-                                    widget.articleData['coverImgList'] is List &&
-                                    (widget.articleData['coverImgList'] as List).isNotEmpty
-                                ? List<String>.from(widget.articleData['coverImgList'])
-                                : [widget.articleData['coverImg'].toString()],
+                            imageUrls:
+                                widget.articleData['coverImgList'] != null &&
+                                        widget.articleData['coverImgList']
+                                            is List &&
+                                        (widget.articleData['coverImgList']
+                                                as List)
+                                            .isNotEmpty
+                                    ? List<String>.from(
+                                      widget.articleData['coverImgList'],
+                                    )
+                                    : [
+                                      widget.articleData['coverImg'].toString(),
+                                    ],
                           ),
                         ),
                       ),
@@ -500,7 +538,10 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                                   Navigator.push(
                                     context,
                                     RouteUtils.slideFromBottom(
-                                      PostPage(type: '评论', articelData: widget.articleData),
+                                      PostPage(
+                                        type: '评论',
+                                        articelData: widget.articleData,
+                                      ),
                                     ),
                                   );
                                 },
@@ -524,11 +565,15 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                             child: Align(
                               alignment: Alignment.centerRight,
                               child: _buildTwitterActionButton(
-                                icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                                icon:
+                                    isLiked
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
                                 count: likeCount,
-                                color: isLiked
-                                    ? Color.fromRGBO(224, 36, 94, 1.0)
-                                    : Colors.grey[600]!,
+                                color:
+                                    isLiked
+                                        ? Color.fromRGBO(224, 36, 94, 1.0)
+                                        : Colors.grey[600]!,
                                 onTap: () {
                                   _handleLike();
                                 },
@@ -579,11 +624,7 @@ class _ArticleState extends State<Article> with SingleTickerProviderStateMixin {
                   ),
                 )
               else
-                Icon(
-                  icon,
-                  size: 18.5,
-                  color: color,
-                ),
+                Icon(icon, size: 18.5, color: color),
               SizedBox(width: 6),
               Text(
                 _formatCount(count),

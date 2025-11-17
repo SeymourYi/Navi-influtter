@@ -5,6 +5,7 @@ import 'package:Navi/page/UserInfo/components/userpage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:Navi/utils/route_utils.dart';
+import 'package:Navi/utils/viewport_image.dart';
 
 class LitArticle extends StatefulWidget {
   const LitArticle({super.key, required this.articleData});
@@ -27,19 +28,12 @@ class _LitArticleState extends State<LitArticle> {
           Row(
             children: [
               // 转发图标
-              Icon(
-                Icons.repeat,
-                size: 16,
-                color: Colors.grey[600],
-              ),
+              Icon(Icons.repeat, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 4),
               // 转发者昵称 + "转推了"
               Text(
                 "${widget.articleData['nickname'] ?? '用户'} 转推了",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -58,9 +52,11 @@ class _LitArticleState extends State<LitArticle> {
 
                   Navigator.push(
                     context,
-                    RouteUtils.slideFromRight(ProfilePage(
-                      username: widget.articleData['beShareCreaterUserName'],
-                    )),
+                    RouteUtils.slideFromRight(
+                      ProfilePage(
+                        username: widget.articleData['beShareCreaterUserName'],
+                      ),
+                    ),
                   );
                 },
                 child: Padding(
@@ -80,6 +76,41 @@ class _LitArticleState extends State<LitArticle> {
                       widget.articleData['beShareArticleId'],
                     );
                     var articleData = result['data'];
+
+                    // 尝试预加载文章中的图片以实现“秒开”体验
+                    try {
+                      List<String> imageUrls = [];
+                      if (articleData != null) {
+                        if (articleData['coverImgList'] != null &&
+                            articleData['coverImgList'] is List &&
+                            (articleData['coverImgList'] as List).isNotEmpty) {
+                          imageUrls = List<String>.from(
+                            articleData['coverImgList'],
+                          );
+                        } else if (articleData['coverImg'] != null &&
+                            articleData['coverImg'].toString().isNotEmpty) {
+                          imageUrls = [articleData['coverImg'].toString()];
+                        }
+                      }
+
+                      if (imageUrls.isNotEmpty) {
+                        // 并行预加载，但限制等待时间，避免卡顿
+                        await Future.wait(
+                          imageUrls.map(
+                            (url) => ViewportAwareImage.precacheNetworkImage(
+                              url,
+                              context,
+                            ),
+                          ),
+                        ).timeout(
+                          const Duration(milliseconds: 600),
+                          onTimeout: () => [],
+                        );
+                      }
+                    } catch (e) {
+                      // 预加载出错时忽略，继续导航
+                    }
+
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -169,17 +200,30 @@ class _LitArticleState extends State<LitArticle> {
 
                       // Article image - 支持多张图片
                       if (widget.articleData['beShareCoverImg'] != null &&
-                          widget.articleData['beShareCoverImg'].toString().isNotEmpty)
+                          widget.articleData['beShareCoverImg']
+                              .toString()
+                              .isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: ArticleImage(
-                              imageUrls: widget.articleData['beShareCoverImgList'] != null &&
-                                      widget.articleData['beShareCoverImgList'] is List &&
-                                      (widget.articleData['beShareCoverImgList'] as List).isNotEmpty
-                                  ? List<String>.from(widget.articleData['beShareCoverImgList'])
-                                  : [widget.articleData['beShareCoverImg'].toString()],
+                              imageUrls:
+                                  widget.articleData['beShareCoverImgList'] !=
+                                              null &&
+                                          widget.articleData['beShareCoverImgList']
+                                              is List &&
+                                          (widget.articleData['beShareCoverImgList']
+                                                  as List)
+                                              .isNotEmpty
+                                      ? List<String>.from(
+                                        widget
+                                            .articleData['beShareCoverImgList'],
+                                      )
+                                      : [
+                                        widget.articleData['beShareCoverImg']
+                                            .toString(),
+                                      ],
                             ),
                           ),
                         ),
